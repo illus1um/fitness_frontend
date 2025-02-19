@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
-import 'profile_screen.dart';
 import 'forgot_password_screen.dart';
 import 'complete_profile_screen.dart';
 import 'home_screen.dart';
-import 'complete_profile_screen.dart';
 import 'register_screen.dart'; // Импортируем экран регистрации
 
 class LoginScreen extends StatefulWidget {

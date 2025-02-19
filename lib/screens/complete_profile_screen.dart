@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
-import 'home_screen.dart';
-import 'fitness_goal_screen.dart';
+import 'training_program_screen.dart.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   @override
@@ -28,7 +27,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     if (success) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => FitnessGoalScreen()),
+        MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

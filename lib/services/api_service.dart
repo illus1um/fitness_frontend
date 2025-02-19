@@ -161,22 +161,53 @@ class ApiService {
     return false;
   }
 
-  static Future<bool> setFitnessGoal(String goal) async {
+  static Future<bool> setTrainingProgram(String program) async {
   String? token = await AuthService.getAccessToken();
   if (token == null) return false;
 
   final response = await http.post(
-    Uri.parse('$baseUrl/users/set-goal'),
+    Uri.parse('$baseUrl/users/set-program'),
     headers: {
       "Authorization": "Bearer $token",
       "Content-Type": "application/json"
     },
-    body: jsonEncode({"fitness_goal": goal}),  // 👈 Здесь исправили формат
+    body: jsonEncode({"training_program": program}),
   );
 
   return response.statusCode == 200;
-}
+  }
 
+  static Future<bool> setTrainingLocation(String location) async {
+  String? token = await AuthService.getAccessToken();
+  if (token == null) return false;
+
+  final response = await http.post(
+    Uri.parse('$baseUrl/users/set-location'),
+    headers: {
+      "Authorization": "Bearer $token",
+      "Content-Type": "application/json"
+    },
+    body: jsonEncode({"training_location": location}),
+  );
+
+  return response.statusCode == 200;
+  }
+
+  static Future<bool> setTrainingExperience(String experience) async {
+    String? token = await AuthService.getAccessToken();
+    if (token == null) return false;
+
+    final response = await http.post(
+    Uri.parse('$baseUrl/users/set-experience'),
+    headers: {
+      "Authorization": "Bearer $token",
+      "Content-Type": "application/json"
+    },
+    body: jsonEncode({"training_experience": experience}),
+    );
+
+    return response.statusCode == 200;
+  } 
 
 
   /// **Запрос кода сброса пароля**
