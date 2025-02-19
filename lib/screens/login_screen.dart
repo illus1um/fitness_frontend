@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
-import 'package:fitness_app/screens/profile_screen.dart';
-import 'package:fitness_app/screens/register_screen.dart';
-import 'package:fitness_app/screens/forgot_password_screen.dart';
+import 'profile_screen.dart';
+import 'forgot_password_screen.dart';
+import 'complete_profile_screen.dart';
+import 'home_screen.dart';
+import 'complete_profile_screen.dart';
+import 'register_screen.dart'; // Импортируем экран регистрации
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -15,33 +18,43 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
 
   void login() async {
-    setState(() {
-      isLoading = true;
-    });
+  setState(() {
+    isLoading = true;
+  });
 
-    var response = await ApiService.login(
-      usernameController.text,
-      passwordController.text,
-    );
+  bool success = await ApiService.login(
+    usernameController.text,
+    passwordController.text,
+  );
 
-    setState(() {
-      isLoading = false;
-    });
+  setState(() {
+    isLoading = false;
+  });
 
-    if (response != null) {
+  if (success) {
+    bool profileCompleted = await ApiService.checkProfileStatus();
+    
+    if (profileCompleted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => ProfileScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Ошибка входа. Проверьте логин и пароль."),
-          backgroundColor: Colors.red,
-        ),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => CompleteProfileScreen()),
       );
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Ошибка входа. Проверьте логин и пароль."),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
             TextButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => RegisterScreen()),
+                MaterialPageRoute(builder: (context) => RegisterScreen()), // Переход на экран регистрации
               ),
               child: Text("Нет аккаунта? Зарегистрироваться"),
             ),

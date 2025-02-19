@@ -13,8 +13,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   bool gender = true; // true = Мужской, false = Женский
+  bool isLoading = false;
 
   void register() async {
+    setState(() => isLoading = true);
+
     var response = await ApiService.register(
       usernameController.text,
       emailController.text,
@@ -24,12 +27,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       gender,
     );
 
+    setState(() => isLoading = false);
+
     if (response != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Регистрация успешна! Теперь войдите в систему."),
         backgroundColor: Colors.green,
       ));
-      Navigator.pop(context); // Вернуться на экран логина
+      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Ошибка регистрации. Проверьте данные."),
@@ -69,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
             SizedBox(height: 16),
-            ElevatedButton(onPressed: register, child: Text("Зарегистрироваться")),
+            isLoading ? CircularProgressIndicator() : ElevatedButton(onPressed: register, child: Text("Зарегистрироваться")),
             TextButton(onPressed: () => Navigator.pop(context), child: Text("Уже есть аккаунт? Войти")),
           ],
         ),

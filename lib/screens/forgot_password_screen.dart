@@ -12,15 +12,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool isLoading = false;
 
   void sendResetCode() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     bool success = await ApiService.forgotPassword(emailController.text);
-    
-    setState(() {
-      isLoading = false;
-    });
+
+    setState(() => isLoading = false);
 
     if (success) {
       Navigator.push(
@@ -31,10 +27,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Ошибка! Проверьте email."),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text("Ошибка! Проверьте email."), backgroundColor: Colors.red),
       );
     }
   }
@@ -47,18 +40,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(labelText: "Введите email"),
-              keyboardType: TextInputType.emailAddress,
-            ),
+            TextField(controller: emailController, decoration: InputDecoration(labelText: "Введите email"), keyboardType: TextInputType.emailAddress),
             SizedBox(height: 16),
-            isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: sendResetCode,
-                    child: Text("Получить код сброса"),
-                  ),
+            isLoading ? CircularProgressIndicator() : ElevatedButton(onPressed: sendResetCode, child: Text("Получить код сброса")),
           ],
         ),
       ),

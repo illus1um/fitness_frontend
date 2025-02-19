@@ -17,21 +17,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool isLoading = false;
 
   void verifyCodeAndResetPassword() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     bool codeValid = await ApiService.verifyResetCode(widget.email, codeController.text);
 
     if (!codeValid) {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Неверный код! Попробуйте снова."),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text("Неверный код! Попробуйте снова."), backgroundColor: Colors.red),
       );
       return;
     }
@@ -42,27 +35,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       newPasswordController.text,
     );
 
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
 
     if (passwordChanged) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Пароль успешно изменён!"),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: Text("Пароль успешно изменён!"), backgroundColor: Colors.green),
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Ошибка! Попробуйте снова."),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text("Ошибка! Попробуйте снова."), backgroundColor: Colors.red),
       );
     }
   }
@@ -75,23 +57,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: codeController,
-              decoration: InputDecoration(labelText: "Введите код из email"),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: newPasswordController,
-              decoration: InputDecoration(labelText: "Новый пароль"),
-              obscureText: true,
-            ),
+            TextField(controller: codeController, decoration: InputDecoration(labelText: "Введите код из email"), keyboardType: TextInputType.number),
+            TextField(controller: newPasswordController, decoration: InputDecoration(labelText: "Новый пароль"), obscureText: true),
             SizedBox(height: 16),
-            isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: verifyCodeAndResetPassword,
-                    child: Text("Сбросить пароль"),
-                  ),
+            isLoading ? CircularProgressIndicator() : ElevatedButton(onPressed: verifyCodeAndResetPassword, child: Text("Сбросить пароль")),
           ],
         ),
       ),
