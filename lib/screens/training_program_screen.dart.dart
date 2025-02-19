@@ -36,32 +36,32 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ElevatedButton(
-              onPressed: () => setTrainingProgram("Потеря веса"),
+              onPressed: () => setTrainingProgram("Weight Loss"),
               child: Text("🔥 Потеря веса"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingProgram("Выносливость"),
+              onPressed: () => setTrainingProgram("Endurance"),
               child: Text("🏃‍♂️ Выносливость"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingProgram("Полное тело"),
+              onPressed: () => setTrainingProgram("Full Body"),
               child: Text("💪 Полное тело"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingProgram("Набор мышечной массы"),
+              onPressed: () => setTrainingProgram("Gain Muscle Mass"),
               child: Text("🦾 Набор массы"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingProgram("Ноги"),
+              onPressed: () => setTrainingProgram("Legs"),
               child: Text("🦵 Ноги"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingProgram("Широкая спина"),
+              onPressed: () => setTrainingProgram("Wide Back"),
               child: Text("🏋️‍♂️ Широкая спина"),
             ),
           ],

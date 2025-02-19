@@ -38,13 +38,13 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ElevatedButton(
-              onPressed: () => setTrainingLocation("Дом"),
-              child: Text("🏠 Дом"),
+              onPressed: () => setTrainingLocation("Home"),
+              child: Text("🏠 Home"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingLocation("Зал"),
-              child: Text("🏋️ Зал"),
+              onPressed: () => setTrainingLocation("Gym"),
+              child: Text("🏋️ Gym"),
             ),
           ],
         ),

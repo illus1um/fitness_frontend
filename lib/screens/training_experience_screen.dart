@@ -38,18 +38,18 @@ class _TrainingExperienceScreenState extends State<TrainingExperienceScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ElevatedButton(
-              onPressed: () => setTrainingExperience("Нету опыта"),
-              child: Text("🥉 Нету опыта"),
+              onPressed: () => setTrainingExperience("No experience"),
+              child: Text("🥉 No experience"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingExperience("Новичок"),
-              child: Text("🥈 Новичок"),
+              onPressed: () => setTrainingExperience("Beginner"),
+              child: Text("🥈 Beginner"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => setTrainingExperience("Опытный"),
-              child: Text("🥇 Опытный"),
+              onPressed: () => setTrainingExperience("Experienced"),
+              child: Text("🥇 Experienced"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
