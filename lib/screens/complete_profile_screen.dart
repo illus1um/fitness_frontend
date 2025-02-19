@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'home_screen.dart';
+import 'fitness_goal_screen.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   @override
@@ -27,7 +28,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     if (success) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()), // Переход на домашнюю страницу
+        MaterialPageRoute(builder: (context) => FitnessGoalScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

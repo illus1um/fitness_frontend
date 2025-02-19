@@ -161,6 +161,23 @@ class ApiService {
     return false;
   }
 
+  static Future<bool> setFitnessGoal(String goal) async {
+  String? token = await AuthService.getAccessToken();
+  if (token == null) return false;
+
+  final response = await http.post(
+    Uri.parse('$baseUrl/users/set-goal'),
+    headers: {
+      "Authorization": "Bearer $token",
+      "Content-Type": "application/json"
+    },
+    body: jsonEncode({"fitness_goal": goal}),  // 👈 Здесь исправили формат
+  );
+
+  return response.statusCode == 200;
+}
+
+
 
   /// **Запрос кода сброса пароля**
   static Future<bool> forgotPassword(String email) async {
