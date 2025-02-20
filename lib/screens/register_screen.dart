@@ -10,16 +10,23 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
-  bool gender = true; // true = Мужской, false = Женский
+  bool gender = true;
   bool isLoading = false;
   bool isPasswordVisible = false;
 
+  final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_.-]+$');
+
   void register() async {
+    if (!_formKey.currentState!.validate()) {
+      return; // Если валидация не прошла, не отправляем запрос
+    }
+
     setState(() => isLoading = true);
 
     var response = await ApiService.register(
@@ -32,20 +39,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (response != null) {
-      // Автоматический вход в аккаунт после регистрации
       bool loginSuccess = await ApiService.login(usernameController.text, passwordController.text);
-
       if (loginSuccess) {
         bool profileCompleted = await ApiService.checkProfileStatus();
-
-        // Если профиль уже заполнен, переходим в HomeScreen
         if (profileCompleted) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomeScreen()),
           );
         } else {
-          // Если профиль не заполнен, переходим в CompleteProfileScreen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => CompleteProfileScreen()),
@@ -65,31 +67,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildToggleButtons(context, false), // false = активен "Registration"
-
-            SizedBox(height: 32),
-            _buildInputField("Username", usernameController),
-            _buildInputField("Email", emailController),
-            _buildPasswordField(),
-            _buildInputField("Name", firstNameController),
-            _buildInputField("Last Name", lastNameController),
-            _buildGenderSwitch(),
-            SizedBox(height: 20),
-            _buildRegisterButton(),
-          ],
+      body: SingleChildScrollView( // Добавляем скроллинг
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey, 
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildToggleButtons(context, false),
+                SizedBox(height: 100),
+                _buildInputField("Username", usernameController, validator: _validateUsername),
+                _buildInputField("Email", emailController, validator: _validateEmail),
+                _buildPasswordField(),
+                _buildInputField("Name", firstNameController, validator: _validateName),
+                _buildInputField("Last Name", lastNameController, validator: _validateName),
+                _buildGenderSwitch(),
+                SizedBox(height: 20),
+                _buildRegisterButton(),
+              ],
+            ),
+          ),
         ),
       ),
-        ],
-      )
     );
   }
+
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
   return Align(
@@ -170,41 +173,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
 
 
-  Widget _buildInputField(String label, TextEditingController controller) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0), // Уменьшаем общий отступ
-    child: TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.black),
-        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12), // Уменьшаем внутренний отступ
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+  Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Color.fromARGB(198, 169, 127, 88), width: 2.0),
+          ),
+          fillColor: Colors.white,
+          filled: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Color.fromARGB(198, 169, 127, 88), width: 2.0),
-        ),
-        fillColor: Colors.white,
-        filled: true,
+        validator: validator, 
       ),
-      style: TextStyle(fontSize: 16), // Уменьшаем размер шрифта для компактности
-    ),
-  );
-}
+    );
+  }
 
 
   Widget _buildPasswordField() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: TextField(
+      child: TextFormField(
         controller: passwordController,
         obscureText: !isPasswordVisible,
         decoration: InputDecoration(
           labelText: "Password",
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12), 
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -216,12 +220,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
         filled: true, // Включаем заливку
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           suffixIcon: IconButton(
             icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
             onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
           ),
         ),
+        validator: _validatePassword,
       ),
     );
   }
@@ -299,7 +304,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
   );
 }
 
+/// Валидация username
+  String? _validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Username is required";
+    } else if (value.length < 3 || value.length > 20) {
+      return "Username must be between 3 and 20 characters";
+    } else if (!usernameRegExp.hasMatch(value)) {
+      return "Only letters, numbers, '_', '-', and '.' allowed";
+    }
+    return null;
+  }
 
+  /// Валидация email
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Email is required";
+    } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+      return "Enter a valid email";
+    }
+    return null;
+  }
+
+  /// Валидация пароля
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Password is required";
+    } else if (value.length < 6 || value.length > 32) {
+      return "Password must be between 6 and 32 characters";
+    }
+    return null;
+  }
+
+  /// Валидация имени и фамилии
+  String? _validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return "This field is required";
+    } else if (value.length < 1 || value.length > 30) {
+      return "Must be between 1 and 30 characters";
+    }
+    return null;
+  }
 
 Widget _buildRegisterButton() {
   return ElevatedButton(

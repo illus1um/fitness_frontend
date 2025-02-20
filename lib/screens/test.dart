@@ -94,160 +94,102 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-
+  /// Кнопка переключения между "Login" и "Registration"
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
     return Align(
-    alignment: Alignment.topCenter, // Фиксируем сверху
-    child: Container(
-      width: double.infinity, // Растягиваем на всю ширину
-      height: 40,
-      margin: EdgeInsets.only(top: 40), // Отступ сверху
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.brown[100],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (isLogin) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => RegisterScreen()),
-                  );
-                }
-              },
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    bottomLeft: Radius.circular(10),
-                  ),
-                  color: !isLogin ? Colors.brown[300] : Colors.transparent,
-                ),
-                child: Text(
-                  "Registration",
-                  style: TextStyle(
-                    color: !isLogin ? Colors.white : Colors.brown[700],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+      alignment: Alignment.topCenter,
+      child: Container(
+        width: double.infinity,
+        height: 40,
+        margin: EdgeInsets.only(top: 40),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.brown[100],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  if (isLogin) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => RegisterScreen()),
+                    );
+                  }
+                },
+                child: Center(child: Text("Registration")),
               ),
             ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (!isLogin) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  );
-                }
-              },
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
-                  ),
-                  color: isLogin ? Color.fromARGB(198, 169, 127, 100) : Colors.transparent,
-                ),
-                child: Text(
-                  "Login",
-                  style: TextStyle(
-                    color: isLogin ? Colors.white : Colors.brown[700],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  if (!isLogin) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    );
+                  }
+                },
+                child: Center(child: Text("Login")),
               ),
             ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
-  Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)), // Цвет текста метки
-          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+          ],
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0), // Цвет при фокусе
-        ),
-        fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
-        filled: true, // Включаем заливку
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-        validator: validator,
       ),
     );
   }
 
+  /// Поле для ввода текста с валидацией
+  Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        validator: validator, // Проверка данных
+      ),
+    );
+  }
+
+  /// Поле для ввода пароля с валидацией
   Widget _buildPasswordField() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: passwordController,
         obscureText: !isPasswordVisible,
         decoration: InputDecoration(
           labelText: "Password",
-            labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)), // Цвет текста метки
-            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0), // Цвет при фокусе
-          ),
-          fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
-          filled: true, // Включаем заливку
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           suffixIcon: IconButton(
             icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
             onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
           ),
         ),
-        validator: _validatePassword,
+        validator: _validatePassword, // Проверка пароля
       ),
     );
   }
 
+  /// Кнопка входа
   Widget _buildLoginButton() {
     return ElevatedButton(
       onPressed: isLoading ? null : login,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        minimumSize: Size(double.infinity, 40),
-        shape: RoundedRectangleBorder( // Устанавливаем закругление углов
-          borderRadius: BorderRadius.circular(12), // Радиус закругления
-        ),
+        minimumSize: Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: isLoading 
-        ? CircularProgressIndicator(color: Colors.white) 
-        : Text("Login"),
+      child: isLoading ? CircularProgressIndicator(color: Colors.white) : Text("Login"),
     );
   }
-  
-    /// Валидация username
+
+  /// Валидация username
   String? _validateUsername(String? value) {
     if (value == null || value.isEmpty) {
       return "Username is required";
