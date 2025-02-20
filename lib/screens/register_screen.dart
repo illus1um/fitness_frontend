@@ -124,12 +124,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  color: !isLogin ? Color.fromARGB(198, 169, 127, 100) : Colors.transparent,
+                  color: !isLogin ? Color.fromARGB(255, 199, 169, 127)  : const Color.fromARGB(248, 0, 0, 0),
                 ),
                 child: Text(
                   "Registration",
                   style: TextStyle(
-                    color: !isLogin ? Colors.white : Colors.brown[700],
+                    color: !isLogin ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(255, 0, 0, 0),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -153,13 +153,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  color: isLogin ? Colors.brown[300] : Colors.transparent,
+                  color: isLogin ? Colors.brown[300] : Color.fromARGB(255, 219, 200, 173),
                 ),
                 child: Text(
                   "Login",
                   style: TextStyle(
-                    color: isLogin ? Colors.white : Colors.brown[700],
-                    fontWeight: FontWeight.bold,
+                    color: isLogin ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
                   ),
                 ),
               ),
@@ -232,77 +231,98 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildGenderSwitch() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0), // Уменьшенный внешний отступ
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 6), // Меньший отступ
-        Container(
-          height: 40, // Уменьшаем высоту контейнера
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8), // Меньший радиус
-            border: Border.all(color: Colors.brown),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => gender = true),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 8), // Уменьшенный внутренний отступ
-                    decoration: BoxDecoration(
-                      color: gender ? Color.fromARGB(198, 169, 127, 100) : Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        bottomLeft: Radius.circular(8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 6),
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20), // Делаем закругление больше
+              border: Border.all(color: Colors.brown),
+            ),
+            child: Row(
+              children: [
+                // 🔹 Кнопка "Male"
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => gender = true),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: gender ? Color.fromARGB(255, 199, 169, 127) : Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          bottomLeft: Radius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Male",
-                        style: TextStyle(
-                          fontSize: 14, // Уменьшаем размер шрифта
-                          color: gender ? Colors.white :Color.fromRGBO(0, 0, 0, 1),
-                          fontWeight: FontWeight.w500,
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (gender) // 🔹 Галочка только если выбран "Male"
+                              Icon(Icons.check, size: 16, color: Colors.black),
+                            SizedBox(width: gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
+                            Text(
+                              "Male",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => gender = false),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 8), // Уменьшенный внутренний отступ
-                    decoration: BoxDecoration(
-                      color: !gender ? Color.fromARGB(198, 169, 127, 100) : Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(8),
-                        bottomRight: Radius.circular(8),
+
+                // 🔹 Кнопка "Female"
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => gender = false),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: !gender ? Color.fromARGB(255, 199, 169, 127) : Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Female",
-                        style: TextStyle(
-                          fontSize: 14, // Уменьшаем размер шрифта
-                          color: !gender ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
-                          fontWeight: FontWeight.w500,
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (!gender) // 🔹 Галочка только если выбран "Female"
+                              Icon(Icons.check, size: 16, color: Colors.black),
+                            SizedBox(width: !gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
+                            Text(
+                              "Female",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
+
+
 
 /// Валидация username
   String? _validateUsername(String? value) {
@@ -346,21 +366,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-Widget _buildRegisterButton() {
-  return ElevatedButton(
-    onPressed: isLoading ? null : register,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
-      minimumSize: Size(double.infinity, 40),
-      shape: RoundedRectangleBorder( // Устанавливаем закругление углов
-        borderRadius: BorderRadius.circular(12), // Радиус закругления
+  Widget _buildRegisterButton() {
+    return ElevatedButton(
+      onPressed: isLoading ? null : register,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        minimumSize: Size(double.infinity, 40),
+        shape: RoundedRectangleBorder( // Устанавливаем закругление углов
+          borderRadius: BorderRadius.circular(12), // Радиус закругления
+        ),
       ),
-    ),
-    child: isLoading 
-      ? CircularProgressIndicator(color: Colors.white) 
-      : Text("Registration"),
-  );
-}
+      child: isLoading 
+        ? CircularProgressIndicator(color: Colors.white) 
+        : Text("Registration"),
+    );
+  }
 
 }

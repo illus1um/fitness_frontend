@@ -8,8 +8,6 @@ class TrainingLocationScreen extends StatefulWidget {
 }
 
 class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
-  String selectedLocation = "";
-
   void setTrainingLocation(String location) async {
     bool success = await ApiService.setTrainingLocation(location);
 
@@ -21,34 +19,97 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Ошибка при сохранении места тренировки"),
+          content: Text("Error saving the training location"),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
+  final List<Map<String, String>> locations = [
+    {"name": "At home", "image": "assets/images/home.jpg"},
+    {"name": "In the gym", "image": "assets/images/gym.jpg"},
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Выберите место тренировки")),
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.center, // 🔹 Центрируем весь Column
           children: [
-            ElevatedButton(
-              onPressed: () => setTrainingLocation("Home"),
-              child: Text("🏠 Home"),
+            Center( // 🔹 Центрируем заголовок
+              child: Text(
+                "Where to train?",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => setTrainingLocation("Gym"),
-              child: Text("🏋️ Gym"),
+            SizedBox(height: 40),
+
+            Expanded(
+              child: ListView.separated(
+                itemCount: locations.length,
+                separatorBuilder: (context, index) => SizedBox(height: 18),
+                itemBuilder: (context, index) {
+                  final location = locations[index];
+                  return _buildLocationCard(location["name"]!, location["image"]!);
+                },
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
+
+  Widget _buildLocationCard(String name, String imagePath) {
+  return GestureDetector(
+    onTap: () => setTrainingLocation(name),
+    child: Container(
+      height: 60, // 🔹 Фиксируем высоту карточки
+      decoration: BoxDecoration(
+        color: Color.fromARGB(255, 219, 200, 173),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // 🔹 Текстовое описание
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                name,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black),
+              ),
+            ),
+          ),
+
+          // 🔹 Исправленное изображение
+          ClipRRect(
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(12),
+              bottomRight: Radius.circular(12),
+            ),
+            child: Image.asset(
+              imagePath,
+              width: 100, // 🔹 Устанавливаем фиксированную ширину
+              height: 60, // 🔹 Совпадает с высотой карточки
+              fit: BoxFit.cover, // 🔹 Заполняет область, не искажая изображение
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 }

@@ -125,13 +125,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  color: !isLogin ? Colors.brown[300] : Colors.transparent,
+                  color: !isLogin ? Color.fromARGB(255, 199, 127, 127) : Color.fromARGB(255, 219, 200, 173),
                 ),
                 child: Text(
                   "Registration",
                   style: TextStyle(
-                    color: !isLogin ? Colors.white : Colors.brown[700],
-                    fontWeight: FontWeight.bold,
+                    color: !isLogin ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
                   ),
                 ),
               ),
@@ -154,12 +153,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  color: isLogin ? Color.fromARGB(198, 169, 127, 100) : Colors.transparent,
+                  color: isLogin ? Color.fromARGB(255, 199, 169, 127) : const Color.fromARGB(0, 227, 212, 212),
                 ),
                 child: Text(
                   "Login",
                   style: TextStyle(
-                    color: isLogin ? Colors.white : Colors.brown[700],
+                    color: isLogin ? const Color.fromARGB(255, 0, 0, 0) : Colors.brown[700],
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -269,3 +268,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 }
+
+//Color.fromARGB(255, 219, 200, 173), light
+//Color.fromARGB(255, 199, 169, 127) dark
