@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color.fromARGB(255, 244, 241, 237),
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: "Workout"),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Body"),
@@ -39,8 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.local_drink), label: "Drinking"),
           BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: "Else"),
         ],
+        
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Color.fromARGB(255, 199, 169, 127),
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
