@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Fitness App',
       theme: ThemeData(primarySwatch: Colors.brown,
-      scaffoldBackgroundColor: Colors.white,
+      scaffoldBackgroundColor: const Color.fromARGB(255, 249, 249, 249),
       fontFamily: 'Poppins', // Устанавливаем Poppins для всего приложения
           textTheme: TextTheme(
             bodyLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.black),
