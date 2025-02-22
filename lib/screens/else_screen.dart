@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/screens/login_screen.dart';
 import 'package:fitness_app/screens/myprofilegoal_screen.dart';
+import 'change_password.dart';
 
 class ElseScreen extends StatefulWidget {
   @override
@@ -88,8 +89,9 @@ class _ElseScreenState extends State<ElseScreen> {
                       title: "Account",
                       children: [
                         _buildInfoTile(Icons.email, userData!["email"]),
-                        _buildListTile(Icons.lock, "Change Password", () {}),
-                        _buildListTile(Icons.exit_to_app, "Logout from Account", _logout, color: Colors.red),
+                        _buildListTile(Icons.lock, "Change Password", () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => ChangePasswordScreen()));}),
+                        _buildListTile(Icons.exit_to_app, "Logout from Account", _logout, color: const Color.fromARGB(255, 214, 88, 79)),
                       ],
                     ),
                     SizedBox(height: 20), // Добавил отступ, чтобы не упиралось в край экрана

@@ -74,6 +74,31 @@ class ApiService {
     }
   }
 
+  static Future<bool> changePassword(String oldPassword, String newPassword) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/change-password'),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json"
+        },
+        body: jsonEncode({
+          "old_password": oldPassword,
+          "new_password": newPassword,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error changing password: $e");
+      return false;
+    }
+  }
+
+
   static Future<bool> updateProfile(double weight, double height, int age) async {
     try {
       String? token = await AuthService.getAccessToken();
