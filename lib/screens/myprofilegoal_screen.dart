@@ -22,9 +22,12 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     });
   }
 
-  /// 📌 Функция для обновления значений (пока просто демонстрация)
   void _updateField(String field, String newValue) {
-    print("Обновляем $field на $newValue"); // Здесь можно добавить API-запрос
+    print("Обновляем $field на $newValue");
+  }
+
+  void _deleteAccount() {
+    print("Запрос на удаление аккаунта");
   }
 
   @override
@@ -42,15 +45,13 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    /// 🖼 **Аватарка**
                     CircleAvatar(
-                      radius: 60,
+                      radius: 90,
                       backgroundColor: Colors.grey[300],
-                      child: Icon(Icons.person, size: 60, color: Colors.white),
+                      child: Icon(Icons.person, size: 120, color: Colors.white),
                     ),
                     SizedBox(height: 20),
 
-                    /// 📌 **Карточка "My Personal Information"**
                     _buildCard(
                       title: "My Personal Information",
                       children: [
@@ -65,7 +66,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                     ),
                     SizedBox(height: 20),
 
-                    /// 📌 **Карточка "Goal Settings"**
                     _buildCard(
                       title: "Goal Settings",
                       children: [
@@ -74,6 +74,17 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                         _buildEditableTile("Training Experience", userData!["training_experience"]),
                       ],
                     ),
+                    SizedBox(height: 30),
+
+                    Divider(),
+                    TextButton(
+                      onPressed: _deleteAccount,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey,
+                        textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      child: Text("Delete your account?"),
+                    ),
                   ],
                 ),
               ),
@@ -81,13 +92,21 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     );
   }
 
-  /// 📌 **Карточка с заголовком и контентом**
+  /// 📌 **Карточка с тенями**
   Widget _buildCard({required String title, required List<Widget> children}) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 255, 255, 255),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1), // Легкая тень
+            blurRadius: 6, // Размытие тени
+            spreadRadius: 2, // Распределение тени
+            offset: Offset(0, 4), // Смещение вниз
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +130,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     );
   }
 
-  /// 📌 **Элемент списка (не редактируемый, без стрелки)**
   Widget _buildInfoTile(String label, String value) {
     return ListTile(
       title: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -119,7 +137,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     );
   }
 
-  /// 📌 **Элемент списка (с возможностью редактирования)**
   Widget _buildEditableTile(String label, String value) {
     return ListTile(
       title: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -135,6 +152,3 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     );
   }
 }
-
-//Color.fromARGB(255, 219, 200, 173),
-//Color.fromARGB(255, 199, 169, 127)

@@ -43,34 +43,55 @@ class GuideScreen extends StatelessWidget {
   }
 
   Widget _buildGuideCard(String title, String imagePath) {
-    return Container(
-      width: double.infinity,
-      height: 120,
-      decoration: BoxDecoration(
-        color: Color.fromARGB(255, 219, 200, 173),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.black)),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                topRight: Radius.circular(12),
-                bottomRight: Radius.circular(12),
+  return Container(
+    width: double.infinity,
+    height: 110,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1), // Цвет тени с прозрачностью
+          blurRadius: 6, // Размытие тени
+          spreadRadius: 2, // Распределение тени
+          offset: Offset(0, 4), // Смещение тени вниз
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          flex: 1,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color.fromARGB(255, 199, 169, 127),
               ),
-              child: Image.asset(imagePath, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        Expanded(
+          flex: 1,
+          child: ClipRRect(
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(12),
+              bottomRight: Radius.circular(12),
+            ),
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 }
