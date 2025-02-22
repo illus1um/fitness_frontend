@@ -3,6 +3,7 @@ import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/screens/login_screen.dart';
 import 'package:fitness_app/screens/myprofilegoal_screen.dart';
 import 'change_password.dart';
+import 'package:fitness_app/screens/settings.dart';
 
 class ElseScreen extends StatefulWidget {
   @override
@@ -70,7 +71,6 @@ class _ElseScreenState extends State<ElseScreen> {
                     _buildCard(
                       title: "General",
                       children: [
-                        _buildListTile(Icons.settings, "Settings", () {}),
                         _buildListTile(
                           Icons.person,
                           "My Profile & Goal",
@@ -79,7 +79,13 @@ class _ElseScreenState extends State<ElseScreen> {
                             MaterialPageRoute(builder: (context) => MyProfileGoalScreen()),
                           ),
                         ),
+
                         _buildListTile(Icons.history, "My Workouts", () {}),
+
+                        _buildListTile(Icons.settings, "Settings", () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => SettingsScreen()),
+                          ),),
                       ],
                     ),
                     SizedBox(height: 20),
