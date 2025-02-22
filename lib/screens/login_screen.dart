@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Text(
                       "Forgot password?",
-                      style: TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: const Color.fromARGB(255, 199, 169, 127), fontWeight: FontWeight.w900),
                     ),
                   ),
                 ),

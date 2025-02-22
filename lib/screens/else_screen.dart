@@ -33,7 +33,11 @@ class _ElseScreenState extends State<ElseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Profile")),
+      appBar: AppBar(
+        title: Text("Profile"),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        ),
       body: userData == null
           ? Center(child: CircularProgressIndicator())
           : Column(

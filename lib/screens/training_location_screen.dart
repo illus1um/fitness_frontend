@@ -35,6 +35,7 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color(255),
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),

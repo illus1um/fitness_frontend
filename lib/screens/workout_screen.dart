@@ -31,7 +31,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Workout Plan")),
+      appBar: AppBar(
+        title: Text("Workout Plan"),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: userData == null

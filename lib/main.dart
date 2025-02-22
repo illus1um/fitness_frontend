@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'routes.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -23,8 +24,9 @@ class MyApp extends StatelessWidget {
           color: Color.fromARGB(255, 199, 169, 127), // ✅ Глобальный цвет загрузки
         )
         ),
-      initialRoute: "/login",
-      routes: appRoutes,
+        initialRoute: "/login",
+        routes: appRoutes,
+      // home: HomeScreen(),
     );
   }
 }

@@ -56,12 +56,12 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500, color: Colors.black),
             ),
           ),
-          SizedBox(height: 40), 
+          SizedBox(height: 26), 
 
           Expanded(
             child: ListView.separated(
               itemCount: programs.length,
-              separatorBuilder: (context, index) => SizedBox(height: 20),
+              separatorBuilder: (context, index) => SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final program = programs[index];
                 return _buildProgramCard(program["abbr"]!, program["name"]!, program["image"]!);

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:8000"; // FastAPI сервер
+  static const String baseUrl = "http://192.168.1.76:8000"; // FastAPI сервер
 
   /// **Авторизация пользователя**
   static Future<bool> login(String username, String password) async {
@@ -16,7 +16,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        await AuthService.saveTokens(data["access_token"], data["refresh_token"]);
+        await AuthService.saveTokens(data["access_token"], data["refresh_token"], username);
         return true;
       }
       return false;
@@ -111,7 +111,12 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        await AuthService.saveTokens(data["access_token"], data["refresh_token"]);
+        String? username = await AuthService.getUsername(); // ✅ Получаем username
+        await AuthService.saveTokens(
+          data["access_token"], 
+          data["refresh_token"], 
+          username ?? "" // ✅ Передаем username
+        );
         return true;
       }
 
