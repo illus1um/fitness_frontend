@@ -67,9 +67,9 @@ class GuideScreen extends StatelessWidget {
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color.fromARGB(255, 199, 169, 127),
+                fontSize: 22,
+                fontWeight: FontWeight.w500,
+                color: Color.fromARGB(255, 0, 0, 0),
               ),
             ),
           ),

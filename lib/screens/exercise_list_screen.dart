@@ -49,6 +49,8 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
         title: Text(widget.muscleGroup),
         centerTitle: true,
         backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,      
       ),
       body: Column(
         children: [

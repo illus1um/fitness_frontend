@@ -35,6 +35,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         title: Text("Workout Plan"),
         centerTitle: true,
         backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -50,10 +50,12 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Muscle Groups"),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-      ),
+      title: Text("Muscle Groups"),
+      centerTitle: true,
+      backgroundColor: Colors.white,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+    ),
       body: Column(
         children: [
           // 🔹 Поле поиска с уменьшенной высотой и динамической границей

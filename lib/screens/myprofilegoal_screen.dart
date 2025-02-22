@@ -37,6 +37,8 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         title: Text("My Profile & Goal"),
         centerTitle: true,
         backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,        
       ),
       body: userData == null
           ? Center(child: CircularProgressIndicator())
