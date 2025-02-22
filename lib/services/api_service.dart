@@ -73,6 +73,7 @@ class ApiService {
       return null;
     }
   }
+
   static Future<bool> updateProfile(double weight, double height, int age) async {
     try {
       String? token = await AuthService.getAccessToken();
@@ -97,7 +98,51 @@ class ApiService {
       return false;
     }
   }
-  /// **Обновление `access_token` с помощью `refresh_token`**
+
+  static Future<bool> updateUserProfile(Map<String, dynamic> updatedData) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.post(
+        Uri.parse("$baseUrl/users/update-profile"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json"
+        },
+        body: jsonEncode(updatedData),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Ошибка при обновлении профиля: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> deleteAccount() async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/delete-account'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        await AuthService.removeTokens();
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      print("Error deleting account: $e");
+      return false;
+    }
+  }
+
+  
   static Future<bool> refreshAccessToken() async {
     try {
       String? refreshToken = await AuthService.getRefreshToken();
