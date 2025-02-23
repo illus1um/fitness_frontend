@@ -35,7 +35,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   /// 📌 **Загрузка и фильтрация упражнений**
   Future<void> loadExercises() async {
-    String jsonString = await rootBundle.loadString('assets/workout_exercise.json');
+    String jsonString = await rootBundle.loadString('assets/ideal.json');
     List<dynamic> jsonList = json.decode(jsonString);
 
     List<Map<String, dynamic>> filteredExercises = [];
@@ -94,6 +94,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0, 
       ),
       body: userData == null
           ? Center(child: CircularProgressIndicator())

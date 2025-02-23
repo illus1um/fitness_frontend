@@ -16,6 +16,7 @@ class ExerciseDetailScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0, 
       ),
       body: SingleChildScrollView( // ✅ Делаем весь экран прокручиваемым
         child: Padding(
