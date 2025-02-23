@@ -22,6 +22,8 @@ flutter:
     - assets/exercises.json
     - assets/gifs/
     - assets/muscle_groups/
+    - assets/workout_exercise.json
+    - assets/ideal.json
   fonts:
     - family: Poppins
       fonts:
