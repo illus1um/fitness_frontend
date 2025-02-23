@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> _screens = [
       WorkoutScreen(),  // 🏋️‍♂️ Тренировки (по умолчанию)
-      BodyScreen(),  // 🏃‍♂️ Тело
+      // BodyScreen(),  // 🏃‍♂️ Тело
       GuideScreen(),  // 📖 Гайд
       DrinkingScreen(username: username),  // ✅ Передаём username
       ElseScreen(),  // ⚙️ Профиль и настройки
@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color.fromARGB(255, 244, 241, 237),
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: "Workout"),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Body"),
+          // BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Body"),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: "Guide"),
           BottomNavigationBarItem(icon: Icon(Icons.local_drink), label: "Drinking"),
           BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: "Else"),

@@ -7,6 +7,7 @@ class ExerciseDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Извлекаем инструкции
     List<dynamic>? instructions = exercise["instructions"];
 
     return Scaffold(
@@ -22,14 +23,16 @@ class ExerciseDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 GIF
+              // 🔹 GIF изображения
               Center(
                 child: Image.asset(
                   exercise["gif"] ?? "assets/images/placeholder.png",
                   height: 350,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                  errorBuilder: (context, error, stackTrace) {
+                    print("⚠ Ошибка загрузки гифки: ${exercise["gif"]}");
+                    return Icon(Icons.image_not_supported, size: 100, color: Colors.grey);
+                  },
                 ),
               ),
               SizedBox(height: 20),
@@ -62,7 +65,7 @@ class ExerciseDetailScreen extends StatelessWidget {
               ),
               SizedBox(height: 10),
 
-              // 🔹 Список инструкций (без Expanded)
+              // 🔹 Проверяем, есть ли инструкции
               if (instructions != null && instructions.isNotEmpty)
                 ListView.builder(
                   shrinkWrap: true, // ✅ Отключаем бесконечную прокрутку
@@ -74,7 +77,7 @@ class ExerciseDetailScreen extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 🔹 Кружок с номером
+                          // 🔹 Кружок с номером шага
                           Container(
                             width: 30,
                             height: 30,
@@ -110,7 +113,7 @@ class ExerciseDetailScreen extends StatelessWidget {
               else
                 Center(
                   child: Text(
-                    "Инструкции не найдены.",
+                    "Instructions not available.",
                     style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey),
                   ),
                 ),
