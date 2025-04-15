@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = "http://192.168.1.76:8000"; // FastAPI сервер
+  static const String baseUrl = "https://fitness-deploy.onrender.com"; // FastAPI сервер
 
   /// **Авторизация пользователя**
   static Future<bool> login(String username, String password) async {

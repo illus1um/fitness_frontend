@@ -15,7 +15,7 @@ class DrinkingScreen extends StatefulWidget {
 class _DrinkingScreenState extends State<DrinkingScreen> {
   double dailyWaterTarget = 2.0;
   double currentWaterIntake = 0.0;
-  final List<double> _intakeHistory = []; // ✅ История добавленной воды для Undo/Redo
+  final List<double> _intakeHistory = [];
 
   @override
   void initState() {
@@ -89,65 +89,100 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Water Tracker"), centerTitle: true, backgroundColor: Colors.white),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Daily Drink Target", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 199, 169, 127))),
-          SizedBox(height: 30),
+    double screenWidth = MediaQuery.of(context).size.width;
+    double circleSize = screenWidth * 0.6; 
 
-          /// 📌 **Анимация прогресса воды**
-          TweenAnimationBuilder(
-            tween: Tween<double>(begin: 0, end: currentWaterIntake / dailyWaterTarget),
-            duration: Duration(seconds: 1),
-            builder: (context, double progress, child) {
-              return Stack(
-                alignment: Alignment.center,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Water Tracker"),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 250,
-                    height: 250,
-                    child: CircularProgressIndicator(
-                      value: progress,
-                      strokeWidth: 14,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 85, 150, 193)),
+                  Text(
+                    "Daily Drink Target",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 199, 169, 127),
                     ),
                   ),
-                  Column(
+                  SizedBox(height: 30),
+
+                  /// 📌 Прогресс-бар
+                  TweenAnimationBuilder(
+                    tween: Tween<double>(
+                      begin: 0,
+                      end: currentWaterIntake / dailyWaterTarget,
+                    ),
+                    duration: Duration(seconds: 1),
+                    builder: (context, double progress, child) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: circleSize,
+                            height: circleSize,
+                            child: CircularProgressIndicator(
+                              value: progress,
+                              strokeWidth: 14,
+                              backgroundColor: Colors.grey[300],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color.fromARGB(255, 85, 150, 193),
+                              ),
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              Text(
+                                "${(progress * 100).toInt()}%",
+                                style: TextStyle(
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                "${currentWaterIntake.toStringAsFixed(2)} L / ${dailyWaterTarget.toStringAsFixed(2)} L",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  SizedBox(height: 30),
+
+                  /// 📌 Кнопки добавления воды и Undo/Redo
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
-                      Text("${(progress * 100).toInt()}%", style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold)),
-                      Text("${currentWaterIntake.toStringAsFixed(2)} L / ${dailyWaterTarget.toStringAsFixed(2)} L",
-                          style: TextStyle(fontSize: 16)),
+                      _buildWaterButton("0.2L", 0.2, Icons.local_cafe),
+                      _buildWaterButton("0.25L", 0.25, Icons.local_drink),
+                      _buildWaterButton("0.5L", 0.5, Icons.sports_bar),
+                      _buildUndoRedoButton("Undo", _undoLastIntake, Colors.black, Icons.undo),
+                      _buildUndoRedoButton("Redo", _redoLastIntake, Colors.black, Icons.redo),
                     ],
                   ),
+                  SizedBox(height: 20),
                 ],
-              );
-            },
-          ),
-          SizedBox(height: 30),
-
-          /// 📌 **Кнопки добавления воды**
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _buildWaterButton("0.2L", 0.2, Icons.local_cafe),
-                _buildWaterButton("0.25L", 0.25, Icons.local_drink),
-                _buildWaterButton("0.5L", 0.5, Icons.sports_bar),
-                _buildUndoRedoButton("Undo", _undoLastIntake,  Colors.black, Icons.undo),
-                _buildUndoRedoButton("Redo", _redoLastIntake, Colors.black, Icons.redo),
-              ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
+
 
   /// 📌 **Кнопка добавления воды с иконкой**
   Widget _buildWaterButton(String label, double amount, IconData icon) {
