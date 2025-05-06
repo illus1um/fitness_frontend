@@ -9,11 +9,14 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^0.13.4
+  rename: ^3.0.2
   shared_preferences: ^2.0.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.6
 
 flutter:
   uses-material-design: true
@@ -33,5 +36,15 @@ flutter:
         - asset: assets/fonts/Poppins-Italic.ttf
           style: italic
 
-  
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/strenvy_icon.png"
 
+flutter_native_splash:
+  color: "#000000" # Чёрный фон
+  image: assets/icons/splash_logo.png # Лого персонажа (чуть выше центра)
+  branding: assets/icons/splash_text.png # Слоган "Enviable Strength" внизу (если нужен)
+  branding_mode: bottom # Разместить слоган снизу
+  android: true
+  ios: true

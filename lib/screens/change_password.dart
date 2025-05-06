@@ -114,6 +114,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }) {
     return TextFormField(
       controller: controller,
+      cursorColor: Color.fromARGB(255, 199, 169, 127),
       obscureText: !isPasswordVisible,
       decoration: InputDecoration(
         contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12), // Уменьшена высота

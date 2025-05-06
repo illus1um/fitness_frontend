@@ -177,6 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
+        cursorColor: Color.fromARGB(255, 199, 169, 127),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
@@ -204,6 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextFormField(
         controller: passwordController,
+        cursorColor: Color.fromARGB(255, 199, 169, 127),
         obscureText: !isPasswordVisible,
         decoration: InputDecoration(
           labelText: "Password",

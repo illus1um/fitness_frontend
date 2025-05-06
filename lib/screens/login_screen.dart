@@ -177,24 +177,26 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextFormField(
         controller: controller,
+        cursorColor: Color.fromARGB(255, 199, 169, 127), // <<< цвет каретки
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)), // Цвет текста метки
+          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0), // Цвет при фокусе
-        ),
-        fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
-        filled: true, // Включаем заливку
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0),
+          ),
+          fillColor: const Color.fromARGB(255, 255, 255, 255),
+          filled: true,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         validator: validator,
       ),
+
     );
   }
 
@@ -203,21 +205,22 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextFormField(
         controller: passwordController,
+        cursorColor: Color.fromARGB(255, 199, 169, 127), // <<< цвет каретки
         obscureText: !isPasswordVisible,
         decoration: InputDecoration(
           labelText: "Password",
-            labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)), // Цвет текста метки
-            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0), // Цвет при фокусе
+            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0),
           ),
-          fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
-          filled: true, // Включаем заливку
+          fillColor: const Color.fromARGB(255, 255, 255, 255),
+          filled: true,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           suffixIcon: IconButton(
             icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
@@ -226,6 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         validator: _validatePassword,
       ),
+
     );
   }
 

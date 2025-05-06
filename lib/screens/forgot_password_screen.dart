@@ -78,6 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget _buildEmailField() {
     return TextFormField(
       controller: emailController,
+      cursorColor: Color.fromARGB(255, 199, 169, 127),
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         labelText: "Email",
