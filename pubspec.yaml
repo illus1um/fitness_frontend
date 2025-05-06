@@ -23,6 +23,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/supplements/
     - assets/exercises.json
     - assets/gifs/
     - assets/muscle_groups/
