@@ -40,11 +40,13 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/icons/strenvy_icon.png"
+  adaptive_icon_foreground: assets/icons/strenvy_icon.png
+  adaptive_icon_background: "#000000"
 
 flutter_native_splash:
-  color: "#000000" # Чёрный фон
-  image: assets/icons/splash_logo.png # Лого персонажа (чуть выше центра)
-  branding: assets/icons/splash_text.png # Слоган "Enviable Strength" внизу (если нужен)
-  branding_mode: bottom # Разместить слоган снизу
+  color: "#000000"
+  image: assets/icons/splash_logo.png
+  branding: assets/icons/splash_text.png
+  branding_mode: bottom 
   android: true
   ios: true
