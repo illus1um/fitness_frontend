@@ -205,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextFormField(
         controller: passwordController,
-        cursorColor: Color.fromARGB(255, 199, 169, 127), // <<< цвет каретки
+        cursorColor: Color.fromARGB(255, 199, 169, 127),
         obscureText: !isPasswordVisible,
         decoration: InputDecoration(
           labelText: "Password",
