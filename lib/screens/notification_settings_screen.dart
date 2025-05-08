@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
+import '../../main.dart'; // чтобы видеть flutterLocalNotificationsPlugin
 
 class NotificationSettingsScreen extends StatefulWidget {
   final String username;
@@ -43,13 +46,89 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notifications_enabled_${widget.username}', notificationsEnabled);
+    await prefs.setBool(
+        'notifications_enabled_${widget.username}', notificationsEnabled);
     await prefs.setInt('start_hour_${widget.username}', startTime.hour);
     await prefs.setInt('start_minute_${widget.username}', startTime.minute);
     await prefs.setInt('end_hour_${widget.username}', endTime.hour);
     await prefs.setInt('end_minute_${widget.username}', endTime.minute);
     await prefs.setInt('interval_hours_${widget.username}', intervalHours);
     await prefs.setInt('interval_minutes_${widget.username}', intervalMinutes);
+
+    if (notificationsEnabled) {
+      await _requestNotificationPermission();
+      await _scheduleNotifications();
+    } else {
+      await flutterLocalNotificationsPlugin.cancelAll();
+    }
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestPermission();
+  }
+
+  Future<void> _scheduleNotifications() async {
+    await flutterLocalNotificationsPlugin.cancelAll();
+
+    // Инициализация временных зон должна быть выполнена в main()
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    final Duration interval =
+        Duration(hours: intervalHours, minutes: intervalMinutes);
+
+    // Определяем начало и конец окна на текущий день
+    final tz.TZDateTime windowStart = tz.TZDateTime(
+        tz.local, now.year, now.month, now.day, startTime.hour, startTime.minute);
+    final tz.TZDateTime windowEnd = tz.TZDateTime(
+        tz.local, now.year, now.month, now.day, endTime.hour, endTime.minute);
+
+    tz.TZDateTime firstNotificationTime;
+    if (now.isBefore(windowStart)) {
+      // До начала - ставим на начало окна
+      firstNotificationTime = windowStart;
+    } else if (now.isBefore(windowEnd)) {
+      // Внутри окна - ставим на ближайший следующий интервал
+      final tz.TZDateTime next = now.add(interval);
+      firstNotificationTime = tz.TZDateTime.from(next, tz.local);
+    } else {
+      // После конца - планируем на завтра в startTime
+      final tz.TZDateTime tomorrow = windowStart.add(Duration(days: 1));
+      firstNotificationTime = tomorrow;
+    }
+
+    int id = 0;
+    // Планируем уведомления до конца окна
+    while (firstNotificationTime.isBefore(windowEnd) ||
+        firstNotificationTime.isAtSameMomentAs(windowEnd)) {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id++,
+        'Time to drink water!',
+        'Stay hydrated 💧',
+        firstNotificationTime,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reminder_channel',
+            'Reminders',
+            channelDescription: 'Drink water notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+        androidAllowWhileIdle: true,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      final tz.TZDateTime next = firstNotificationTime.add(interval);
+      firstNotificationTime = tz.TZDateTime.from(next, tz.local);
+    }
+
+    // Отладка
+    final pending =
+        await flutterLocalNotificationsPlugin.pendingNotificationRequests();
+    // ignore: avoid_print
+    print('Pending notifications: $pending');
   }
 
   Future<void> _pickStartTime() async {
