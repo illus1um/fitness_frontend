@@ -114,6 +114,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             channelDescription: 'Drink water notifications',
             importance: Importance.max,
             priority: Priority.high,
+            icon: 'ic_notification',
           ),
         ),
         androidAllowWhileIdle: true,
@@ -189,7 +190,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   void _pickInterval() {
     final presets = <Map<String, Duration>>[
-      {'1 min': Duration(minutes: 1)},
       {'30 min': Duration(minutes: 30)},
       {'1 h': Duration(hours: 1)},
       {'1 h 30 min': Duration(hours: 1, minutes: 30)},
