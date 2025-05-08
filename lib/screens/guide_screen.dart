@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 import 'exercises_screen.dart';
 import 'sports_nutrition_screen.dart';
+import 'calories_screen.dart';
 
 class GuideScreen extends StatelessWidget {
   final List<Map<String, String>> guides = [
-    {
-      "title": "Exercises",
-      "subtitle": "Explore exercises by muscle groups",
-      "image": "assets/images/exercises.jpg",
-      "route": "exercises",
-    },
-    {
-      "title": "Sports Nutrition",
-      "subtitle": "Supplements and tips",
-      "image": "assets/images/nutrition.jpg",
-      "route": "nutrition",
-    },
+  {
+    "title": "Exercises",
+    "subtitle": "Explore exercises by muscle groups",
+    "image": "assets/images/exercises.jpg",
+    "route": "exercises",
+  },
+  {
+    "title": "Sports Nutrition",
+    "subtitle": "Supplements and tips",
+    "image": "assets/images/nutrition.jpg",
+    "route": "nutrition",
+  },
+  {
+    "title": "Caloric Content of Products",
+    "subtitle": "Check calories and nutrients",
+    "image": "assets/images/calories.jpg", // не забудь добавить изображение
+    "route": "calories",
+  },
   ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +56,12 @@ class GuideScreen extends StatelessWidget {
                 } else if (route == "nutrition") {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => SportsNutritionScreen()),
+                    MaterialPageRoute(builder: (context) => SportsNutritionScreen()),
+                  );
+                } else if (route == "calories") {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CaloriesScreen()),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -57,6 +69,7 @@ class GuideScreen extends StatelessWidget {
                   );
                 }
               },
+
               child: _buildGuideCard(title, image),
             );
           },
