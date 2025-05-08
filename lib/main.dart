@@ -24,9 +24,9 @@ class MyApp extends StatelessWidget {
           color: Color.fromARGB(255, 199, 169, 127), // ✅ Глобальный цвет загрузки
         )
         ),
-        initialRoute: "/login",
+        // initialRoute: "/login",
         routes: appRoutes,
-      // home: HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }

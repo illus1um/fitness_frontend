@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/screens/history_screen.dart';
 import 'package:fitness_app/services/api_service.dart';
+import 'notification_settings_screen.dart';
 
 class DrinkingScreen extends StatefulWidget {
   final String username;
@@ -232,7 +233,20 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
         backgroundColor: Colors.white,
         actions: [
           IconButton(
+            icon: Icon(Icons.notifications, color: Colors.black),
+            tooltip: "Notification Settings",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationSettingsScreen(username: widget.username),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.history, color: Colors.black),
+            tooltip: "History",
             onPressed: () {
               Navigator.push(
                 context,
@@ -308,7 +322,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
                     spacing: 12,
                     runSpacing: 12,
                     children: [
-                      _buildWaterButton("0.2L", 0.2, Icons.local_cafe),
+                      _buildWaterButton("0.1L", 0.1, Icons.local_cafe),
                       _buildWaterButton("0.25L", 0.25, Icons.local_drink),
                       _buildWaterButton("0.5L", 0.5, Icons.sports_bar),
                       _buildWaterButton("Custom", 0.0, Icons.add, isCustom: true),
@@ -331,7 +345,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
     return GestureDetector(
       onTap: () => isCustom ? _showCustomWaterDialog() : _updateWaterIntake(amount),
       child: Container(
-        width: 100,
+        width: 70,
         height: 70,
         decoration: BoxDecoration(
           color: Color.fromARGB(255, 199, 169, 127),
