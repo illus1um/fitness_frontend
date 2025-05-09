@@ -25,18 +25,14 @@ android {
     }
 
     defaultConfig {
-<<<<<<< HEAD
-        applicationId = "com.example.fitness_app"
-=======
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.strenvy"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
->>>>>>> 1187dc1c6f21e19ec53b3c92d1f00456abdb210d
         minSdk = 21
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 33
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     buildTypes {

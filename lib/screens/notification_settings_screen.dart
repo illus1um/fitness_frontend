@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
-import '../../main.dart'; // чтобы видеть flutterLocalNotificationsPlugin
+import 'package:permission_handler/permission_handler.dart';
+import '../../main.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   final String username;
@@ -10,10 +11,12 @@ class NotificationSettingsScreen extends StatefulWidget {
   NotificationSettingsScreen({required this.username});
 
   @override
-  _NotificationSettingsScreenState createState() => _NotificationSettingsScreenState();
+  _NotificationSettingsScreenState createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
   bool notificationsEnabled = false;
   TimeOfDay startTime = TimeOfDay(hour: 9, minute: 0);
   TimeOfDay endTime = TimeOfDay(hour: 20, minute: 0);
@@ -40,7 +43,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         minute: prefs.getInt('end_minute_${widget.username}') ?? 0,
       );
       intervalHours = prefs.getInt('interval_hours_${widget.username}') ?? 2;
-      intervalMinutes = prefs.getInt('interval_minutes_${widget.username}') ?? 0;
+      intervalMinutes =
+          prefs.getInt('interval_minutes_${widget.username}') ?? 0;
     });
   }
 
@@ -56,29 +60,31 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     await prefs.setInt('interval_minutes_${widget.username}', intervalMinutes);
 
     if (notificationsEnabled) {
-      await _requestNotificationPermission();
-      await _scheduleNotifications();
+      final status = await Permission.notification.request();
+      if (status.isGranted) {
+        await _scheduleNotifications();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Notification permission denied.'),
+          ),
+        );
+        setState(() {
+          notificationsEnabled = false;
+        });
+      }
     } else {
       await flutterLocalNotificationsPlugin.cancelAll();
     }
   }
 
-  Future<void> _requestNotificationPermission() async {
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestPermission();
-  }
-
   Future<void> _scheduleNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
 
-    // Инициализация временных зон должна быть выполнена в main()
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     final Duration interval =
         Duration(hours: intervalHours, minutes: intervalMinutes);
 
-    // Определяем начало и конец окна на текущий день
     final tz.TZDateTime windowStart = tz.TZDateTime(
         tz.local, now.year, now.month, now.day, startTime.hour, startTime.minute);
     final tz.TZDateTime windowEnd = tz.TZDateTime(
@@ -86,20 +92,16 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
     tz.TZDateTime firstNotificationTime;
     if (now.isBefore(windowStart)) {
-      // До начала - ставим на начало окна
       firstNotificationTime = windowStart;
     } else if (now.isBefore(windowEnd)) {
-      // Внутри окна - ставим на ближайший следующий интервал
       final tz.TZDateTime next = now.add(interval);
       firstNotificationTime = tz.TZDateTime.from(next, tz.local);
     } else {
-      // После конца - планируем на завтра в startTime
       final tz.TZDateTime tomorrow = windowStart.add(Duration(days: 1));
       firstNotificationTime = tomorrow;
     }
 
     int id = 0;
-    // Планируем уведомления до конца окна
     while (firstNotificationTime.isBefore(windowEnd) ||
         firstNotificationTime.isAtSameMomentAs(windowEnd)) {
       await flutterLocalNotificationsPlugin.zonedSchedule(
@@ -125,10 +127,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       firstNotificationTime = tz.TZDateTime.from(next, tz.local);
     }
 
-    // Отладка
     final pending =
         await flutterLocalNotificationsPlugin.pendingNotificationRequests();
-    // ignore: avoid_print
     print('Pending notifications: $pending');
   }
 
@@ -148,7 +148,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             backgroundColor: Colors.white,
           ),
           textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(foregroundColor: Colors.black),
+          style: TextButton.styleFrom(foregroundColor: Colors.black),
           ),
         ),
         child: child!,
@@ -256,7 +256,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   value: notificationsEnabled,
                   activeColor: Color.fromARGB(255, 199, 169, 127),
                   inactiveThumbColor: Color.fromARGB(0, 141, 141, 141),
-                  inactiveTrackColor: const Color.fromARGB(255, 203, 203, 203),
+                  inactiveTrackColor:
+                      const Color.fromARGB(255, 203, 203, 203),
                   onChanged: (value) {
                     setState(() => notificationsEnabled = value);
                     _saveSettings();
@@ -280,7 +281,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           title: Text("Start Time"),
                           trailing: Text(
                             _formatTime(startTime),
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w500),
                           ),
                           onTap: _pickStartTime,
                         ),
@@ -289,7 +291,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           title: Text("End Time"),
                           trailing: Text(
                             _formatTime(endTime),
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w500),
                           ),
                           onTap: _pickEndTime,
                         ),
@@ -298,7 +301,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           title: Text("Interval"),
                           trailing: Text(
                             "$intervalHours h $intervalMinutes min",
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w500),
                           ),
                           onTap: _pickInterval,
                         ),
