@@ -94,7 +94,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)), // Уменьшены углы
                           ),
                           onPressed: _changePassword,
-                          child: Text("CHANGE", style: TextStyle(color: Colors.white, fontSize: 15)),
+                          child: Text("CHANGE", style: TextStyle(color: Colors.white, fontSize: 15, height: 2)),
                         ),
                       ),
               ],
@@ -118,11 +118,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       obscureText: !isPasswordVisible,
       decoration: InputDecoration(
         contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12), // Уменьшена высота
-        border: OutlineInputBorder(),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         labelText: label,
         labelStyle: TextStyle(color: Colors.black54), // Обычный цвет
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Color.fromARGB(255, 199, 169, 127), width: 2.0), // Коричневый цвет при фокусе
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
         ),
         floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)), // Коричневый label при фокусе
         suffixIcon: IconButton(
