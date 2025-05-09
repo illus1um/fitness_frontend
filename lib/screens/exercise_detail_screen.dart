@@ -5,6 +5,11 @@ class ExerciseDetailScreen extends StatelessWidget {
 
   ExerciseDetailScreen(this.exercise);
 
+  String _capitalize(String text) {
+  if (text.isEmpty) return text;
+  return text[0].toUpperCase() + text.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     // ✅ Извлекаем инструкции
@@ -12,7 +17,7 @@ class ExerciseDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(exercise["name"] ?? "Exercise"),
+        title: Text(_capitalize(exercise["name"] ?? "Exercise")),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -40,9 +45,10 @@ class ExerciseDetailScreen extends StatelessWidget {
 
               // 🔹 Название упражнения
               Text(
-                exercise["name"] ?? "Unknown Exercise",
+                _capitalize(exercise["name"] ?? "Unknown Exercise"),
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
+
               SizedBox(height: 10),
 
               // 🔹 Основная мышца

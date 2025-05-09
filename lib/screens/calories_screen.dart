@@ -125,67 +125,60 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
                   final name = food['description'] ?? 'Unknown Product';
                   final nutrients = food['foodNutrients'] ?? [];
 
-                  return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProductDetailScreen(
-                            name: displayName,
-                            nutrients: nutrients,
+                  return FutureBuilder<String?>(
+                    future: _fetchImage(displayName),
+                    builder: (context, snapshot) {
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProductDetailScreen(
+                                name: displayName,
+                                nutrients: nutrients,
+                                imageUrl: snapshot.data,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          elevation: 3,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            leading: snapshot.connectionState == ConnectionState.waiting
+                                ? SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: snapshot.hasData
+                                        ? CachedNetworkImage(
+                                            imageUrl: snapshot.data!,
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Icon(Icons.image_not_supported),
+                                  ),
+                            title: Text(
+                              displayName,
+                              style:
+                                  TextStyle(fontSize: 18),
+                            ),
+                            trailing: Icon(Icons.arrow_forward_ios, size: 18),
                           ),
                         ),
                       );
                     },
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      margin:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      elevation: 3,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 12),
-                        leading: FutureBuilder<String?>(
-                          future: _fetchImage(displayName),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Container(
-                                width: 50,
-                                height: 50,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              );
-                            } else if (snapshot.hasData) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
-                                  imageUrl: snapshot.data!,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                  errorWidget: (context, url, error) =>
-                                      Icon(Icons.broken_image),
-                                ),
-                              );
-                            } else {
-                              return Icon(Icons.image_not_supported);
-                            }
-                          },
-                        ),
-                        title: Text(
-                          displayName,
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                        trailing: Icon(Icons.arrow_forward_ios, size: 18),
-                      ),
-                    ),
                   );
                 },
+
               ),
             ),
         ],

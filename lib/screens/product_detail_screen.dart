@@ -33,9 +33,20 @@ class ProductDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 16.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(imageUrl!, height: 200, fit: BoxFit.cover),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    return Image.network(
+                      imageUrl!,
+                      width: width,
+                      height: width,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                ),
               ),
             ),
+
           Text(
             "Nutritional Information (per 100g):",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

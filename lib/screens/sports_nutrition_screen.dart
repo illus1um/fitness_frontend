@@ -141,53 +141,56 @@ class SportsNutritionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Sports Nutrition")),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12.0),
-        itemCount: supplements.length,
-        itemBuilder: (context, index) {
-          final supplement = supplements[index];
-          return Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.symmetric(vertical: 10),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SupplementDetailScreen(supplement: supplement),
-                  ),
-                );
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  return Scaffold(
+    appBar: AppBar(title: Text("Sports Nutrition")),
+    body: ListView.builder(
+      padding: const EdgeInsets.all(12.0),
+      itemCount: supplements.length,
+      itemBuilder: (context, index) {
+        final supplement = supplements[index];
+        return Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.symmetric(vertical: 10),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SupplementDetailScreen(supplement: supplement),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
                     child: Image.asset(
                       supplement["image"]!,
-                      height: 200,
-                      width: double.infinity,
+                      width: 100,
+                      height: 100,
                       fit: BoxFit.cover,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
+                  const SizedBox(width: 16),
+                  Expanded(
                     child: Text(
                       supplement["title"]!,
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 20),
                     ),
                   ),
                 ],
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
+
 }
 
 class SupplementDetailScreen extends StatelessWidget {
@@ -222,30 +225,38 @@ class SupplementDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(supplement["title"]!)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Image.asset(
+  final screenWidth = MediaQuery.of(context).size.width;
+
+  return Scaffold(
+    appBar: AppBar(title: Text(supplement["title"]!)),
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(
               supplement["image"]!,
-              height: 200,
-              width: double.infinity,
+              width: screenWidth - 32, // Учитываем padding 16 слева и справа
+              height: screenWidth - 32,
               fit: BoxFit.cover,
             ),
-            const SizedBox(height: 20),
-            RichText(
-              text: TextSpan(
-                style: TextStyle(color: Colors.black),
-                children: _buildFormattedText(supplement["details"]!),
-              ),
-              textAlign: TextAlign.justify,
+          ),
+          const SizedBox(height: 20),
+          RichText(
+            text: TextSpan(
+              style: TextStyle(color: Colors.black, fontSize: 16),
+              children: _buildFormattedText(supplement["details"]!),
             ),
-          ],
-        ),
+            textAlign: TextAlign.justify,
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 }
 
