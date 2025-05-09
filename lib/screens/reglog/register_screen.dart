@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'complete_profile_screen.dart'; // Страница для заполнения возраста, роста и веса
-import 'home_screen.dart';
+import '../home_screen.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {

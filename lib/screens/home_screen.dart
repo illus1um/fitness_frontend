@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fitness_app/screens/workout_screen.dart';
-import 'package:fitness_app/screens/guide_screen.dart';
-import 'package:fitness_app/screens/drinking_screen.dart';
-import 'package:fitness_app/screens/else_screen.dart';
+import 'package:fitness_app/screens/workout/workout_screen.dart';
+import 'package:fitness_app/screens/guide/guide_screen.dart';
+import 'package:fitness_app/screens/drinking/drinking_screen.dart';
+import 'package:fitness_app/screens/else/else_screen.dart';
 import 'package:fitness_app/services/auth_service.dart';  // ✅ Добавлено для получения username
 
 class HomeScreen extends StatefulWidget {

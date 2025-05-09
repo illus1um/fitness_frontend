@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
-import 'home_screen.dart';
+import '../home_screen.dart';
 
 class TrainingExperienceScreen extends StatefulWidget {
   @override

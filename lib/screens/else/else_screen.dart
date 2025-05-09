@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
-import 'package:fitness_app/screens/login_screen.dart';
-import 'package:fitness_app/screens/myprofilegoal_screen.dart';
+import 'package:fitness_app/screens/reglog/login_screen.dart';
+import 'package:fitness_app/screens/else/myprofilegoal_screen.dart';
 import 'change_password.dart';
-import 'package:fitness_app/screens/settings.dart';
+import 'package:fitness_app/screens/else/settings.dart';
 
 class ElseScreen extends StatefulWidget {
   @override
