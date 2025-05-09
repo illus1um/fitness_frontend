@@ -11,7 +11,13 @@ dependencies:
   http: ^0.13.4
   rename: ^3.0.2
   shared_preferences: ^2.0.6
+<<<<<<< HEAD
   cached_network_image: ^3.3.1
+=======
+  flutter_picker_plus: ^1.0.6
+  flutter_local_notifications: ^15.0.0
+  permission_handler: ^12.0.0+1
+>>>>>>> 1187dc1c6f21e19ec53b3c92d1f00456abdb210d
 
 dev_dependencies:
   flutter_test:
@@ -43,12 +49,18 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/icons/strenvy_icon.png"
+  adaptive_icon_foreground: assets/icons/strenvy_icon.png
+  adaptive_icon_background: "#000000"
 
 
 flutter_native_splash:
   color: "#000000"
   image: assets/icons/splash_logo.png
   branding: assets/icons/splash_text.png
+<<<<<<< HEAD
   branding_mode: bottom
+=======
+  branding_mode: bottom 
+>>>>>>> 1187dc1c6f21e19ec53b3c92d1f00456abdb210d
   android: true
   ios: true

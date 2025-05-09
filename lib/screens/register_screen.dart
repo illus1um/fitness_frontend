@@ -38,7 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       gender,
     );
 
-    if (response != null) {
+    if (response) {
       bool loginSuccess = await ApiService.login(usernameController.text, passwordController.text);
       if (loginSuccess) {
         bool profileCompleted = await ApiService.checkProfileStatus();
@@ -217,7 +217,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0), // Цвет при фокусе
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
         ),
         fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
         filled: true, // Включаем заливку

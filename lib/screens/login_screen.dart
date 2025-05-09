@@ -188,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0),
+            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
           fillColor: const Color.fromARGB(255, 255, 255, 255),
           filled: true,
@@ -205,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextFormField(
         controller: passwordController,
-        cursorColor: Color.fromARGB(255, 199, 169, 127), // <<< цвет каретки
+        cursorColor: Color.fromARGB(255, 199, 169, 127),
         obscureText: !isPasswordVisible,
         decoration: InputDecoration(
           labelText: "Password",
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88)!, width: 2.0),
+            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
           fillColor: const Color.fromARGB(255, 255, 255, 255),
           filled: true,

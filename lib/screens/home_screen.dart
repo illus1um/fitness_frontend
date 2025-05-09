@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/screens/workout_screen.dart';
-import 'package:fitness_app/screens/body_screen.dart';
 import 'package:fitness_app/screens/guide_screen.dart';
 import 'package:fitness_app/screens/drinking_screen.dart';
 import 'package:fitness_app/screens/else_screen.dart';

@@ -166,8 +166,8 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                         _confirmDeleteAccount();
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey,
-                        textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+                        textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                       ),
                       child: Text("Delete your account?"),
                     ),
@@ -184,10 +184,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(255 * 0.1.toInt()), // Замена .withOpacity()
+            color: Colors.black.withOpacity(0.1), // Замена .withOpacity()
             blurRadius: 6,
             spreadRadius: 2,
             offset: Offset(0, 4),
