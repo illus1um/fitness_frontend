@@ -1,12 +1,28 @@
 import 'package:flutter/material.dart';
 import 'exercises_screen.dart';
+import 'sports_nutrition_screen.dart';
+import 'calories_screen.dart';
 
 class GuideScreen extends StatelessWidget {
   final List<Map<String, String>> guides = [
-    {"title": "Exercises", "image": "assets/images/exercises.jpg", "route": "exercises"},
-    {"title": "Sports Nutrition", "image": "assets/images/nutrition.jpg", "route": "nutrition"},
-    {"title": "Caloric Content of Products", "image": "assets/images/calories.jpg", "route": "calories"},
-    {"title": "Encyclopedia", "image": "assets/images/encyclopedia.jpg", "route": "encyclopedia"},
+    {
+      "title": "Exercises",
+      "subtitle": "Explore exercises by muscle groups",
+      "image": "assets/images/exercises.jpg",
+      "route": "exercises",
+    },
+    {
+      "title": "Sports Nutrition",
+      "subtitle": "Supplements and tips",
+      "image": "assets/images/nutrition.jpg",
+      "route": "nutrition",
+    },
+    {
+      "title": "Nutritional value of products",
+      "subtitle": "Check calories and nutrients",
+      "image": "assets/images/calories.jpg",
+      "route": "calories",
+    },
   ];
 
   @override
@@ -18,78 +34,69 @@ class GuideScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.separated(
-          itemCount: guides.length,
-          separatorBuilder: (context, index) => SizedBox(height: 20),
-          itemBuilder: (context, index) {
-            final guide = guides[index];
-            final isActive = guide["route"] == "exercises";
-            return GestureDetector(
-              onTap: isActive
-                  ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ExercisesScreen()),
-                      );
-                    }
-                  : null,
-              child: _buildGuideCard(guide["title"]!, guide["image"]!, isActive),
-            );
-          },
-        ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(12.0),
+        itemCount: guides.length,
+        itemBuilder: (context, index) {
+          final guide = guides[index];
+          return _buildGuideCard(
+            context,
+            guide["title"] ?? "",
+            guide["subtitle"] ?? "",
+            guide["image"] ?? "",
+            guide["route"] ?? "",
+          );
+        },
       ),
     );
   }
 
-  Widget _buildGuideCard(String title, String imagePath, bool isActive) {
-    return Opacity(
-      opacity: isActive ? 1.0 : 0.5, // Неактивные кнопки становятся полупрозрачными
-      child: Container(
-        width: double.infinity,
-        height: 110,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 6,
-              spreadRadius: 2,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
+  Widget _buildGuideCard(BuildContext context, String title, String subtitle, String imagePath, String route) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: InkWell(
+        onTap: () {
+          if (route == "exercises") {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => ExercisesScreen()));
+          } else if (route == "nutrition") {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => SportsNutritionScreen()));
+          } else if (route == "calories") {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => CaloriesScreen()));
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Page not available yet")),
+            );
+          }
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              child: Image.asset(
+                imagePath,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
             ),
-            Expanded(
-              flex: 1,
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                ],
               ),
             ),
           ],

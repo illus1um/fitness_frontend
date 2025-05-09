@@ -11,6 +11,7 @@ dependencies:
   http: ^0.13.4
   rename: ^3.0.2
   shared_preferences: ^2.0.6
+  cached_network_image: ^3.3.1
   flutter_picker_plus: ^1.0.6
   flutter_local_notifications: ^15.0.0
   permission_handler: ^12.0.0+1
@@ -21,10 +22,12 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.6
 
+
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/supplements/
     - assets/exercises.json
     - assets/gifs/
     - assets/muscle_groups/
@@ -45,6 +48,7 @@ flutter_icons:
   image_path: "assets/icons/strenvy_icon.png"
   adaptive_icon_foreground: assets/icons/strenvy_icon.png
   adaptive_icon_background: "#000000"
+
 
 flutter_native_splash:
   color: "#000000"

@@ -31,6 +31,11 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
       });
     });
   }
+  
+  String _capitalize(String text) {
+  if (text.isEmpty) return text;
+  return text[0].toUpperCase() + text.substring(1);
+  }
 
   // 🔍 Фильтр поиска
   void _filterExercises(String query) {
@@ -46,7 +51,7 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.muscleGroup),
+        title: Text(_capitalize(widget.muscleGroup)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -113,8 +118,10 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                                 Icon(Icons.image_not_supported, size: 50),
                           ),
                         ),
-                        title: Text(exercise["name"] ?? "No Name",
-                            style: TextStyle(fontSize: 18)),
+                        title: Text(
+                          _capitalize(exercise["name"] ?? "No Name"),
+                          style: TextStyle(fontSize: 18),
+                        ),
                         trailing: Icon(Icons.chevron_right),
                         onTap: () {
                           Navigator.push(

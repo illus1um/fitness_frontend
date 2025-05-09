@@ -46,6 +46,11 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     });
   }
 
+  String _capitalize(String text) {
+  if (text.isEmpty) return text;
+  return text[0].toUpperCase() + text.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -132,7 +137,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                               ),
                             ),
                             title: Text(
-                              muscleGroup,
+                              _capitalize(muscleGroup),
                               style: TextStyle(fontSize: 20),
                             ),
                             trailing: Icon(Icons.chevron_right, size: 28),
