@@ -54,38 +54,76 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView( // Добавляем скроллинг
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Закрываем клавиатуру при скролле
+      body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
-            key: _formKey, // Связываем форму с ключом
+            key: _formKey,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildToggleButtons(context, true), // true = активен "Login"
-                SizedBox(height: 100),
-                _buildInputField("Username", usernameController, validator: _validateUsername),
-                _buildPasswordField(),
-                SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-                    ),
-                    child: Text(
-                      "Forgot password?",
-                      style: TextStyle(color: const Color.fromARGB(255, 199, 169, 127), fontWeight: FontWeight.w900),
+                SizedBox(height: 40),
+                Center(
+                  child: Text(
+                    "STRENVY",
+                    style: TextStyle(
+                      fontSize: 35,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
                 SizedBox(height: 20),
-                _buildLoginButton(),
+                _buildToggleButtons(context, true),
+                SizedBox(height: 40),
+
+                /// Обёртка для полей и кнопки логина
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF4F4F4), // светло-серый
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 5,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInputField("Username", usernameController, validator: _validateUsername),
+                      _buildPasswordField(),
+                      SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+                          ),
+                          child: Text(
+                            "Forgot password?",
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 162, 162, 162),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      _buildLoginButton(),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -95,12 +133,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
+
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
     return Align(
     alignment: Alignment.topCenter, // Фиксируем сверху
     child: Container(
       width: double.infinity, // Растягиваем на всю ширину
-      height: 40,
+      height: 50,
       margin: EdgeInsets.only(top: 40), // Отступ сверху
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -174,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 15.0),
       child: TextFormField(
         controller: controller,
         cursorColor: Color.fromARGB(255, 199, 169, 127), // <<< цвет каретки
@@ -239,13 +278,13 @@ class _LoginScreenState extends State<LoginScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        minimumSize: Size(double.infinity, 40),
+        minimumSize: Size(double.infinity, 45),
         shape: RoundedRectangleBorder( // Устанавливаем закругление углов
           borderRadius: BorderRadius.circular(12), // Радиус закругления
         ),
       ),
       child: isLoading 
-        ? CircularProgressIndicator(color: Colors.white) 
+        ? CircularProgressIndicator(color: const Color.fromARGB(255, 255, 255, 255)) 
         : Text("Login"),
     );
   }
