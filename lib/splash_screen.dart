@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/auth_service.dart'; // путь поправь на свой
 import 'screens/home_screen.dart';
-import 'screens/login_screen.dart'; // ваш экран логина
+import 'screens/reglog/login_screen.dart'; // ваш экран логина
 
 class SplashScreen extends StatefulWidget {
   @override

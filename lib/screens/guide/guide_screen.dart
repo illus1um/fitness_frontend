@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'exercises_screen.dart';
-import 'sports_nutrition_screen.dart';
-import 'calories_screen.dart';
+import 'exercises/exercises_screen.dart';
+import 'nutrition/sports_nutrition_screen.dart';
+import 'calories/calories_screen.dart';
 
 class GuideScreen extends StatelessWidget {
   final List<Map<String, String>> guides = [

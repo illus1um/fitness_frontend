@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fitness_app/screens/history_screen.dart';
+import 'package:fitness_app/screens/drinking/history_screen.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'notification_settings_screen.dart';
 

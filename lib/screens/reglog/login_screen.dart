@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'forgot_password_screen.dart';
 import 'complete_profile_screen.dart';
-import 'home_screen.dart';
+import '../home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
