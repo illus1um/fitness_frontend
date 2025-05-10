@@ -34,15 +34,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     });
   }
 
-  void _filterGroups(String query) {
-    setState(() {
-      filteredMuscleGroups = groupedExercises.keys
-          .where((group) =>
-              group.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    });
-  }
-
   String _capitalize(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
@@ -55,8 +46,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     final borderRadius = BorderRadius.circular(12.0);
     final cardColor = theme.cardColor;
     final shadowColor = theme.shadowColor.withOpacity(0.1);
-    final iconColor = theme.iconTheme.color;
-    final searchStyle = theme.textTheme.bodyMedium;
     final titleStyle = theme.textTheme.headlineSmall!
         .copyWith(fontWeight: FontWeight.w600);
 
@@ -68,45 +57,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
       ),
       body: Column(
         children: [
-          // Search field
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: padding, vertical: 8),
-            child: SizedBox(
-              height: 40,
-              child: TextField(
-                controller: searchController,
-                focusNode: _searchFocusNode,
-                onChanged: _filterGroups,
-                style: searchStyle,
-                decoration: InputDecoration(
-                  hintText: 'Search muscle group...',
-                  hintStyle: searchStyle,
-                  prefixIcon: Icon(Icons.search, color: iconColor),
-                  filled: true,
-                  fillColor: cardColor,
-                  contentPadding: EdgeInsets.symmetric(
-                      vertical: 8, horizontal: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: borderRadius,
-                    borderSide:
-                        BorderSide(color: theme.dividerColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: borderRadius,
-                    borderSide:
-                        BorderSide(color: theme.dividerColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: borderRadius,
-                    borderSide: BorderSide(
-                        color: theme.primaryColor, width: 2),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Grid of muscle groups
           Expanded(
             child: groupedExercises.isEmpty
                 ? Center(
