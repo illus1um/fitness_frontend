@@ -8,13 +8,11 @@ import 'routes.dart';
 import 'splash_screen.dart';
 import 'screens/else/settings.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // === notifications setup ===
   tz.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Asia/Almaty'));
 
@@ -34,9 +32,7 @@ Future<void> main() async {
   final initSettings =
       InitializationSettings(android: androidInit);
   await flutterLocalNotificationsPlugin.initialize(initSettings);
-  // ===========================
 
-  // ==== load saved theme ====
   final prefs = await SharedPreferences.getInstance();
   final saved = prefs.getString('theme') ?? 'Light';
   runApp(MyApp(initialTheme: saved));

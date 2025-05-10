@@ -1,12 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/services/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   final String username;
-
   const HistoryScreen({Key? key, required this.username}) : super(key: key);
 
   @override
@@ -16,6 +14,8 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   Map<String, double> history = {};
   double dailyWaterTarget = 2.0;
+  String _waterUnit = 'L';
+  static const double _litersToFlOz = 33.814;
 
   @override
   void initState() {
@@ -24,6 +24,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+    _waterUnit = prefs.getString('water_unit') ?? 'L';
     await _loadHistory();
     await _loadUserProfile();
   }
@@ -53,6 +55,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  double _convertToDisplay(double liters) {
+    return _waterUnit == 'fl oz' ? liters * _litersToFlOz : liters;
+  }
+
+  String get _unitLabel => _waterUnit;
+
   Color _intakeColor(double intake, ThemeData theme) {
     if (intake >= dailyWaterTarget) {
       return theme.primaryColor;
@@ -68,71 +76,61 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final theme = Theme.of(context);
     final sortedDates = history.keys.toList()..sort((a, b) => b.compareTo(a));
 
-    final titleStyle = theme.textTheme.bodyLarge!;
-    final subtitleStyle = theme.textTheme.bodyMedium!.copyWith(color: theme.hintColor);
-    final headingStyle = theme.textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.bold);
-    final noDataStyle = theme.textTheme.bodyLarge!.copyWith(color: theme.disabledColor);
-
-    if (sortedDates.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Water Intake History', style: headingStyle),
-          centerTitle: true,
-          elevation: 0,
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'No history yet.\nStart tracking your water intake!',
-              textAlign: TextAlign.center,
-              style: noDataStyle,
-            ),
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Water Intake History', style: headingStyle),
+        title: Text('Water Intake History', style: TextStyle(fontWeight: FontWeight.w700),),
         centerTitle: true,
         elevation: 0,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: sortedDates.length,
-        itemBuilder: (context, index) {
-          final date = sortedDates[index];
-          final intake = history[date]!;
-          final color = _intakeColor(intake, theme);
+      body: sortedDates.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'No history yet.\nStart tracking your water intake!',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge!.copyWith(color: theme.disabledColor),
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: sortedDates.length,
+              itemBuilder: (context, index) {
+                final date = sortedDates[index];
+                final intakeLiters = history[date]!;
+                final displayIntake = _convertToDisplay(intakeLiters);
+                final color = _intakeColor(intakeLiters, theme);
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Card(
-              color: theme.cardColor,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                leading: Icon(
-                  intake >= dailyWaterTarget ? Icons.emoji_events : Icons.calendar_today,
-                  color: intake >= dailyWaterTarget ? theme.colorScheme.secondary : theme.iconTheme.color,
-                  size: intake >= dailyWaterTarget ? 32 : 28,
-                ),
-                title: Text(date, style: titleStyle.copyWith(fontWeight: FontWeight.bold)),
-                subtitle: Text('Water intake', style: subtitleStyle),
-                trailing: Text(
-                  '${intake.toStringAsFixed(2)} L',
-                  style: titleStyle.copyWith(color: color, fontWeight: FontWeight.bold),
-                ),
-              ),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: Card(
+                    color: theme.cardColor,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      leading: Icon(
+                        intakeLiters >= dailyWaterTarget ? Icons.emoji_events : Icons.calendar_today,
+                        color: intakeLiters >= dailyWaterTarget
+                            ? theme.colorScheme.secondary
+                            : theme.iconTheme.color,
+                        size: intakeLiters >= dailyWaterTarget ? 32 : 28,
+                      ),
+                      title: Text(date,
+                          style: theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold)),
+                      subtitle: Text('Water intake',
+                          style: theme.textTheme.bodyMedium!.copyWith(color: theme.hintColor)),
+                      trailing: Text(
+                        '${displayIntake.toStringAsFixed(1)} $_unitLabel',
+                        style: theme.textTheme.bodyLarge!
+                            .copyWith(color: color, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }

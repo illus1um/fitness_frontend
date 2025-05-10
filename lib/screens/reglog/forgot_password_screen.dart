@@ -8,13 +8,13 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _formKey = GlobalKey<FormState>(); // Ключ формы для валидации
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   bool isLoading = false;
 
   void sendResetCode() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Если email некорректный, не отправляем запрос
+      return;
     }
 
     setState(() => isLoading = true);
@@ -47,11 +47,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Закрытие клавиатуры при скролле
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
-            key: _formKey, // Подключаем форму
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -83,20 +83,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
         ),
         floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),  
-      validator: _validateEmail, // Функция валидации
+      validator: _validateEmail,
     );
   }
 
-  /// Кнопка отправки кода сброса пароля
   Widget _buildResetButton() {
     return ElevatedButton(
       onPressed: isLoading ? null : sendResetCode,
@@ -110,7 +109,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  /// Валидация email
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return "Email is required";

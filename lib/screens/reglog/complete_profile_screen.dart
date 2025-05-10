@@ -8,7 +8,7 @@ class CompleteProfileScreen extends StatefulWidget {
 }
 
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
-  final _formKey = GlobalKey<FormState>(); // Ключ формы
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController weightController = TextEditingController();
   final TextEditingController heightController = TextEditingController();
@@ -18,7 +18,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   void saveProfile() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Если данные некорректны, не отправляем запрос
+      return;
     }
 
     setState(() => isLoading = true);
@@ -79,7 +79,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-  /// Поле для ввода веса
   Widget _buildWeightField() {
     return TextFormField(
       controller: weightController,
@@ -89,7 +88,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-  /// Поле для ввода роста
   Widget _buildHeightField() {
     return TextFormField(
       controller: heightController,
@@ -99,7 +97,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-  /// Поле для ввода возраста
   Widget _buildAgeField() {
     return TextFormField(
       controller: ageController,
@@ -109,7 +106,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-  /// Кнопка сохранения профиля
   Widget _buildSaveButton() {
     return ElevatedButton(
       onPressed: isLoading ? null : saveProfile,
@@ -123,7 +119,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-  /// Валидация веса
   String? _validateWeight(String? value) {
     if (value == null || value.isEmpty) {
       return "Enter your weight";
@@ -135,7 +130,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return null;
   }
 
-  /// Валидация роста
   String? _validateHeight(String? value) {
     if (value == null || value.isEmpty) {
       return "Enter your height";
@@ -147,7 +141,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return null;
   }
 
-  /// Валидация возраста
   String? _validateAge(String? value) {
     if (value == null || value.isEmpty) {
       return "Enter your age";
@@ -159,18 +152,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return null;
   }
 
-  /// Стилизация полей ввода
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
       contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
         ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),

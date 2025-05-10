@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
-import 'complete_profile_screen.dart'; // Страница для заполнения возраста, роста и веса
+import 'complete_profile_screen.dart';
 import '../home_screen.dart';
 import 'login_screen.dart';
 
@@ -24,7 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void register() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Если валидация не прошла, не отправляем запрос
+      return;
     }
 
     setState(() => isLoading = true);
@@ -67,7 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView( // Добавляем скроллинг
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -96,11 +96,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
   return Align(
-    alignment: Alignment.topCenter, // Фиксируем сверху
+    alignment: Alignment.topCenter,
     child: Container(
-      width: double.infinity, // Растягиваем на всю ширину
+      width: double.infinity,
       height: 40,
-      margin: EdgeInsets.only(top: 40), // Отступ сверху
+      margin: EdgeInsets.only(top: 40),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: Colors.brown[100],
@@ -169,9 +169,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ),
   );
 }
-
-
-
   Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -212,11 +209,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12), 
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
         ),
         floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -245,7 +242,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             child: Row(
               children: [
-                // 🔹 Кнопка "Male"
+
                 Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => gender = true),
@@ -262,9 +259,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (gender) // 🔹 Галочка только если выбран "Male"
+                            if (gender)
                               Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
-                            SizedBox(width: gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
+                            SizedBox(width: gender ? 6 : 0),
                             Text(
                               "Male",
                               style: TextStyle(
@@ -279,7 +276,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
 
-                // 🔹 Кнопка "Female"
                 Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => gender = false),
@@ -296,9 +292,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (!gender) // 🔹 Галочка только если выбран "Female"
+                            if (!gender)
                               Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
-                            SizedBox(width: !gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
+                            SizedBox(width: !gender ? 6 : 0),
                             Text(
                               "Female",
                               style: TextStyle(

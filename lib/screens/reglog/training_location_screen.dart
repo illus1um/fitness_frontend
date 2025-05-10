@@ -42,9 +42,9 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center, // 🔹 Центрируем весь Column
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Center( // 🔹 Центрируем заголовок
+            Center(
               child: Text(
                 "Where to train?",
                 textAlign: TextAlign.center,
@@ -82,7 +82,6 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 🔹 Текстовое описание
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),

@@ -45,9 +45,9 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
     body: Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center, // 🔹 Меняем с start на center
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Align( // 🔹 Центрируем текст вручную
+          Align(
             alignment: Alignment.center,
             child: Text(
               "Choose training program",
@@ -129,7 +129,3 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
     );
   }
 }
-
-
-//Color.fromARGB(255, 219, 200, 173),
-//Color.fromARGB(255, 199, 169, 127)

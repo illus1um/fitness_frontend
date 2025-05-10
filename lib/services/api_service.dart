@@ -3,9 +3,8 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = "https://fitness-deploy.onrender.com"; // FastAPI сервер
+  static const String baseUrl = "https://fitness-deploy.onrender.com"; // Backend server
 
-  /// **Авторизация пользователя**
   static Future<bool> login(String username, String password) async {
     try {
       final response = await http.post(
@@ -26,7 +25,6 @@ class ApiService {
     }
   }
 
-  /// **Регистрация нового пользователя**
   static Future<bool> register(String username, String email, String password, String firstName, String lastName, bool gender) async {
     try {
       final response = await http.post(
@@ -49,7 +47,6 @@ class ApiService {
     }
   }
 
-  /// **Получение профиля текущего пользователя**
   static Future<Map<String, dynamic>?> getUserProfile() async {
     try {
       String? token = await AuthService.getAccessToken();
@@ -181,11 +178,11 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        String? username = await AuthService.getUsername(); // ✅ Получаем username
+        String? username = await AuthService.getUsername();
         await AuthService.saveTokens(
           data["access_token"], 
           data["refresh_token"], 
-          username ?? "" // ✅ Передаем username
+          username ?? ""
         );
         return true;
       }
@@ -197,7 +194,6 @@ class ApiService {
     }
   }
 
-  /// **Выход пользователя (удаление токенов)**
   static Future<bool> logout() async {
     try {
       String? token = await AuthService.getAccessToken();
@@ -284,8 +280,6 @@ class ApiService {
     return response.statusCode == 200;
   } 
 
-
-  /// **Запрос кода сброса пароля**
   static Future<bool> forgotPassword(String email) async {
     try {
       final response = await http.post(
@@ -301,7 +295,6 @@ class ApiService {
     }
   }
 
-  /// **Проверка кода сброса пароля**
   static Future<bool> verifyResetCode(String email, String code) async {
     try {
       final response = await http.post(
@@ -317,7 +310,6 @@ class ApiService {
     }
   }
 
-  /// **Сброс пароля**
   static Future<bool> resetPassword(String email, String code, String newPassword) async {
     try {
       final response = await http.post(

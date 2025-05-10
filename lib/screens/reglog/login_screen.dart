@@ -11,7 +11,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>(); // Ключ для формы
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -19,12 +19,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   bool isPasswordVisible = false;
 
-  // Регулярное выражение для username (разрешены буквы, цифры, _, -, .)
   final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_.-]+$');
 
   void login() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Если валидация не пройдена, отменяем вход
+      return;
     }
 
     setState(() => isLoading = true);
@@ -57,16 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView( // Добавляем скроллинг
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Закрываем клавиатуру при скролле
+      body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
-            key: _formKey, // Связываем форму с ключом
+            key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildToggleButtons(context, true), // true = активен "Login"
+                _buildToggleButtons(context, true),
                 SizedBox(height: 100),
                 _buildInputField("Username", usernameController, validator: _validateUsername),
                 _buildPasswordField(),
@@ -97,11 +96,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
     return Align(
-    alignment: Alignment.topCenter, // Фиксируем сверху
+    alignment: Alignment.topCenter,
     child: Container(
-      width: double.infinity, // Растягиваем на всю ширину
+      width: double.infinity,
       height: 40,
-      margin: EdgeInsets.only(top: 40), // Отступ сверху
+      margin: EdgeInsets.only(top: 40),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: Colors.brown[100],
@@ -238,8 +237,8 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         minimumSize: Size(double.infinity, 40),
-        shape: RoundedRectangleBorder( // Устанавливаем закругление углов
-          borderRadius: BorderRadius.circular(12), // Радиус закругления
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
       child: isLoading 
@@ -247,8 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
         : Text("Login"),
     );
   }
-  
-    /// Валидация username
+
   String? _validateUsername(String? value) {
     if (value == null || value.isEmpty) {
       return "Username is required";
@@ -260,7 +258,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  /// Валидация пароля
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return "Password is required";
@@ -270,6 +267,3 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 }
-
-//Color.fromARGB(255, 219, 200, 173), light
-//Color.fromARGB(255, 199, 169, 127) dark

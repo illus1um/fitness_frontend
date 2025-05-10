@@ -14,6 +14,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedTheme = 'System';
   String _selectedWeightUnit = 'kg';
   String _selectedHeightUnit = 'cm';
+  String _selectedWaterUnit = 'L'; // added
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _selectedTheme = prefs.getString('theme') ?? 'Light';
       _selectedWeightUnit = prefs.getString('weight_unit') ?? 'kg';
       _selectedHeightUnit = prefs.getString('height_unit') ?? 'cm';
+      _selectedWaterUnit = prefs.getString('water_unit') ?? 'L';
     });
   }
 
@@ -39,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (key == 'theme') _selectedTheme = value;
       if (key == 'weight_unit') _selectedWeightUnit = value;
       if (key == 'height_unit') _selectedHeightUnit = value;
+      if (key == 'water_unit') _selectedWaterUnit = value;
     });
 
     if (key == 'theme') {
@@ -122,11 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge!
-                  ),
+          Text(title, style: Theme.of(context).textTheme.titleLarge!),
           const SizedBox(height: 10),
           ...children,
         ],
@@ -188,6 +187,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ['cm', 'inch'],
                   _selectedHeightUnit,
                   (v) => _updateSetting('height_unit', v),
+                );
+              }),
+              const SizedBox(height: 8),
+              _buildListTile(Icons.local_drink, 'Water Unit', _selectedWaterUnit, () {
+                _showOptionPicker(
+                  context,
+                  'Select Water Unit',
+                  ['L', 'fl oz'],
+                  _selectedWaterUnit,
+                  (v) => _updateSetting('water_unit', v),
                 );
               }),
             ]),

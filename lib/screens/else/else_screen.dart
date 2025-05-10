@@ -164,8 +164,6 @@ Widget _buildListTile(
   );
 }
 
-
-  /// 📌 **Элемент информации (без стрелки)**
   Widget _buildInfoTile(IconData icon, String text) {
     return ListTile(
       leading: Icon(icon, color:  Theme.of(context).iconTheme.color),

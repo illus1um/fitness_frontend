@@ -130,7 +130,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                                   child: Text(
                                     _capitalize(muscleGroup),
                                     textAlign: TextAlign.center,
-                                    style: titleStyle,
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.normal)
                                   ),
                                 ),
                               ],
