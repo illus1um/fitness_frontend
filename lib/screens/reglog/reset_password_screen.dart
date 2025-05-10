@@ -63,7 +63,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       appBar: AppBar(
         title: Text("Reset Password"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
@@ -79,7 +78,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 SizedBox(height: 40),
                 Text(
                   "Enter the reset code sent to your email and set a new password.",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20),
@@ -100,10 +99,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget _buildCodeField() {
     return TextFormField(
       controller: codeController,
+      cursorColor: Color.fromARGB(255, 199, 169, 127),
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
         labelText: "Enter the code",
-        labelStyle: TextStyle(color: Colors.black),
+        labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -113,8 +113,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
         ),
-        fillColor: Colors.white,
-        filled: true,
+        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
       validator: _validateCode,
@@ -128,7 +127,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       obscureText: !isPasswordVisible,
       decoration: InputDecoration(
         labelText: "New Password",
-        labelStyle: TextStyle(color: Colors.black),
+        labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -142,8 +141,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
           onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
         ),
-        fillColor: Colors.white,
-        filled: true,
+        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
       validator: _validatePassword,

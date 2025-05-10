@@ -177,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextFormField(
         controller: controller,
-        cursorColor: Color.fromARGB(255, 199, 169, 127), // <<< цвет каретки
+        cursorColor: Color.fromARGB(255, 199, 169, 127),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
@@ -190,8 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
-          fillColor: const Color.fromARGB(255, 255, 255, 255),
-          filled: true,
+          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         validator: validator,
@@ -219,8 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
-          fillColor: const Color.fromARGB(255, 255, 255, 255),
-          filled: true,
+          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           suffixIcon: IconButton(
             icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),

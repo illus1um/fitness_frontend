@@ -38,10 +38,9 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
-      backgroundColor: Colors.white,
       elevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
     ),
     body: Padding(
       padding: const EdgeInsets.all(16.0),
@@ -53,7 +52,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
             child: Text(
               "Choose training program",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500, color: Colors.black),
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
             ),
           ),
           SizedBox(height: 26), 

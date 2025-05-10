@@ -35,10 +35,9 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(255),
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -49,7 +48,7 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
               child: Text(
                 "Where to train?",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
             ),
             SizedBox(height: 40),
@@ -94,7 +93,6 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
             ),
           ),
 
-          // 🔹 Исправленное изображение
           ClipRRect(
             borderRadius: BorderRadius.only(
               topRight: Radius.circular(12),
@@ -102,9 +100,9 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
             ),
             child: Image.asset(
               imagePath,
-              width: 100, // 🔹 Устанавливаем фиксированную ширину
-              height: 60, // 🔹 Совпадает с высотой карточки
-              fit: BoxFit.cover, // 🔹 Заполняет область, не искажая изображение
+              width: 100,
+              height: 60,
+              fit: BoxFit.cover,
             ),
           ),
         ],

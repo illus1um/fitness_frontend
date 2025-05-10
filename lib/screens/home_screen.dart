@@ -3,7 +3,7 @@ import 'package:fitness_app/screens/workout/workout_screen.dart';
 import 'package:fitness_app/screens/guide/guide_screen.dart';
 import 'package:fitness_app/screens/drinking/drinking_screen.dart';
 import 'package:fitness_app/screens/else/else_screen.dart';
-import 'package:fitness_app/services/auth_service.dart';  // ✅ Добавлено для получения username
+import 'package:fitness_app/services/auth_service.dart'; 
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,16 +12,16 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  String username = ""; // ✅ Переменная для username
+  String username = "";
 
   @override
   void initState() {
     super.initState();
-    _loadUsername(); // ✅ Загружаем username при запуске
+    _loadUsername();
   }
 
   Future<void> _loadUsername() async {
-    String? storedUsername = await AuthService.getUsername(); // ✅ Получаем username
+    String? storedUsername = await AuthService.getUsername();
     if (storedUsername != null) {
       setState(() {
         username = storedUsername;
@@ -32,17 +32,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> _screens = [
-      WorkoutScreen(),  // 🏋️‍♂️ Тренировки (по умолчанию)
-      // BodyScreen(),  // 🏃‍♂️ Тело
-      GuideScreen(),  // 📖 Гайд
-      DrinkingScreen(username: username),  // ✅ Передаём username
-      ElseScreen(),  // ⚙️ Профиль и настройки
+      WorkoutScreen(),
+      // BodyScreen(),
+      GuideScreen(),
+      DrinkingScreen(username: username),
+      ElseScreen(),
     ];
 
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color.fromARGB(255, 244, 241, 237),
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: "Workout"),
           // BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Body"),
@@ -51,8 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: "Else"),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Color.fromARGB(255, 199, 169, 127),
-        unselectedItemColor: Colors.grey,
+        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+        selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
+        unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;

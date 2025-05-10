@@ -61,7 +61,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 SizedBox(height: 0),
                 Text(
                   "About Your Body",
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500, color: Colors.black),
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
                   ),
                 SizedBox(height: 100),
                 _buildWeightField(),
@@ -163,7 +163,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: Colors.black),
       contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -174,8 +173,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
         ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      fillColor: Colors.white,
-      filled: true,
+      floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
     );
   }
 }

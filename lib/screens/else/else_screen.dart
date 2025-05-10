@@ -3,7 +3,7 @@ import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/screens/reglog/login_screen.dart';
 import 'package:fitness_app/screens/else/myprofilegoal_screen.dart';
 import 'change_password.dart';
-import 'package:fitness_app/screens/else/settings.dart';
+
 
 class ElseScreen extends StatefulWidget {
   @override
@@ -39,7 +39,6 @@ class _ElseScreenState extends State<ElseScreen> {
       appBar: AppBar(
         title: Text("Else"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,      
       ),
@@ -62,7 +61,6 @@ class _ElseScreenState extends State<ElseScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: Color.fromARGB(255, 0, 0, 0),
                       ),
                     ),
                     SizedBox(height: 30),
@@ -82,22 +80,22 @@ class _ElseScreenState extends State<ElseScreen> {
 
                         _buildListTile(Icons.history, "My Workouts", () {}),
 
-                        _buildListTile(Icons.settings, "Settings", () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => SettingsScreen()),
-                          ),),
+                        _buildListTile(
+                          Icons.settings,
+                          "Settings",
+                          () => Navigator.pushNamed(context, '/settings'),
+                        ),
                       ],
                     ),
                     SizedBox(height: 20),
 
-                    /// 📌 **Информация пользователя в карточке**
                     _buildCard(
                       title: "Account",
                       children: [
                         _buildInfoTile(Icons.email, userData!["email"]),
                         _buildListTile(Icons.lock, "Change Password", () {
                             Navigator.push(context, MaterialPageRoute(builder: (context) => ChangePasswordScreen()));}),
-                        _buildListTile(Icons.exit_to_app, "Logout from Account", _logout, color: const Color.fromARGB(255, 214, 88, 79)),
+                        _buildListTile(Icons.exit_to_app, "Logout from Account", _logout, color: const Color.fromARGB(255, 201, 50, 50)),
                       ],
                     ),
                     SizedBox(height: 20), // Добавил отступ, чтобы не упиралось в край экрана
@@ -114,7 +112,7 @@ class _ElseScreenState extends State<ElseScreen> {
       padding: EdgeInsets.all(16),
       margin: EdgeInsets.only(bottom: 10), // Добавил отступ между карточками
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -130,16 +128,12 @@ class _ElseScreenState extends State<ElseScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 199, 169, 127),
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127)),
           ),
           SizedBox(height: 10),
           ListView(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(), // Убираем отдельный скролл для списка
+            physics: NeverScrollableScrollPhysics(),
             children: children,
           ),
         ],
@@ -148,19 +142,33 @@ class _ElseScreenState extends State<ElseScreen> {
   }
 
   /// 📌 **Элемент списка с иконкой**
-  Widget _buildListTile(IconData icon, String title, VoidCallback onTap, {Color color = Colors.black}) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title, style: TextStyle(fontSize: 16, color: color)),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: color),
-      onTap: onTap,
-    );
-  }
+Widget _buildListTile(
+  IconData icon,
+  String title,
+  VoidCallback onTap, {
+  Color? color, // теперь nullable
+}) {
+  // берём цвет иконок из темы, если не передали явно
+  final iconColor = color ?? Theme.of(context).iconTheme.color!;
+  // и текстовый стиль из темы с заменой цвета на iconColor
+  final textStyle = Theme.of(context)
+      .textTheme
+      .bodyMedium!
+      .copyWith(color: iconColor);
+
+  return ListTile(
+    leading: Icon(icon, color: iconColor),
+    title: Text(title, style: textStyle),
+    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: iconColor),
+    onTap: onTap,
+  );
+}
+
 
   /// 📌 **Элемент информации (без стрелки)**
   Widget _buildInfoTile(IconData icon, String text) {
     return ListTile(
-      leading: Icon(icon, color: Colors.black),
+      leading: Icon(icon, color:  Theme.of(context).iconTheme.color),
       title: Text(text, style: TextStyle(fontSize: 16)),
     );
   }

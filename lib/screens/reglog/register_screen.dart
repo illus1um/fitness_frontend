@@ -190,8 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
-          fillColor: Colors.white,
-          filled: true,
+          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         validator: validator, 
@@ -219,8 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
         ),
-        fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
-        filled: true, // Включаем заливку
+        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           suffixIcon: IconButton(
             icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
@@ -254,7 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: gender ? Color.fromARGB(255, 199, 169, 127) : Colors.white,
+                        color: gender ? Color.fromARGB(255, 199, 169, 127) : Theme.of(context).canvasColor,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           bottomLeft: Radius.circular(20),
@@ -265,13 +263,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (gender) // 🔹 Галочка только если выбран "Male"
-                              Icon(Icons.check, size: 16, color: Colors.black),
+                              Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
                             SizedBox(width: gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
                             Text(
                               "Male",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.black,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -289,7 +286,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: !gender ? Color.fromARGB(255, 199, 169, 127) : Colors.white,
+                        color: !gender ? Color.fromARGB(255, 199, 169, 127) : Theme.of(context).canvasColor,
                         borderRadius: BorderRadius.only(
                           topRight: Radius.circular(20),
                           bottomRight: Radius.circular(20),
@@ -300,13 +297,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (!gender) // 🔹 Галочка только если выбран "Female"
-                              Icon(Icons.check, size: 16, color: Colors.black),
+                              Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
                             SizedBox(width: !gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
                             Text(
                               "Female",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.black,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),

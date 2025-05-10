@@ -48,7 +48,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
           child: Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
@@ -62,7 +61,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                 SizedBox(height: 10),
                 Text(
                   "All your data will be permanently removed. This action cannot be undone.",
-                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                  style: TextStyle(fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20),
@@ -115,7 +114,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
       appBar: AppBar(
         title: Text("My Profile & Goal"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
@@ -126,7 +124,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    /// 🖼 **Аватарка**
                     CircleAvatar(
                       radius: 90,
                       backgroundColor: Colors.grey[300],
@@ -134,7 +131,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                     ),
                     SizedBox(height: 20),
 
-                    /// 📌 **Карточка "My Personal Information"**
                     _buildCard(
                       title: "My Personal Information",
                       children: [
@@ -166,7 +162,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                         _confirmDeleteAccount();
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+                        foregroundColor: const Color.fromARGB(255, 142, 142, 142),
                         textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                       ),
                       child: Text("Delete your account?"),
@@ -183,7 +179,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -211,7 +207,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   Widget _buildInfoTile(String label, String value) {
     return ListTile(
       title: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      trailing: Text(value, style: TextStyle(fontSize: 16, color: Colors.black54)),
+      trailing: Text(value, style: TextStyle(fontSize: 16)),
     );
   }
 
@@ -221,7 +217,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(value, style: TextStyle(fontSize: 16, color: Colors.black54)),
+          Text(value, style: TextStyle(fontSize: 16)),
           SizedBox(width: 8),
           Icon(Icons.arrow_forward_ios, size: 16),
         ],
@@ -310,7 +306,7 @@ Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onC
           child: Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).primaryColor,
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
@@ -354,11 +350,11 @@ Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onC
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             labelText: "Enter $field",
-            labelStyle: TextStyle(color: Colors.black54),
+            labelStyle: TextStyle(),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Color.fromARGB(255, 199, 169, 127), width: 2.0),
             ),
-            floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+            floatingLabelStyle: TextStyle(),
           ),
         ),
       ),

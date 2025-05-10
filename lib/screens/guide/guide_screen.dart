@@ -31,7 +31,6 @@ class GuideScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text("Guide"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: ListView.builder(

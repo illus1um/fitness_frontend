@@ -18,7 +18,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     loadUserData();
   }
 
-  /// 📌 **Загрузка данных профиля**
   void loadUserData() async {
     var data = await ApiService.getUserProfile();
 
@@ -33,7 +32,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
   }
 
-  /// 📌 **Загрузка и фильтрация упражнений**
   Future<void> loadExercises() async {
     String jsonString = await rootBundle.loadString('assets/ideal.json');
     List<dynamic> jsonList = json.decode(jsonString);
@@ -53,16 +51,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             exercise["Training Experience"] == experience) {
           
           String gifUrl = exercise["GIF URL"];
-          String gifFileName = gifUrl.split('/').last; // Получаем последнее имя файла
+          String gifFileName = gifUrl.split('/').last;
 
-          // 🔥 Добавляем проверку расширения
           if (!gifFileName.endsWith(".gif")) {
             gifFileName = "$gifFileName.gif";
           }
 
-          String previewFileName = gifFileName.replaceAll('.gif', '.png'); // Делаем превью
+          String previewFileName = gifFileName.replaceAll('.gif', '.png');
 
-          // ✅ Правильные пути
           String gifPath = "assets/gifs/$gifFileName";
           String previewPath = "assets/gifs/$previewFileName";
 
@@ -71,8 +67,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             "bodyPart": exercise["Body Part"],
             "target": exercise["Target Muscle"],
             "equipment": exercise["Equipment"],
-            "gif": gifPath, // 🔹 Используем локальную гифку
-            "preview": previewPath, // 🔹 Превью для списка
+            "gif": gifPath,
+            "preview": previewPath,
             "instructions": exercise["Instructions"] ?? [],
           });
         }
@@ -92,7 +88,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       appBar: AppBar(
         title: Text("Workout Plan"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0, 
       ),
@@ -105,20 +100,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildInfoCard(),
-                    SizedBox(height: 20),
-                    Text("Recommended Exercises", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127))),
-                    SizedBox(height: 10),
-                    workoutExercises.isEmpty
-                        ? Center(child: Text("No exercises found for your selection."))
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: workoutExercises.length,
-                            itemBuilder: (context, index) {
-                              var exercise = workoutExercises[index];
-                              return _buildExerciseTile(exercise);
-                            },
-                          ),
+                    // SizedBox(height: 20),
+                    // Text("Recommended Exercises", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127))),
+                    // SizedBox(height: 10),
+                    // workoutExercises.isEmpty
+                    //     ? Center(child: Text("No exercises found for your selection."))
+                    //     : ListView.builder(
+                    //         shrinkWrap: true,
+                    //         physics: NeverScrollableScrollPhysics(),
+                    //         itemCount: workoutExercises.length,
+                    //         itemBuilder: (context, index) {
+                    //           var exercise = workoutExercises[index];
+                    //           return _buildExerciseTile(exercise);
+                    //         },
+                    //       ),
                   ],
                 ),
               ),
@@ -126,12 +121,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  /// 📌 **Карточка с информацией о пользователе**
   Widget _buildInfoCard() {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -152,20 +146,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  /// 📌 **Отображение информации о пользователе**
   Widget _buildInfoTile(IconData icon, String title, String value) {
     return ListTile(
-      leading: Icon(icon, color: Colors.black87),
+      leading: Icon(icon, color: Theme.of(context).iconTheme.color),
       title: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      subtitle: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black54)),
+      subtitle: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       contentPadding: EdgeInsets.symmetric(vertical: 4),
     );
   }
 
-  /// 📌 **Карточка упражнения с навигацией**
   Widget _buildExerciseTile(Map<String, dynamic> exercise) {
     return Card(
-      color: Colors.white, 
       margin: EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(

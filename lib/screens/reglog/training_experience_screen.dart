@@ -37,10 +37,9 @@ class _TrainingExperienceScreenState extends State<TrainingExperienceScreen> {
 Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
-      backgroundColor: Color(255),
       elevation: 0,
       centerTitle: true,
-      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
     ),
     body: Padding(
       padding: const EdgeInsets.all(16.0),
@@ -51,7 +50,7 @@ Widget build(BuildContext context) {
             child: Text(
               "Difficulty level",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ),
           SizedBox(height: 40),

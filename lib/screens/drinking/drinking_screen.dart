@@ -230,10 +230,9 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
       appBar: AppBar(
         title: Text("Water Tracker"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.notifications, color: Colors.black),
+            icon: Icon(Icons.notifications, color: const Color.fromARGB(255, 199, 169, 127),),
             tooltip: "Notification Settings",
             onPressed: () {
               Navigator.push(
@@ -245,7 +244,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.history, color: Colors.black),
+            icon: Icon(Icons.history, color: Color.fromARGB(255, 199, 169, 127),),
             tooltip: "History",
             onPressed: () {
               Navigator.push(

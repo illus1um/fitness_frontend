@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fitness_app/services/api_service.dart'; // для загрузки профиля
+import 'package:fitness_app/services/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   final String username;
 
-  HistoryScreen({required this.username});
+  const HistoryScreen({Key? key, required this.username}) : super(key: key);
 
   @override
   _HistoryScreenState createState() => _HistoryScreenState();
@@ -15,7 +15,7 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   Map<String, double> history = {};
-  double dailyWaterTarget = 2.0; // индивидуальная норма
+  double dailyWaterTarget = 2.0;
 
   @override
   void initState() {
@@ -29,111 +29,110 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String historyKey = "history_${widget.username}";
-
-    String? historyJson = prefs.getString(historyKey);
-    if (historyJson != null) {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'history_${widget.username}';
+    final jsonStr = prefs.getString(key);
+    if (jsonStr != null) {
       setState(() {
-        history = Map<String, double>.from(json.decode(historyJson));
+        history = Map<String, double>.from(json.decode(jsonStr));
       });
     }
   }
 
   Future<void> _loadUserProfile() async {
     final profile = await ApiService.getUserProfile();
-
     if (profile != null) {
-      double weight = profile["weight"] ?? 70.0;
-      int age = profile["age"] ?? 25;
-      bool isMale = profile["gender"] ?? true;
-
-      double calculatedWaterTarget = _calculateDailyWaterTarget(weight, age, isMale);
-
+      final weight = (profile['weight'] ?? 70.0) as double;
+      final age = (profile['age'] ?? 25) as int;
+      final isMale = (profile['gender'] ?? true) as bool;
+      final base = isMale ? weight * 0.035 : weight * 0.031;
+      final factor = age > 55 ? 0.90 : (age > 30 ? 0.95 : 1.0);
       setState(() {
-        dailyWaterTarget = calculatedWaterTarget;
+        dailyWaterTarget = double.parse((base * factor).toStringAsFixed(2));
       });
     }
   }
 
-  double _calculateDailyWaterTarget(double weight, int age, bool isMale) {
-    double baseWater = isMale ? weight * 0.035 : weight * 0.031;
-    if (age > 30 && age <= 55) baseWater *= 0.95;
-    else if (age > 55) baseWater *= 0.90;
-    return double.parse(baseWater.toStringAsFixed(2));
-  }
-
-  /// 📌 Выбор цвета на основе индивидуальной нормы
-  Color getColorForIntake(double intake) {
+  Color _intakeColor(double intake, ThemeData theme) {
     if (intake >= dailyWaterTarget) {
-      return Colors.green;
+      return theme.primaryColor;
     } else if (intake >= dailyWaterTarget * 0.5) {
-      return Colors.orange;
+      return theme.colorScheme.secondary;
     } else {
-      return Colors.red;
+      return Color.fromARGB(255, 236, 56, 56);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    List<String> sortedDates = history.keys.toList()
-      ..sort((a, b) => b.compareTo(a)); // Сортировка по убыванию
+    final theme = Theme.of(context);
+    final sortedDates = history.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    final titleStyle = theme.textTheme.bodyLarge!;
+    final subtitleStyle = theme.textTheme.bodyMedium!.copyWith(color: theme.hintColor);
+    final headingStyle = theme.textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.bold);
+    final noDataStyle = theme.textTheme.bodyLarge!.copyWith(color: theme.disabledColor);
+
+    if (sortedDates.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Water Intake History', style: headingStyle),
+          centerTitle: true,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'No history yet.\nStart tracking your water intake!',
+              textAlign: TextAlign.center,
+              style: noDataStyle,
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Water Intake History"),
+        title: Text('Water Intake History', style: headingStyle),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: sortedDates.isEmpty
-          ? Center(
-              child: Text(
-                "No history yet.\nStart tracking your water intake!",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            )
-          : ListView.builder(
-              itemCount: sortedDates.length,
-              itemBuilder: (context, index) {
-                String date = sortedDates[index];
-                double intake = history[date] ?? 0.0;
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: sortedDates.length,
+        itemBuilder: (context, index) {
+          final date = sortedDates[index];
+          final intake = history[date]!;
+          final color = _intakeColor(intake, theme);
 
-                return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  elevation: 4,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    leading: intake >= dailyWaterTarget
-                        ? Icon(Icons.emoji_events, color: Colors.amber, size: 32)
-                        : Icon(Icons.calendar_today, color: Colors.blueAccent, size: 28),
-                    title: Text(
-                      date,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(
-                      "Water intake",
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                    trailing: Text(
-                      "${intake.toStringAsFixed(2)} L",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: getColorForIntake(intake),
-                      ),
-                    ),
-                  ),
-                );
-              },
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Card(
+              color: theme.cardColor,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                leading: Icon(
+                  intake >= dailyWaterTarget ? Icons.emoji_events : Icons.calendar_today,
+                  color: intake >= dailyWaterTarget ? theme.colorScheme.secondary : theme.iconTheme.color,
+                  size: intake >= dailyWaterTarget ? 32 : 28,
+                ),
+                title: Text(date, style: titleStyle.copyWith(fontWeight: FontWeight.bold)),
+                subtitle: Text('Water intake', style: subtitleStyle),
+                trailing: Text(
+                  '${intake.toStringAsFixed(2)} L',
+                  style: titleStyle.copyWith(color: color, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
+          );
+        },
+      ),
     );
   }
 }

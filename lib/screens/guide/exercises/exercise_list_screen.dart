@@ -5,133 +5,170 @@ class ExerciseListScreen extends StatefulWidget {
   final String muscleGroup;
   final List<Map<String, dynamic>> exercises;
 
-  ExerciseListScreen({required this.muscleGroup, required this.exercises});
+  const ExerciseListScreen({
+    Key? key,
+    required this.muscleGroup,
+    required this.exercises,
+  }) : super(key: key);
 
   @override
   _ExerciseListScreenState createState() => _ExerciseListScreenState();
 }
 
 class _ExerciseListScreenState extends State<ExerciseListScreen> {
-  List<Map<String, dynamic>> filteredExercises = [];
-  TextEditingController searchController = TextEditingController();
-  FocusNode _searchFocusNode = FocusNode();
-  Color _borderColor = Colors.grey; // Цвет границы по умолчанию
+  late List<Map<String, dynamic>> filteredExercises;
+  final TextEditingController searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _filterExercises(""); // Инициализация списка
-
-    // Добавляем слушатель на изменение фокуса
-    _searchFocusNode.addListener(() {
-      setState(() {
-        _borderColor = _searchFocusNode.hasFocus
-            ? Color.fromARGB(255, 219, 200, 173) // Цвет при фокусе
-            : Colors.grey; // Цвет по умолчанию
-      });
-    });
-  }
-  
-  String _capitalize(String text) {
-  if (text.isEmpty) return text;
-  return text[0].toUpperCase() + text.substring(1);
+    filteredExercises = widget.exercises;
+    _filterExercises('');
   }
 
-  // 🔍 Фильтр поиска
+  @override
+  void dispose() {
+    searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
   void _filterExercises(String query) {
     setState(() {
-      filteredExercises = widget.exercises
-          .where((exercise) =>
-              (exercise["name"] ?? "").toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      filteredExercises = widget.exercises.where((exercise) {
+        final name = (exercise['name'] ?? '').toString().toLowerCase();
+        return name.contains(query.toLowerCase());
+      }).toList();
     });
+  }
+
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderRadius = BorderRadius.circular(12.0);
+    final cardColor = theme.cardColor;
+    final dividerColor = theme.dividerColor;
+    final iconColor = theme.iconTheme.color;
+    final bodyStyle = theme.textTheme.bodyMedium;
+    final titleStyle = theme.textTheme.bodyLarge;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_capitalize(widget.muscleGroup)),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
-        scrolledUnderElevation: 0,      
+        scrolledUnderElevation: 0,
       ),
       body: Column(
         children: [
-          // 🔹 Поле поиска с уменьшенной высотой и эффектом фокуса
+          // Search field
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: SizedBox(
-              height: 40, // Уменьшаем высоту поля поиска
+              height: 40,
               child: TextField(
                 controller: searchController,
-                focusNode: _searchFocusNode, // Добавляем focusNode
-                onChanged: _filterExercises, // Фильтруем список при вводе
+                focusNode: _searchFocusNode,
+                onChanged: _filterExercises,
+                style: bodyStyle,
                 decoration: InputDecoration(
-                  hintText: "Search exercise...",
-                  prefixIcon: Icon(Icons.search),
+                  hintText: 'Search exercise...',
+                  hintStyle: bodyStyle,
+                  prefixIcon: Icon(Icons.search, color: iconColor),
+                  filled: true,
+                  fillColor: cardColor,
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 12.0),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: _borderColor), // Динамический цвет границы
+                    borderRadius: borderRadius,
+                    borderSide: BorderSide(color: dividerColor),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey), // Граница без фокуса
+                    borderRadius: borderRadius,
+                    borderSide: BorderSide(color: dividerColor),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: Color.fromARGB(255, 219, 200, 173), width: 2), // Цвет при фокусе
+                    borderRadius: borderRadius,
+                    borderSide:
+                        BorderSide(color: theme.primaryColor, width: 2),
                   ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: EdgeInsets.symmetric(vertical: 8.0), // Уменьшаем внутренние отступы
                 ),
               ),
             ),
           ),
 
-          // 🔹 Список упражнений
+          // Exercises list
           Expanded(
             child: filteredExercises.isEmpty
-                ? Center(child: Text("No exercises found"))
+                ? Center(
+                    child: Text(
+                      'No exercises found',
+                      style: bodyStyle,
+                    ),
+                  )
                 : ListView.builder(
                     itemCount: filteredExercises.length,
                     itemBuilder: (context, index) {
                       final exercise = filteredExercises[index];
+                      final rawGif = exercise['gif'] as String?;
+                      final imagePath = rawGif != null
+                          ? rawGif.replaceAll('.gif', '.png')
+                          : 'assets/placeholder.png';
 
-                      // 🔹 Заменяем путь к GIF на статичное изображение (например, PNG)
-                      String staticImagePath =
-                          exercise["gif"]?.replaceAll(".gif", ".png") ??
-                          "assets/placeholder.png";
-
-                      return ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.asset(
-                            staticImagePath, // ✅ Отображаем статичное изображение вместо GIF
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Icon(Icons.image_not_supported, size: 50),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 6.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            borderRadius: borderRadius,
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.shadowColor.withOpacity(0.1),
+                                blurRadius: 6,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.asset(
+                                imagePath,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(Icons.image_not_supported,
+                                        size: 50, color: iconColor),
+                              ),
+                            ),
+                            title: Text(
+                              _capitalize(exercise['name'] ?? ''),
+                              style: titleStyle,
+                            ),
+                            trailing:
+                                Icon(Icons.chevron_right, color: iconColor),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ExerciseDetailScreen(exercise),
+                                ),
+                              );
+                            },
                           ),
                         ),
-                        title: Text(
-                          _capitalize(exercise["name"] ?? "No Name"),
-                          style: TextStyle(fontSize: 18),
-                        ),
-                        trailing: Icon(Icons.chevron_right),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ExerciseDetailScreen(exercise),
-                            ),
-                          );
-                        },
                       );
                     },
                   ),
