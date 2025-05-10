@@ -14,7 +14,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedTheme = 'System';
   String _selectedWeightUnit = 'kg';
   String _selectedHeightUnit = 'cm';
-  String _selectedWaterUnit = 'L'; // added
+  String _selectedWaterUnit = 'L';
 
   @override
   void initState() {
@@ -43,7 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (key == 'height_unit') _selectedHeightUnit = value;
       if (key == 'water_unit') _selectedWaterUnit = value;
     });
-
     if (key == 'theme') {
       final mode = value == 'Dark'
           ? ThemeMode.dark
@@ -145,7 +144,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // General
             _buildCard(title: 'General', children: [
               _buildListTile(Icons.language, 'Language', _selectedLanguage, () {
                 _showOptionPicker(
@@ -168,7 +166,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }),
             ]),
             const SizedBox(height: 20),
-            // Units
             _buildCard(title: 'Units', children: [
               _buildListTile(Icons.fitness_center, 'Weight Unit', _selectedWeightUnit, () {
                 _showOptionPicker(

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/services/api_service.dart';
 
 class MyProfileGoalScreen extends StatefulWidget {
@@ -9,34 +10,62 @@ class MyProfileGoalScreen extends StatefulWidget {
 
 class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   Map<String, dynamic>? userData;
+  String _weightUnit = 'kg';
+  String _heightUnit = 'cm';
 
   @override
   void initState() {
     super.initState();
+    _loadUnits();
     _loadUserData();
   }
 
-  void _loadUserData() async {
-    var data = await ApiService.getUserProfile();
+  Future<void> _loadUnits() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _weightUnit = prefs.getString('weight_unit') ?? 'kg';
+      _heightUnit = prefs.getString('height_unit') ?? 'cm';
+    });
+  }
+
+  Future<void> _loadUserData() async {
+    final data = await ApiService.getUserProfile();
     setState(() {
       userData = data;
     });
   }
 
   void _updateField(String field, dynamic newValue) async {
-  setState(() {
-    userData![field] = newValue;
-  });
+    setState(() {
+      userData![field] = newValue;
+    });
 
-  Map<String, dynamic> updatedData = {field: newValue};
-
-  bool success = await ApiService.updateUserProfile(updatedData);
-  if (success) {
-    print("$field успешно обновлено на сервере");
-  } else {
-    print("Ошибка при обновлении $field на сервере");
+    bool success = await ApiService.updateUserProfile({field: newValue});
+    if (success) {
+      print("$field успешно обновлено на сервере");
+    } else {
+      print("Ошибка при обновлении $field на сервере");
+    }
   }
-}
+
+  // Added from the second file - unit conversion helpers
+  double get _displayWeight {
+    if (userData == null) return 0;
+    final kg = (userData!['weight'] ?? 0.0) as double;
+    return _weightUnit == 'lb' ? kg * 2.20462 : kg;
+  }
+
+  String get _displayHeight {
+    if (userData == null) return '';
+    final cm = (userData!['height'] ?? 0.0) as double;
+    if (_heightUnit == 'inch') {
+      final totalInches = (cm / 2.54).round();
+      final feet = totalInches ~/ 12;
+      final inches = totalInches % 12;
+      return "$feet ft $inches in";
+    }
+    return "${cm.toStringAsFixed(0)} cm";
+  }
 
   void _confirmDeleteAccount() {
     showModalBottomSheet(
@@ -108,6 +137,178 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     }
   }
 
+  // Improved weight editing from second file
+  void _editWeight() {
+    final displayed = _displayWeight;
+    final min = _weightUnit == 'kg' ? 30.0 : 30.0 * 2.20462;
+    final max = _weightUnit == 'kg' ? 200.0 : 200.0 * 2.20462;
+    int initialItem = (displayed - min).round();
+    double selected = displayed;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Weight ($_weightUnit)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              SizedBox(
+                height: 140,
+                child: CupertinoPicker(
+                  scrollController: FixedExtentScrollController(initialItem: initialItem),
+                  itemExtent: 32,
+                  onSelectedItemChanged: (i) => selected = min + i.toDouble(),
+                  children: List.generate((max - min).round() + 1, (i) => Text((min + i).toStringAsFixed(0))),
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  final newKg = _weightUnit == 'lb' ? selected / 2.20462 : selected;
+                  _updateField('weight', newKg);
+                  Navigator.pop(context);
+                },
+                child: Text('Done', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Improved height editing from second file
+  void _editHeight() {
+    if (_heightUnit == 'inch') {
+      final cmValue = (userData!['height'] ?? 0.0) as double;
+      final totalInches = (cmValue / 2.54).round();
+      int feet = totalInches ~/ 12;
+      int inches = totalInches % 12;
+      int selectedFeet = feet;
+      int selectedInches = inches;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Height (ft/in)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 140,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CupertinoPicker(
+                          scrollController: FixedExtentScrollController(initialItem: selectedFeet),
+                          itemExtent: 32,
+                          onSelectedItemChanged: (i) => selectedFeet = i,
+                          children: List.generate(8, (i) => Text('$i ft')),
+                        ),
+                      ),
+                      Expanded(
+                        child: CupertinoPicker(
+                          scrollController: FixedExtentScrollController(initialItem: selectedInches),
+                          itemExtent: 32,
+                          onSelectedItemChanged: (i) => selectedInches = i,
+                          children: List.generate(12, (i) => Text('$i in')),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    final total = selectedFeet * 12 + selectedInches;
+                    final newCm = total * 2.54;
+                    _updateField('height', newCm);
+                    Navigator.pop(context);
+                  },
+                  child: Text('Done', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } else {
+      final cm = (userData!['height'] ?? 0.0) as double;
+      double selected = cm;
+      final min = 100.0;
+      final max = 220.0;
+      int initial = (cm - min).round();
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Height (cm)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 140,
+                  child: CupertinoPicker(
+                    scrollController: FixedExtentScrollController(initialItem: initial),
+                    itemExtent: 32,
+                    onSelectedItemChanged: (i) => selected = min + i.toDouble(),
+                    children: List.generate((max - min).round() + 1, (i) => Text('${(min + i).round()}')),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    _updateField('height', selected);
+                    Navigator.pop(context);
+                  },
+                  child: Text('Done', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,13 +340,12 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                         _buildEditableTile("Last Name", userData!["last_name"], () => _editTextField("last_name")),
                         _buildEditableTile("Age", userData!["age"].toString(), () => _editNumberPicker("age", 12, 80)),
                         _buildEditableTile("Gender", userData!["gender"] ? "Male" : "Female", () => _editGenderPicker("gender")),
-                        _buildEditableTile("Weight", "${userData!["weight"]} kg", () => _editDoublePicker("weight", 30, 200)),
-                        _buildEditableTile("Height", "${userData!["height"]} cm", () => _editDoublePicker("height", 100, 220)),
+                        _buildEditableTile("Weight", "${_displayWeight.toStringAsFixed(1)} $_weightUnit", _editWeight),
+                        _buildEditableTile("Height", _displayHeight, _editHeight),
                       ],
                     ),
                     SizedBox(height: 20),
 
-                    /// 📌 **Карточка "Goal Settings"**
                     _buildCard(
                       title: "Goal Settings",
                       children: [
@@ -174,7 +374,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     );
   }
 
-  /// 📌 **Карточка**
   Widget _buildCard({required String title, required List<Widget> children}) {
     return Container(
       padding: EdgeInsets.all(16),
@@ -183,7 +382,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1), // Замена .withOpacity()
+            color: Colors.black.withOpacity(0.1), 
             blurRadius: 6,
             spreadRadius: 2,
             offset: Offset(0, 4),
@@ -227,74 +426,70 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   }
 
   void _editGenderPicker(String field) {
-  bool isMale = userData![field]; // Получаем boolean
+    bool isMale = userData![field]; // Получаем boolean
 
-  _showEditDialog(
-    "Select Gender",
-    StatefulBuilder(
-      builder: (context, setStateDialog) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildRadioTile("Male", isMale ? "Male" : "Female", (value) {
-              setStateDialog(() {
-                isMale = value == "Male";
-              });
-            }),
-            _buildRadioTile("Female", isMale ? "Male" : "Female", (value) {
-              setStateDialog(() {
-                isMale = value == "Male";
-              });
-            }),
-          ],
-        );
-      },
-    ),
-    () => _updateField(field, isMale), // Отправляем true/false на сервер
-  );
-}
-
-
+    _showEditDialog(
+      "Select Gender",
+      StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildRadioTile("Male", isMale ? "Male" : "Female", (value) {
+                setStateDialog(() {
+                  isMale = value == "Male";
+                });
+              }),
+              _buildRadioTile("Female", isMale ? "Male" : "Female", (value) {
+                setStateDialog(() {
+                  isMale = value == "Male";
+                });
+              }),
+            ],
+          );
+        },
+      ),
+      () => _updateField(field, isMale), // Отправляем true/false на сервер
+    );
+  }
 
   void _editTrainingLocationPicker(String field) {
-  String selectedValue = userData![field];
+    String selectedValue = userData![field];
 
-  _showEditDialog(
-    "Select Training Location",
-    StatefulBuilder(
-      builder: (context, setStateDialog) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildRadioTile("At home", selectedValue, (value) {
-              setStateDialog(() {
-                selectedValue = value;
-              });
-            }),
-            _buildRadioTile("In the gym", selectedValue, (value) {
-              setStateDialog(() {
-                selectedValue = value;
-              });
-            }),
-          ],
-        );
-      },
-    ),
-    () => _updateField(field, selectedValue), // Отправляем обновленное значение
-  );
-}
+    _showEditDialog(
+      "Select Training Location",
+      StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildRadioTile("At home", selectedValue, (value) {
+                setStateDialog(() {
+                  selectedValue = value;
+                });
+              }),
+              _buildRadioTile("In the gym", selectedValue, (value) {
+                setStateDialog(() {
+                  selectedValue = value;
+                });
+              }),
+            ],
+          );
+        },
+      ),
+      () => _updateField(field, selectedValue), // Отправляем обновленное значение
+    );
+  }
 
-
-Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onChanged) {
-  return RadioListTile<String>(
-    title: Text(title, style: TextStyle(fontSize: 16)),
-    value: title,
-    groupValue: groupValue,
-    onChanged: (value) => onChanged(value!),
-    activeColor: Color.fromARGB(255, 199, 169, 127), // Коричневый цвет
-  );
-}
-
+  Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onChanged) {
+    return RadioListTile<String>(
+      title: Text(title, style: TextStyle(fontSize: 16)),
+      value: title,
+      groupValue: groupValue,
+      onChanged: (value) => onChanged(value!),
+      activeColor: Color.fromARGB(255, 199, 169, 127), // Коричневый цвет
+    );
+  }
 
   void _showEditDialog(String title, Widget content, VoidCallback onSave) {
     showModalBottomSheet(
@@ -306,31 +501,31 @@ Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onC
           child: Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-            Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            SizedBox(
-              height: 140,
-              child: content,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color.fromARGB(255, 199, 169, 127),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                onSave();  // Вызывает _updateField и отправляет данные на сервер
-                Navigator.pop(context);
-              },
-              child: Text("Done", style: TextStyle(color: Colors.white)),
-            ),
-          ],
+                Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 140,
+                  child: content,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    onSave();  // Вызывает _updateField и отправляет данные на сервер
+                    Navigator.pop(context);
+                  },
+                  child: Text("Done", style: TextStyle(color: Colors.white)),
+                ),
+              ],
             ),
           ),
         );
@@ -338,7 +533,6 @@ Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onC
     );
   }
 
-  
   void _editTextField(String field) {
     TextEditingController controller = TextEditingController(text: userData![field]);
     _showEditDialog(
@@ -371,20 +565,6 @@ Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onC
         itemExtent: 32,
         onSelectedItemChanged: (index) => selectedValue = min + index,
         children: List.generate(max - min + 1, (index) => Text("${min + index}")),
-      ),
-      () => _updateField(field, selectedValue),
-    );
-  }
-
-  void _editDoublePicker(String field, double min, double max) {
-    double selectedValue = double.parse(userData![field].toString());
-    _showEditDialog(
-      field,
-      CupertinoPicker(
-        scrollController: FixedExtentScrollController(initialItem: (selectedValue - min).toInt()),
-        itemExtent: 32,
-        onSelectedItemChanged: (index) => selectedValue = min + index.toDouble(),
-        children: List.generate((max - min + 1).toInt(), (index) => Text("${(min + index).toStringAsFixed(1)}")),
       ),
       () => _updateField(field, selectedValue),
     );
