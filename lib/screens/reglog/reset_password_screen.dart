@@ -176,11 +176,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   /// Валидация пароля
   String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Enter a new password";
-    } else if (value.length < 6 || value.length > 32) {
-      return "Password must be between 6 and 32 characters";
-    }
-    return null;
+  if (value == null || value.isEmpty) {
+    return "Password is required";
+  } else if (value.length < 8 || value.length > 32) {
+    return "Password must be between 8 and 32 characters";
   }
+
+  final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(value);
+  final hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
+  final hasDigit = RegExp(r'\d').hasMatch(value);
+  final hasSpecialChar = RegExp(r'[_!@#\$%^&*(),.?":{}|<>]').hasMatch(value);
+
+  if (!hasLetter) {
+    return "Password must contain at least one letter";
+  } else if (!hasUppercase) {
+    return "Password must contain at least one uppercase letter";
+  } else if (!hasDigit) {
+    return "Password must contain at least one digit";
+  } else if (!hasSpecialChar) {
+    return "Password must contain at least one special character";
+  }
+
+  return null;
+}
+
 }

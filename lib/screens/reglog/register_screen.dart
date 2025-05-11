@@ -3,6 +3,7 @@ import 'package:fitness_app/services/api_service.dart';
 import 'complete_profile_screen.dart'; // Страница для заполнения возраста, роста и веса
 import '../home_screen.dart';
 import 'login_screen.dart';
+import '../../models/registration_data.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -16,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
+  
   bool gender = true;
   bool isLoading = false;
   bool isPasswordVisible = false;
@@ -48,7 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             MaterialPageRoute(builder: (context) => HomeScreen()),
           );
         } else {
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => CompleteProfileScreen()),
           );
@@ -67,117 +69,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-    body: Stack(
-      children: [
-        // 🔹 Фон (градиенты, круги, узоры и т.п.)
-        _buildDecorativeBackground(),
-
-        // 🔹 Основной контент поверх
-        SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  SizedBox(height: 20),
-                  Center(
-                    child: Text(
-                      "STRENVY",
-                      style: TextStyle(
-                        fontSize: 35,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 8,
-                        color: Colors.black87,
-                      ),
-                    ),
+    backgroundColor: Colors.white,
+    body: SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              SizedBox(height: 20),
+              Center(
+                child: Text(
+                  "STRENVY",
+                  style: TextStyle(
+                    fontSize: 35,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 8,
+                    color: Colors.black87,
                   ),
-                  SizedBox(height: 10),
-                  _buildToggleButtons(context, false),
-                  SizedBox(height: 20),
-
-                  Container(
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFF2F2F2).withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.brown.shade100),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          _buildInputField("Username", usernameController, validator: _validateUsername),
-                          _buildInputField("Email", emailController, validator: _validateEmail),
-                          _buildPasswordField(),
-                          _buildInputField("Name", firstNameController, validator: _validateName),
-                          _buildInputField("Last Name", lastNameController, validator: _validateName),
-                          _buildGenderSwitch(),
-                          SizedBox(height: 20),
-                          _buildRegisterButton(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              SizedBox(height: 10),
+              _buildToggleButtons(context, false),
+              SizedBox(height: 20),
+
+              // 🔳 Рамка с формой
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF2F2F2), // светло-серый фон
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.brown.shade100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildInputField("Username", usernameController, validator: _validateUsername),
+                      _buildInputField("Email", emailController, validator: _validateEmail),
+                      _buildPasswordField(),
+                      _buildInputField("Name", firstNameController, validator: _validateName),
+                      _buildInputField("Last Name", lastNameController, validator: _validateName),
+                      _buildGenderSwitch(),
+                      SizedBox(height: 20),
+                      _buildRegisterButton(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-    ),
-  );
-}
-
-
-Widget _buildDecorativeBackground() {
-  return Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Color(0xFFFFF8F1), Color.fromARGB(255, 255, 255, 255)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
       ),
     ),
-    child: Stack(
-      children: [
-        Positioned(
-          top: -60,
-          left: -40,
-          child: _buildCircle(140, Colors.brown.shade100.withOpacity(0.3)),
-        ),
-        Positioned(
-          top: 100,
-          right: -30,
-          child: _buildCircle(100, Colors.brown.shade200.withOpacity(0.2)),
-        ),
-        Positioned(
-          bottom: -50,
-          left: 50,
-          child: _buildCircle(140, Colors.brown.shade300.withOpacity(0.15)),
-        ),
-        // Добавь другие элементы или SVG при желании
-      ],
-    ),
   );
 }
 
-Widget _buildCircle(double size, Color color) {
-  return Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.rectangle,
-      color: color,
-    ),
-  );
-}
+
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
   return Align(
@@ -434,14 +388,31 @@ Widget _buildCircle(double size, Color color) {
   }
 
   /// Валидация пароля
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Password is required";
-    } else if (value.length < 6 || value.length > 32) {
-      return "Password must be between 6 and 32 characters";
-    }
-    return null;
+String? _validatePassword(String? value) {
+  if (value == null || value.isEmpty) {
+    return "Password is required";
+  } else if (value.length < 8 || value.length > 32) {
+    return "Password must be between 8 and 32 characters";
   }
+
+  final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(value);
+  final hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
+  final hasDigit = RegExp(r'\d').hasMatch(value);
+  final hasSpecialChar = RegExp(r'[_!@#\$%^&*(),.?":{}|<>]').hasMatch(value);
+
+  if (!hasLetter) {
+    return "Password must contain at least one letter";
+  } else if (!hasUppercase) {
+    return "Password must contain at least one uppercase letter";
+  } else if (!hasDigit) {
+    return "Password must contain at least one digit";
+  } else if (!hasSpecialChar) {
+    return "Password must contain at least one special character";
+  }
+
+  return null;
+}
+
 
   /// Валидация имени и фамилии
   String? _validateName(String? value) {

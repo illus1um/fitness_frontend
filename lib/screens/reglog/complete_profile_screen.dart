@@ -32,7 +32,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     setState(() => isLoading = false);
 
     if (success) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
       );

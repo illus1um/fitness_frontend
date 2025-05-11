@@ -9,22 +9,24 @@ class TrainingExperienceScreen extends StatefulWidget {
 
 class _TrainingExperienceScreenState extends State<TrainingExperienceScreen> {
   void setTrainingExperience(String experience) async {
-    bool success = await ApiService.setTrainingExperience(experience);
+  bool success = await ApiService.setTrainingExperience(experience);
 
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error while maintaining the training level"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+  if (success) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => HomeScreen()),
+      (route) => false, // Удаляет все предыдущие маршруты
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Error while maintaining the training level"),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
 
   final List<Map<String, String>> experiences = [
     {"level": "1", "name": "No experience", "description": "Didn't do any fitness"},

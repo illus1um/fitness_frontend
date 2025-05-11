@@ -12,7 +12,7 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
     bool success = await ApiService.setTrainingLocation(location);
 
     if (success) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => TrainingExperienceScreen()),
       );

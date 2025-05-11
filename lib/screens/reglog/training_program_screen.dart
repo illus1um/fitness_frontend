@@ -12,7 +12,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
     bool success = await ApiService.setTrainingProgram(program);
 
     if (success) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => TrainingLocationScreen()),
       );
@@ -79,7 +79,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
       onTap: () => setTrainingProgram(name),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 219, 200, 173),
+          color: const Color.fromARGB(255, 231, 231, 231),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -90,7 +90,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
               margin: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color.fromARGB(255, 199, 169, 127),
+                color: Color.fromARGB(255, 255, 255, 255),
               ),
               child: Center(
                 child: Text(
