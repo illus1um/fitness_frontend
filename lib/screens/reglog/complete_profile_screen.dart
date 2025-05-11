@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/models/registration_data.dart';
 import 'training_program_screen.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
+  final RegistrationData registrationData;
+
+  const CompleteProfileScreen({Key? key, required this.registrationData}) : super(key: key);
+
   @override
   _CompleteProfileScreenState createState() => _CompleteProfileScreenState();
 }
 
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
-  final _formKey = GlobalKey<FormState>(); // Ключ формы
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController weightController = TextEditingController();
   final TextEditingController heightController = TextEditingController();
@@ -16,31 +20,25 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   bool isLoading = false;
 
-  void saveProfile() async {
-    if (!_formKey.currentState!.validate()) {
-      return; // Если данные некорректны, не отправляем запрос
-    }
+  void saveProfile() {
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => isLoading = true);
 
-    bool success = await ApiService.updateProfile(
-      double.parse(weightController.text),
-      double.parse(heightController.text),
-      int.parse(ageController.text),
-    );
+    // Обновляем данные в объекте RegistrationData
+    widget.registrationData.weight = int.parse(weightController.text);
+    widget.registrationData.height = int.parse(heightController.text);
+    widget.registrationData.age = int.parse(ageController.text);
 
     setState(() => isLoading = false);
 
-    if (success) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error when saving the profile"), backgroundColor: Colors.red),
-      );
-    }
+    // Переход на следующий экран и передача RegistrationData
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrainingProgramScreen(registrationData: widget.registrationData),
+      ),
+    );
   }
 
   @override

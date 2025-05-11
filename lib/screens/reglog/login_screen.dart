@@ -4,6 +4,8 @@ import 'forgot_password_screen.dart';
 import 'complete_profile_screen.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
+import 'package:fitness_app/models/registration_data.dart';
+
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -23,36 +25,51 @@ class _LoginScreenState extends State<LoginScreen> {
   final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_.-]+$');
 
   void login() async {
-    if (!_formKey.currentState!.validate()) {
-      return; // Если валидация не пройдена, отменяем вход
-    }
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
 
-    setState(() => isLoading = true);
+  setState(() => isLoading = true);
 
-    bool success = await ApiService.login(
-      usernameController.text,
-      passwordController.text,
-    );
+  bool success = await ApiService.login(
+    usernameController.text,
+    passwordController.text,
+  );
 
-    setState(() => isLoading = false);
+  setState(() => isLoading = false);
 
-    if (success) {
-      bool profileCompleted = await ApiService.checkProfileStatus();
+  if (success) {
+    bool profileCompleted = await ApiService.checkProfileStatus();
+
+    if (profileCompleted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else {
+      // создаём пустой RegistrationData для передачи
+      RegistrationData regData = RegistrationData(
+        username: usernameController.text,
+        password: passwordController.text,
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => profileCompleted ? HomeScreen() : CompleteProfileScreen(),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Login error. Check your username and password."),
-          backgroundColor: Colors.red,
+          builder: (context) => CompleteProfileScreen(registrationData: regData),
         ),
       );
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Login error. Check your username and password."),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
 
 
   @override

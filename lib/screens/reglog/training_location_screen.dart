@@ -1,36 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/models/registration_data.dart';
 import 'training_experience_screen.dart';
 
 class TrainingLocationScreen extends StatefulWidget {
+  final RegistrationData registrationData;
+
+  const TrainingLocationScreen({Key? key, required this.registrationData}) : super(key: key);
+
   @override
   _TrainingLocationScreenState createState() => _TrainingLocationScreenState();
 }
 
 class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
-  void setTrainingLocation(String location) async {
-    bool success = await ApiService.setTrainingLocation(location);
-
-    if (success) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TrainingExperienceScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error saving the training location"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   final List<Map<String, String>> locations = [
     {"name": "At home", "image": "assets/images/home.jpg"},
     {"name": "In the gym", "image": "assets/images/gym.jpg"},
   ];
 
+  void setTrainingLocation(String location) {
+    widget.registrationData.location = location;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrainingExperienceScreen(registrationData: widget.registrationData),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

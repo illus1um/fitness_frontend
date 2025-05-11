@@ -3,7 +3,7 @@ import 'package:fitness_app/services/api_service.dart';
 import 'complete_profile_screen.dart'; // Страница для заполнения возраста, роста и веса
 import '../home_screen.dart';
 import 'login_screen.dart';
-import '../../models/registration_data.dart';
+import 'package:fitness_app/models/registration_data.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -24,48 +24,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_.-]+$');
 
-  void register() async {
-    if (!_formKey.currentState!.validate()) {
-      return; // Если валидация не прошла, не отправляем запрос
-    }
-
-    setState(() => isLoading = true);
-
-    var response = await ApiService.register(
-      usernameController.text,
-      emailController.text,
-      passwordController.text,
-      firstNameController.text,
-      lastNameController.text,
-      gender,
-    );
-
-    if (response) {
-      bool loginSuccess = await ApiService.login(usernameController.text, passwordController.text);
-      if (loginSuccess) {
-        bool profileCompleted = await ApiService.checkProfileStatus();
-        if (profileCompleted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-          );
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CompleteProfileScreen()),
-          );
-        }
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Registration error. Check the data."),
-        backgroundColor: Colors.red,
-      ));
-    }
-
-    setState(() => isLoading = false);
+ @override
+  void dispose() {
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
+    super.dispose();
   }
-
 @override
 Widget build(BuildContext context) {
   return Scaffold(
@@ -425,20 +392,39 @@ String? _validatePassword(String? value) {
   }
 
   Widget _buildRegisterButton() {
-    return ElevatedButton(
-      onPressed: isLoading ? null : register,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        minimumSize: Size(double.infinity, 45),
-        shape: RoundedRectangleBorder( // Устанавливаем закругление углов
-          borderRadius: BorderRadius.circular(12), // Радиус закругления
-        ),
-      ),
-      child: isLoading 
-        ? CircularProgressIndicator(color: Colors.white) 
-        : Text("Registration"),
-    );
-  }
+  return ElevatedButton(
+    onPressed: isLoading
+        ? null
+        : () {
+            if (!_formKey.currentState!.validate()) return;
 
+            final registrationData = RegistrationData(
+              username: usernameController.text,
+              email: emailController.text,
+              password: passwordController.text,
+              firstName: firstNameController.text,
+              lastName: lastNameController.text,
+              gender: gender,
+            );
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CompleteProfileScreen(
+                  registrationData: registrationData,
+                ),
+              ),
+            );
+          },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      minimumSize: Size(double.infinity, 45),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    child: Text("Continue"),
+  );
+}
 }

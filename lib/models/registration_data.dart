@@ -1,29 +1,30 @@
 class RegistrationData {
-  String? username;
-  String? email;
-  String? password;
-  String? firstName;
-  String? lastName;
-  bool? gender;
+  final String username;
+  final String? email;
+  final String password;
+  final String? firstName;
+  final String? lastName;
+  final bool? gender;
+
   int? age;
-  double? height;
-  double? weight;
-  String? program;
+  int? height;
+  int? weight;
+  String? trainingProgram;
   String? location;
-  String? experience;
+  String? difficulty;
 
   RegistrationData({
-    this.username,
+    required this.username,
     this.email,
-    this.password,
+    required this.password,
     this.firstName,
     this.lastName,
     this.gender,
     this.age,
     this.height,
     this.weight,
-    this.program,
+    this.trainingProgram,
     this.location,
-    this.experience,
+    this.difficulty,
   });
 }

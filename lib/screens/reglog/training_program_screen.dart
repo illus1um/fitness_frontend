@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/models/registration_data.dart';
 import 'training_location_screen.dart';
 
 class TrainingProgramScreen extends StatefulWidget {
+  final RegistrationData registrationData;
+
+  const TrainingProgramScreen({Key? key, required this.registrationData}) : super(key: key);
+
   @override
   _TrainingProgramScreenState createState() => _TrainingProgramScreenState();
 }
 
 class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
-  void setTrainingProgram(String program) async {
-    bool success = await ApiService.setTrainingProgram(program);
+  void selectProgram(String program) {
+    setState(() {
+      widget.registrationData.trainingProgram = program;
+    });
 
-    if (success) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TrainingLocationScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error saving the training program"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrainingLocationScreen(registrationData: widget.registrationData),
+      ),
+    );
   }
 
   final List<Map<String, String>> programs = [
@@ -76,7 +75,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
 
   Widget _buildProgramCard(String abbr, String name, String imagePath) {
     return GestureDetector(
-      onTap: () => setTrainingProgram(name),
+      onTap: () => selectProgram(name),
       child: Container(
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 231, 231, 231),

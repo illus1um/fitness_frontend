@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = "https://fitness-deploy.onrender.com"; // FastAPI сервер
+  static const String baseUrl = "http://127.0.0.1:8000"; // FastAPI сервер
 
   /// **Авторизация пользователя**
   static Future<bool> login(String username, String password) async {
@@ -102,6 +102,7 @@ class ApiService {
   static Future<bool> updateProfile(double weight, double height, int age) async {
     try {
       String? token = await AuthService.getAccessToken();
+      print("Token: $token");
       if (token == null) return false;
 
       final response = await http.post(
@@ -116,7 +117,6 @@ class ApiService {
           "age": age,
         }),
       );
-
       return response.statusCode == 200;
     } catch (e) {
       print("Ошибка при обновлении профиля: $e");
