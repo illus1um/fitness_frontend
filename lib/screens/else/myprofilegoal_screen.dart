@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/services/plan_cache.dart';
 
 class MyProfileGoalScreen extends StatefulWidget {
   @override
@@ -30,11 +31,13 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
 
   Future<void> _loadUserData() async {
     final data = await ApiService.getUserProfile();
-    setState(() {
-      userData = data;
-    });
+    if (data != null) {
+      setState(() => userData = data);
+    }
   }
 
+  /// Обновляем любое поле и, если это настройка тренировки,
+  /// сбрасываем кеш плана
   void _updateField(String field, dynamic newValue) async {
     setState(() {
       userData![field] = newValue;
@@ -42,13 +45,31 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
 
     bool success = await ApiService.updateUserProfile({field: newValue});
     if (success) {
-      print("$field успешно обновлено на сервере");
+      // Если меняется цель или локация или опыт — чистим кеш
+      if (field == 'training_program' ||
+          field == 'training_location' ||
+          field == 'training_experience') {
+        await PlanCache.clearPlan();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'The "$field" setting has been updated. The plan will be recreated at the next launch.',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$field успешно обновлено')),
+        );
+      }
     } else {
-      print("Ошибка при обновлении $field на сервере");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при обновлении $field')),
+      );
     }
   }
 
-  // Added from the second file - unit conversion helpers
+  // Unit-conversion helpers
   double get _displayWeight {
     if (userData == null) return 0;
     final kg = (userData!['weight'] ?? 0.0) as double;
@@ -75,31 +96,31 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                const Text(
                   "Are you sure you want to delete your account?",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 10),
-                Text(
+                const SizedBox(height: 10),
+                const Text(
                   "All your data will be permanently removed. This action cannot be undone.",
                   style: TextStyle(fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text(
+                      child: const Text(
                         "CANCEL",
                         style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 199, 169, 127)),
                       ),
@@ -115,7 +136,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                         _deleteAccount();
                         Navigator.pop(context);
                       },
-                      child: Text("DELETE", style: TextStyle(color: Colors.white)),
+                      child: const Text("DELETE", style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),
@@ -134,10 +155,13 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
       Navigator.pushReplacementNamed(context, "/login"); // Или другой экран входа
     } else {
       print("Failed to delete account");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ошибка при удалении аккаунта')),
+      );
     }
   }
 
-  // Improved weight editing from second file
+  // Improved weight editing
   void _editWeight() {
     final displayed = _displayWeight;
     final min = _weightUnit == 'kg' ? 30.0 : 30.0 * 2.20462;
@@ -151,16 +175,16 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
       builder: (_) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Weight ($_weightUnit)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
+              Text('Weight ($_weightUnit)', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
               SizedBox(
                 height: 140,
                 child: CupertinoPicker(
@@ -170,10 +194,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                   children: List.generate((max - min).round() + 1, (i) => Text((min + i).toStringAsFixed(0))),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                  backgroundColor: const Color.fromARGB(255, 199, 169, 127),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
@@ -181,7 +205,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                   _updateField('weight', newKg);
                   Navigator.pop(context);
                 },
-                child: Text('Done', style: TextStyle(color: Colors.white)),
+                child: const Text('Done', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -190,7 +214,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     );
   }
 
-  // Improved height editing from second file
+  // Improved height editing
   void _editHeight() {
     if (_heightUnit == 'inch') {
       final cmValue = (userData!['height'] ?? 0.0) as double;
@@ -206,16 +230,16 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         builder: (_) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Height (ft/in)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                const Text('Height (ft/in)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
                 SizedBox(
                   height: 140,
                   child: Row(
@@ -239,10 +263,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                    backgroundColor: const Color.fromARGB(255, 199, 169, 127),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
@@ -251,7 +275,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                     _updateField('height', newCm);
                     Navigator.pop(context);
                   },
-                  child: Text('Done', style: TextStyle(color: Colors.white)),
+                  child: const Text('Done', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -270,16 +294,16 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         builder: (_) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Height (cm)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                const Text('Height (cm)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
                 SizedBox(
                   height: 140,
                   child: CupertinoPicker(
@@ -289,17 +313,17 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                     children: List.generate((max - min).round() + 1, (i) => Text('${(min + i).round()}')),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                    backgroundColor: const Color.fromARGB(255, 199, 169, 127),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
                     _updateField('height', selected);
                     Navigator.pop(context);
                   },
-                  child: Text('Done', style: TextStyle(color: Colors.white)),
+                  child: const Text('Done', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -313,13 +337,13 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("My Profile & Goal"),
+        title: const Text("My Profile & Goal"),
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
       body: userData == null
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -328,9 +352,9 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                     CircleAvatar(
                       radius: 90,
                       backgroundColor: Colors.grey[300],
-                      child: Icon(Icons.person, size: 120, color: Colors.white),
+                      child: const Icon(Icons.person, size: 120, color: Colors.white),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     _buildCard(
                       title: "My Personal Information",
@@ -344,7 +368,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                         _buildEditableTile("Height", _displayHeight, _editHeight),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     _buildCard(
                       title: "Goal Settings",
@@ -354,18 +378,18 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
                         _buildEditableTile("Training Experience", userData!["training_experience"], () => _editPicker("training_experience", experienceLevels)),
                       ],
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 30),
 
-                    Divider(),
+                    const Divider(),
                     TextButton(
                       onPressed: () {
                         _confirmDeleteAccount();
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: const Color.fromARGB(255, 142, 142, 142),
-                        textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                       ),
-                      child: Text("Delete your account?"),
+                      child: const Text("Delete your account?"),
                     ),
                   ],
                 ),
@@ -376,7 +400,8 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
 
   Widget _buildCard({required String title, required List<Widget> children}) {
     return Container(
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -385,7 +410,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
             color: Colors.black.withOpacity(0.1), 
             blurRadius: 6,
             spreadRadius: 2,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -394,9 +419,9 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127)),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127)),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           ...children,
         ],
       ),
@@ -405,20 +430,20 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
 
   Widget _buildInfoTile(String label, String value) {
     return ListTile(
-      title: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      trailing: Text(value, style: TextStyle(fontSize: 16)),
+      title: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      trailing: Text(value, style: const TextStyle(fontSize: 16)),
     );
   }
 
   Widget _buildEditableTile(String label, String value, VoidCallback onTap) {
     return ListTile(
-      title: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      title: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(value, style: TextStyle(fontSize: 16)),
-          SizedBox(width: 8),
-          Icon(Icons.arrow_forward_ios, size: 16),
+          Text(value, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 8),
+          const Icon(Icons.arrow_forward_ios, size: 16),
         ],
       ),
       onTap: onTap,
@@ -483,11 +508,11 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
 
   Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onChanged) {
     return RadioListTile<String>(
-      title: Text(title, style: TextStyle(fontSize: 16)),
+      title: Text(title, style: const TextStyle(fontSize: 16)),
       value: title,
       groupValue: groupValue,
       onChanged: (value) => onChanged(value!),
-      activeColor: Color.fromARGB(255, 199, 169, 127), // Коричневый цвет
+      activeColor: const Color.fromARGB(255, 199, 169, 127), // Коричневый цвет
     );
   }
 
@@ -499,31 +524,31 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
                 SizedBox(
                   height: 140,
                   child: content,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 199, 169, 127),
+                    backgroundColor: const Color.fromARGB(255, 199, 169, 127),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
                     onSave();  // Вызывает _updateField и отправляет данные на сервер
                     Navigator.pop(context);
                   },
-                  child: Text("Done", style: TextStyle(color: Colors.white)),
+                  child: const Text("Done", style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -541,14 +566,12 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: TextField(
           controller: controller,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             border: OutlineInputBorder(),
-            labelText: "Enter $field",
-            labelStyle: TextStyle(),
+            labelText: "Enter value",
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Color.fromARGB(255, 199, 169, 127), width: 2.0),
             ),
-            floatingLabelStyle: TextStyle(),
           ),
         ),
       ),
@@ -585,5 +608,18 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   }
 }
 
-List<String> fitnessGoals = ["Weight Loss", "Endurance", "Full Body", "Gain Muscle Mass", "Legs", "Wide Back"];
-List<String> experienceLevels = ["No experience", "Beginner", "Experienced", "Pro"];
+const List<String> fitnessGoals = [
+  "Weight Loss",
+  "Endurance",
+  "Full Body", 
+  "Gain Muscle Mass",
+  "Legs",
+  "Wide Back"
+];
+
+const List<String> experienceLevels = [
+  "No experience",
+  "Beginner",
+  "Experienced",
+  "Pro"
+];
