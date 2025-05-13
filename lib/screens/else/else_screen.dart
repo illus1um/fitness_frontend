@@ -29,7 +29,11 @@ class _ElseScreenState extends State<ElseScreen> {
   void _logout() async {
     bool success = await ApiService.logout();
     if (success) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => LoginScreen()),
+        (route) => false,
+      );
     }
   }
 
