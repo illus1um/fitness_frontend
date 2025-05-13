@@ -1,3 +1,4 @@
+import 'dart:convert';
 class ExerciseInfo {
   final String id;
   final String name;
@@ -53,8 +54,29 @@ class ExerciseInfo {
         restSec: j['restSec'] as int,
       );
 
-  /// Относительный путь к локальной GIF-картинке в assets/gifs/
-  /// Берёт имя файла из gifUrl и добавляет расширение .gif при необходимости.
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'bodyPart': bodyPart,
+        'equipment': equipment,
+        'gifUrl': gifUrl,
+        'target': target,
+        'secondaryTargets': secondaryTargets,
+        'instructions': instructions,
+        'programs': programs,
+        'locations': locations,
+        'experienceLevels': experienceLevels,
+        'sets': sets,
+        'reps': reps,
+        'durationSec': durationSec,
+        'restSec': restSec,
+  };
+
+  /// Чтение из prefs
+  factory ExerciseInfo.fromStorage(Map<String, dynamic> j) =>
+      ExerciseInfo.fromJson(j);
+
   String get assetGifPath {
     final fileName = gifUrl.split('/').last;
     final nameWithExt =

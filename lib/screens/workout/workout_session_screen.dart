@@ -4,71 +4,83 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../models/day_info.dart';
+import '../../models/progress_entry.dart';
+import '../../services/api_service.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
   final DayInfo day;
-  const WorkoutSessionScreen({required this.day, Key? key}) : super(key: key);
+  final int startIndex;
+  const WorkoutSessionScreen({
+    required this.day,
+    this.startIndex = 0,
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<WorkoutSessionScreen> createState() => _WorkoutSessionScreenState();
 }
 
 class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
-  int exIndex = 0;
+  late int exIndex;
   int currentSet = 0;
   bool isResting = false;
+  bool isPaused = false;
   Timer? timer;
   int secondsLeft = 0;
 
   @override
   void initState() {
     super.initState();
-    _startExercise();
+    exIndex = widget.startIndex;
+    _startPhase();
   }
 
-  void _startExercise() {
+  void _startPhase() {
     final ex = widget.day.exercises[exIndex];
-    // Если время выполнения не задано, оставляем 0
-    secondsLeft = ex.durationSec;
-    timer?.cancel();
-    if (secondsLeft > 0) {
-      timer = Timer.periodic(const Duration(seconds: 1), (t) {
-        if (secondsLeft <= 0) {
-          t.cancel();
-        } else {
-          setState(() => secondsLeft--);
-        }
-      });
-    }
+    secondsLeft = isResting ? ex.restSec : ex.durationSec;
+    _startTimer();
   }
 
-  void _finishSet() {
+  void _startTimer() {
     timer?.cancel();
-    final ex = widget.day.exercises[exIndex];
+    if (secondsLeft <= 0) return;
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (secondsLeft <= 0) {
+        t.cancel();
+        _onPhaseComplete();
+      } else if (!isPaused) {
+        setState(() => secondsLeft--);
+      }
+    });
+  }
 
+  void _onPhaseComplete() {
+    final ex = widget.day.exercises[exIndex];
     if (!isResting) {
-      // Завершили подход
-      setState(() => currentSet++);
+      // завершили подход
+      currentSet++;
+      _saveProgress();
       if (currentSet < ex.sets) {
-        // Переходим в отдых
-        isResting = true;
-        secondsLeft = ex.restSec;
-        timer = Timer.periodic(const Duration(seconds: 1), (t) {
-          if (secondsLeft <= 0) {
-            t.cancel();
-          } else {
-            setState(() => secondsLeft--);
-          }
-        });
+        setState(() => isResting = true);
+        _startPhase();
       } else {
-        // Все подходы завершены → следующее упражнение
         _nextExercise();
       }
     } else {
-      // Завершили отдых → новый подход
+      // завершили отдых → новый подход
       setState(() => isResting = false);
-      _startExercise();
+      _startPhase();
     }
+  }
+
+  Future<void> _saveProgress() async {
+    final ex = widget.day.exercises[exIndex];
+    await ApiService.saveProgress(ProgressEntry(
+      dayIndex: widget.day.dayIndex,
+      exerciseId: ex.id,
+      setsCompleted: currentSet,
+      completedAt: DateTime.now(),
+    ));
   }
 
   void _nextExercise() {
@@ -78,24 +90,27 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         currentSet = 0;
         isResting = false;
       });
-      _startExercise();
+      _startPhase();
     } else {
-      // Конец дня
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Поздравляем!'),
-          content: Text('Тренировка дня ${widget.day.dayIndex} завершена.'),
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  Navigator.popUntil(context, ModalRoute.withName('/')),
-              child: const Text('Готово'),
-            ),
-          ],
-        ),
-      );
+      _showFinishDialog();
     }
+  }
+
+  void _showFinishDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Поздравляем!'),
+        content: Text('Тренировка дня ${widget.day.dayIndex} завершена.'),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.popUntil(context, ModalRoute.withName('/')),
+            child: const Text('Готово'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -104,82 +119,74 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     super.dispose();
   }
 
-  /// Возвращает процент завершения, либо 0.0 при делении на ноль.
-  double pct(int num, int den) => den > 0 ? num / den : 0.0;
+  double _pct(int num, int den) => den > 0 ? (num / den).clamp(0.0, 1.0) : 0.0;
 
   @override
   Widget build(BuildContext context) {
     final ex = widget.day.exercises[exIndex];
+    final phaseTotal = isResting ? ex.restSec : ex.durationSec;
+    final phaseDone = phaseTotal - secondsLeft;
 
     return Scaffold(
       appBar: AppBar(
         title: Text('${exIndex + 1}/${widget.day.exercises.length} ${ex.name}'),
         actions: [
-          IconButton(onPressed: () {/* пауза пока нет */}, icon: const Icon(Icons.pause))
+          IconButton(
+            icon: Icon(isPaused ? Icons.play_arrow : Icons.pause),
+            onPressed: () {
+              setState(() => isPaused = !isPaused);
+              if (!isPaused) _startTimer();
+            },
+          ),
         ],
       ),
       body: Column(
         children: [
-          // GIF из локальных assets
           Expanded(
             child: Center(
               child: Image.asset(
                 ex.assetGifPath,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 64),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 64),
               ),
             ),
           ),
-
-          // Круговые индикаторы
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Таймер/подход
                 CircularPercentIndicator(
                   radius: 50,
                   lineWidth: 6,
-                  percent: isResting
-                      ? 0.0
-                      : pct(ex.durationSec - secondsLeft, ex.durationSec),
-                  center: Text('$secondsLeft', style: const TextStyle(fontSize: 16)),
+                  percent: _pct(phaseDone, phaseTotal),
+                  center: Text('$secondsLeft'),
                   footer: Text(isResting ? 'Отдых' : 'Секунд'),
                 ),
-
-                // Отдых
                 CircularPercentIndicator(
                   radius: 50,
                   lineWidth: 6,
-                  percent: isResting
-                      ? pct(ex.restSec - secondsLeft, ex.restSec)
-                      : 0.0,
-                  center: isResting
-                      ? Text('$secondsLeft', style: const TextStyle(fontSize: 16))
-                      : const Icon(Icons.lock),
-                  footer: const Text('Отдых'),
-                ),
-
-                // Подходы
-                CircularPercentIndicator(
-                  radius: 50,
-                  lineWidth: 6,
-                  percent: pct(currentSet, ex.sets),
-                  center: Text('$currentSet/${ex.sets}', style: const TextStyle(fontSize: 16)),
+                  percent: _pct(currentSet, ex.sets),
+                  center: Text('$currentSet/${ex.sets}'),
                   footer: const Text('Подходов'),
                 ),
               ],
             ),
           ),
-
-          // Кнопка завершения подхода/отдыха
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: secondsLeft == 0 ? _finishSet : null,
+              onPressed: isPaused ? null : () {
+                timer?.cancel();
+                _onPhaseComplete();
+              },
               style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-              child: Text(isResting ? 'Завершить отдых' : 'Завершить подход'),
+              child: Text(isResting
+                  ? 'Завершить отдых'
+                  : currentSet < ex.sets
+                      ? 'Завершить подход'
+                      : 'Далее'),
             ),
           ),
         ],
