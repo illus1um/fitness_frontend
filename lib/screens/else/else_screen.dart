@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/screens/reglog/login_screen.dart';
 import 'package:fitness_app/screens/else/myprofilegoal_screen.dart';
+import 'package:fitness_app/screens/workout/workout_history_screen.dart';
 import 'change_password.dart';
 
 
@@ -82,7 +83,14 @@ class _ElseScreenState extends State<ElseScreen> {
                           ),
                         ),
 
-                        _buildListTile(Icons.history, "My Workouts", () {}),
+                        _buildListTile(
+                          Icons.history, 
+                          "My Workouts", 
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => WorkoutHistoryScreen()),
+                          )
+                        ),
 
                         _buildListTile(
                           Icons.settings,
