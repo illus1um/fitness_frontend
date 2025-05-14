@@ -132,10 +132,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     _workoutDays.clear();
     final startDate = DateTime(sd.year, sd.month, sd.day);
     for (int i = 0; i < plan.length; i++) {
-      final workoutDay = startDate.add(Duration(days: i * 2));
+      // Используем индекс дня для определения даты тренировки (каждый второй день)
+      final dayIndex = plan[i].dayIndex;
+      // Вычисляем смещение в днях от начальной даты (индексы в плане начинаются с 1)
+      // Поэтому для дня 1 смещение будет 0, для дня 2 - 2 и т.д.
+      final dayOffset = (dayIndex - 1) * 2;
+      final workoutDay = startDate.add(Duration(days: dayOffset));
       // Сохраняем только дату без времени
       _workoutDays.add(DateTime(workoutDay.year, workoutDay.month, workoutDay.day));
-      print('Added workout day: ${workoutDay.toString()}');
+      print('Added workout day: ${workoutDay.toString()} for day index $dayIndex');
     }
   }
   
@@ -682,17 +687,24 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           final simpleDay = DateTime(day.year, day.month, day.day);
           if (_startDate == null) return null;
           
-          final diff = day.difference(
+          // Проверяем, находится ли день в списке тренировочных дней
+          final isWorkoutDay = _workoutDays.any((workoutDate) =>
+            workoutDate.year == simpleDay.year && 
+            workoutDate.month == simpleDay.month && 
+            workoutDate.day == simpleDay.day
+          );
+          
+          if (!isWorkoutDay) return null;
+          
+          // Вычисляем разницу в днях между днём календаря и начальной датой
+          final diff = simpleDay.difference(
             DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
           ).inDays;
           
-          // Определяем, является ли этот день тренировочным
-          final isWorkoutDay = diff >= 0 && diff % 2 == 0;
-          if (!isWorkoutDay) return null;
-          
-          // Номер тренировочного дня (0-based) и индекс в плане (1-based)
+          // Находим индекс тренировочного дня (учитывая, что тренировки каждые 2 дня)
           final dayNumber = diff ~/ 2;
-          final dayIndex = dayNumber + 1; // в плане индексы начинаются с 1
+          // В плане индексы начинаются с 1
+          final dayIndex = dayNumber + 1;
           
           // Проверяем, доступен ли день
           final enabled = _isDayOpen(dayIndex);
