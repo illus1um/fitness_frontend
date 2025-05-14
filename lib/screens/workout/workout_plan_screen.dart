@@ -7,7 +7,15 @@ import 'workout_day_screen.dart';
 
 class WorkoutPlanScreen extends StatefulWidget {
   final List<DayInfo> days;
-  const WorkoutPlanScreen({required this.days, Key? key}) : super(key: key);
+  final Set<int>? availableDays;
+  final Function? onWorkoutComplete;
+  
+  const WorkoutPlanScreen({
+    required this.days,
+    this.availableDays,
+    this.onWorkoutComplete,
+    Key? key
+  }) : super(key: key);
 
   @override
   State<WorkoutPlanScreen> createState() => _WorkoutPlanScreenState();
@@ -31,6 +39,76 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
       _loading = false;
     });
   }
+  
+  // Проверяет, завершен ли день полностью
+  bool _isDayCompleted(DayInfo day) {
+    if (day.exercises.isEmpty) return false;
+    
+    // фильтруем прогресс по дню
+    final dayProg = _allProgress
+        .where((e) => e.dayIndex == day.dayIndex)
+        .toList();
+    
+    // считаем, сколько упражнений полностью завершено
+    final completedExercises = day.exercises.where((ex) {
+      final entry = dayProg.firstWhere(
+        (p) => p.exerciseId == ex.id,
+        orElse: () => ProgressEntry(
+          dayIndex: day.dayIndex,
+          exerciseId: ex.id,
+          setsCompleted: 0,
+          completedAt: DateTime.now(),
+        ),
+      );
+      return entry.setsCompleted >= ex.sets;
+    }).length;
+    
+    // Возвращаем true если все упражнения выполнены
+    return completedExercises == day.exercises.length;
+  }
+  
+  // Расчет прогресса выполнения дня (от 0.0 до 1.0)
+  double _calculateDayProgress(DayInfo day) {
+    if (day.exercises.isEmpty) return 0.0;
+    
+    // фильтруем прогресс по дню
+    final dayProg = _allProgress
+        .where((e) => e.dayIndex == day.dayIndex)
+        .toList();
+    
+    // считаем, сколько упражнений полностью завершено
+    final completedExercises = day.exercises.where((ex) {
+      final entry = dayProg.firstWhere(
+        (p) => p.exerciseId == ex.id,
+        orElse: () => ProgressEntry(
+          dayIndex: day.dayIndex,
+          exerciseId: ex.id,
+          setsCompleted: 0,
+          completedAt: DateTime.now(),
+        ),
+      );
+      return entry.setsCompleted >= ex.sets;
+    }).length;
+    
+    final total = day.exercises.length;
+    return total > 0 ? (completedExercises / total).clamp(0.0, 1.0) : 0.0;
+  }
+  
+  // Проверяет, доступен ли день
+  bool _isDayAvailable(int dayIndex) {
+    if (widget.availableDays == null) return true; // Если не задан список доступных дней, считаем все доступными
+    return widget.availableDays!.contains(dayIndex);
+  }
+  
+  // Обработчик завершения дня тренировки
+  Future<void> _onDayComplete() async {
+    await _loadProgress();
+    
+    // Вызываем коллбэк, если он задан
+    if (widget.onWorkoutComplete != null) {
+      await widget.onWorkoutComplete!();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,28 +125,9 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
         itemCount: widget.days.length,
         itemBuilder: (_, i) {
           final day = widget.days[i];
-          // фильтруем прогресс по дню
-          final dayProg = _allProgress
-              .where((e) => e.dayIndex == day.dayIndex)
-              .toList();
-
-          // считаем, сколько упражнений полностью завершено
-          final completedExercises = day.exercises.where((ex) {
-            final entry = dayProg.firstWhere(
-              (p) => p.exerciseId == ex.id,
-              orElse: () => ProgressEntry(
-                dayIndex: day.dayIndex,
-                exerciseId: ex.id,
-                setsCompleted: 0,
-                completedAt: DateTime.now(),
-              ),
-            );
-            return entry.setsCompleted >= ex.sets;
-          }).length;
-
-          final total = day.exercises.length;
-          final percent =
-              total > 0 ? (completedExercises / total).clamp(0.0, 1.0) : 0.0;
+          final percent = _calculateDayProgress(day);
+          final isCompleted = _isDayCompleted(day);
+          final isAvailable = _isDayAvailable(day.dayIndex);
 
           return ListTile(
             contentPadding:
@@ -80,15 +139,46 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
               percent: percent,
               center: Text('${(percent * 100).round()}%'),
               backgroundColor: Colors.grey.shade200,
-              progressColor: Theme.of(context).primaryColor,
+              progressColor: isCompleted 
+                ? Colors.green 
+                : Theme.of(context).primaryColor,
             ),
-            title: Text('${day.dayIndex} тренировка'),
-            subtitle: Text(day.part),
-            trailing: Icon(Icons.arrow_forward),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => WorkoutDayScreen(day: day)),
+            title: Text(
+              '${day.dayIndex + 1} тренировка',
+              style: TextStyle(
+                color: isAvailable ? null : Colors.grey,
+              ),
             ),
+            subtitle: Text(
+              day.part,
+              style: TextStyle(
+                color: isAvailable ? null : Colors.grey,
+              ),
+            ),
+            trailing: isCompleted 
+              ? Icon(Icons.check_circle, color: Colors.green)
+              : isAvailable 
+                ? Icon(Icons.arrow_forward)
+                : Icon(Icons.lock, color: Colors.grey),
+            onTap: isAvailable 
+              ? () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WorkoutDayScreen(
+                      day: day,
+                      onComplete: _onDayComplete,
+                    ),
+                  ),
+                )
+              : () {
+                  // Показываем сообщение, что день недоступен
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Этот день тренировки пока недоступен. Сначала выполните предыдущие дни.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
           );
         },
       ),

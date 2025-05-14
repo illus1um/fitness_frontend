@@ -10,9 +10,12 @@ import '../../services/api_service.dart';
 class WorkoutSessionScreen extends StatefulWidget {
   final DayInfo day;
   final int startIndex;
+  final Function? onComplete;
+  
   const WorkoutSessionScreen({
     required this.day,
     this.startIndex = 0,
+    this.onComplete,
     Key? key,
   }) : super(key: key);
 
@@ -32,6 +35,29 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   void initState() {
     super.initState();
     exIndex = widget.startIndex;
+    _loadCurrentProgress();
+  }
+  
+  Future<void> _loadCurrentProgress() async {
+    final ex = widget.day.exercises[exIndex];
+    final progress = await ApiService.getDayProgress(widget.day.dayIndex);
+    
+    // Находим текущий прогресс для упражнения
+    final exProgress = progress.firstWhere(
+      (p) => p.exerciseId == ex.id,
+      orElse: () => ProgressEntry(
+        dayIndex: widget.day.dayIndex,
+        exerciseId: ex.id,
+        setsCompleted: 0,
+        completedAt: DateTime.now(),
+      ),
+    );
+    
+    // Устанавливаем текущий подход
+    setState(() {
+      currentSet = exProgress.setsCompleted;
+    });
+    
     _startPhase();
   }
 
@@ -99,13 +125,20 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   void _showFinishDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => AlertDialog(
         title: const Text('Поздравляем!'),
-        content: Text('Тренировка дня ${widget.day.dayIndex} завершена.'),
+        content: Text('Тренировка дня ${widget.day.dayIndex + 1} завершена.'),
         actions: [
           TextButton(
-            onPressed: () =>
-                Navigator.popUntil(context, ModalRoute.withName('/')),
+            onPressed: () async {
+              // Вызываем коллбэк завершения
+              if (widget.onComplete != null) {
+                await widget.onComplete!();
+              }
+              Navigator.pop(context); // Закрываем диалог
+              Navigator.pop(context); // Возвращаемся на экран дня
+            },
             child: const Text('Готово'),
           ),
         ],

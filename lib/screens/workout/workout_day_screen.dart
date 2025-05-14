@@ -8,7 +8,13 @@ import 'workout_session_screen.dart';
 
 class WorkoutDayScreen extends StatefulWidget {
   final DayInfo day;
-  const WorkoutDayScreen({required this.day, Key? key}) : super(key: key);
+  final Function? onComplete;
+  
+  const WorkoutDayScreen({
+    required this.day,
+    this.onComplete,
+    Key? key
+  }) : super(key: key);
 
   @override
   State<WorkoutDayScreen> createState() => _WorkoutDayScreenState();
@@ -31,11 +37,33 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
       _loading = false;
     });
   }
+  
+  // Проверяем, завершен ли день полностью
+  bool _isDayCompleted() {
+    if (widget.day.exercises.isEmpty) return false;
+    
+    return widget.day.exercises.every((ex) {
+      final done = _completedSets[ex.id] ?? 0;
+      return done >= ex.sets;
+    });
+  }
+  
+  // Обработчик завершения тренировки
+  Future<void> _onSessionComplete() async {
+    await _loadDayProgress();
+    
+    // Если день полностью завершен, вызываем коллбэк
+    if (_isDayCompleted() && widget.onComplete != null) {
+      await widget.onComplete!();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bool isDayCompleted = _isDayCompleted();
+    
     return Scaffold(
-      appBar: AppBar(title: Text('Упражнения дня ${widget.day.dayIndex}')),
+      appBar: AppBar(title: Text('Упражнения дня ${widget.day.dayIndex + 1}')),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -63,24 +91,44 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                         builder: (_) => WorkoutSessionScreen(
                           day: widget.day,
                           startIndex: i,
+                          onComplete: _onSessionComplete,
                         ),
                       ),
-                    ),
+                    ).then((_) => _loadDayProgress()),
                   ),
                 );
               },
             ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
-        child: ElevatedButton(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WorkoutSessionScreen(day: widget.day),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isDayCompleted)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  'Все упражнения выполнены!',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WorkoutSessionScreen(
+                    day: widget.day,
+                    onComplete: _onSessionComplete,
+                  ),
+                ),
+              ).then((_) => _loadDayProgress()),
+              child: const Text('НАЧАТЬ ТРЕНИРОВКУ'),
+              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
             ),
-          ),
-          child: const Text('НАЧАТЬ ТРЕНИРОВКУ'),
-          style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+          ],
         ),
       ),
     );

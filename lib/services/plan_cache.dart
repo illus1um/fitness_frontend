@@ -3,10 +3,12 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/day_info.dart';
+import '../models/progress_entry.dart';
 
 class PlanCache {
   static const _planKey = 'current_plan';
   static const _startKey = 'plan_start_date';
+  static const _progressKey = 'workout_progress';
 
   static Future<void> savePlan(List<DayInfo> plan) async {
     final prefs = await SharedPreferences.getInstance();
@@ -39,5 +41,24 @@ class PlanCache {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_planKey);
     await prefs.remove(_startKey);
+  }
+
+  // Saving workout progress
+  static Future<void> saveProgress(List<ProgressEntry> progress) async {
+    final prefs = await SharedPreferences.getInstance();
+    final progressJson = json.encode(progress.map((e) => e.toJson()).toList());
+    await prefs.setString(_progressKey, progressJson);
+  }
+
+  // Loading workout progress
+  static Future<List<ProgressEntry>> loadProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_progressKey);
+    if (jsonStr == null) return [];
+    
+    final List<dynamic> decoded = json.decode(jsonStr);
+    return decoded
+        .map((e) => ProgressEntry.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 }
