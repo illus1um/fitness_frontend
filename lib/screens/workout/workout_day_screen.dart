@@ -62,61 +62,270 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isDayCompleted = _isDayCompleted();
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
     
     return Scaffold(
-      appBar: AppBar(title: Text('Day ${widget.day.dayIndex} Exercises')),
+      appBar: AppBar(
+        title: Text('Day ${widget.day.dayIndex}: ${widget.day.part}'),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: _loading
-          ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: widget.day.exercises.length,
-              itemBuilder: (ctx, i) {
-                final ex = widget.day.exercises[i];
-                final done = _completedSets[ex.id] ?? 0;
-                final isDone = done >= ex.sets;
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                  child: ListTile(
-                    leading: Image.asset(
-                      ex.assetPreviewPath,
-                      width: 60, height: 60, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 60),
-                    ),
-                    title: Text(ex.name),
-                    subtitle: Text('$done/${ex.sets} sets'),
-                    trailing: isDone 
-                        ? const Icon(Icons.check_circle, color: Colors.green) 
-                        : const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => WorkoutSessionScreen(
-                          day: widget.day,
-                          startIndex: i,
-                          onComplete: _onSessionComplete,
-                        ),
-                      ),
-                    ).then((_) => _loadDayProgress()),
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(goldColor),
+              ),
+            )
+          : widget.day.exercises.isEmpty
+              ? Center(
+                  child: Text(
+                    'No exercises for this workout day.',
+                    style: TextStyle(fontSize: 16),
                   ),
-                );
-              },
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  itemCount: widget.day.exercises.length,
+                  itemBuilder: (ctx, i) {
+                    final ex = widget.day.exercises[i];
+                    final done = _completedSets[ex.id] ?? 0;
+                    final isDone = done >= ex.sets;
+                    return _buildExerciseCard(ex, done, isDone, i, isDarkMode, goldColor);
+                  },
+                ),
+      bottomNavigationBar: _buildBottomBar(isDayCompleted, isDarkMode, goldColor),
+    );
+  }
+
+  Widget _buildExerciseCard(
+    dynamic ex, 
+    int done, 
+    bool isDone, 
+    int index, 
+    bool isDarkMode, 
+    Color goldColor
+  ) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            spreadRadius: isDarkMode ? 0 : 1,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => WorkoutSessionScreen(
+                day: widget.day,
+                startIndex: index,
+                onComplete: _onSessionComplete,
+              ),
             ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isDayCompleted)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  'All exercises completed!',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
+          ).then((_) => _loadDayProgress()),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Exercise image with rounded corners
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 70,
+                    height: 70,
+                    color: isDarkMode ? Color(0xFF333333) : Colors.grey.shade200,
+                    child: Image.asset(
+                      ex.assetPreviewPath,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.fitness_center,
+                        size: 30,
+                        color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                      ),
+                    ),
                   ),
                 ),
+                SizedBox(width: 16),
+                
+                // Exercise info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ex.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      _buildProgressIndicator(done, ex.sets, isDone, isDarkMode, goldColor),
+                    ],
+                  ),
+                ),
+                
+                // Completion indicator
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isDone
+                        ? goldColor.withOpacity(0.15)
+                        : (isDarkMode
+                            ? Colors.grey.shade800.withOpacity(0.5)
+                            : Colors.grey.shade100),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isDone ? Icons.check_circle : Icons.chevron_right,
+                    size: isDone ? 24 : 20,
+                    color: isDone
+                        ? goldColor
+                        : (isDarkMode ? Colors.white70 : Colors.grey.shade700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator(
+    int completed, 
+    int total, 
+    bool isDone, 
+    bool isDarkMode, 
+    Color goldColor
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              '$completed/$total sets',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isDone
+                    ? goldColor
+                    : (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700),
               ),
-            ElevatedButton(
+            ),
+            Spacer(),
+            Text(
+              '${(completed / total * 100).round()}%',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isDone
+                    ? goldColor
+                    : (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: completed / total,
+            backgroundColor: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isDone ? goldColor : goldColor.withOpacity(0.7),
+            ),
+            minHeight: 8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomBar(bool isDayCompleted, bool isDarkMode, Color goldColor) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Color(0xFF121212) : Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.1),
+            blurRadius: 10,
+            offset: Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isDayCompleted)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: goldColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'All exercises completed!',
+                    style: TextStyle(
+                      color: goldColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize:
+                      16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Container(
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: LinearGradient(
+                colors: [
+                  goldColor,
+                  Color(0xFFD4B995),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: goldColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -126,11 +335,26 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                   ),
                 ),
               ).then((_) => _loadDayProgress()),
-              child: const Text('START WORKOUT'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+              child: Text(
+                'START WORKOUT',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                minimumSize: Size.fromHeight(56),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
