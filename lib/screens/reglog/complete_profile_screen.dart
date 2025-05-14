@@ -1,171 +1,122 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/models/registration_data.dart';
 import 'training_program_screen.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
+  final RegistrationData registrationData;
+
+  const CompleteProfileScreen({Key? key, required this.registrationData}) : super(key: key);
+
   @override
   _CompleteProfileScreenState createState() => _CompleteProfileScreenState();
 }
 
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-
-  final TextEditingController weightController = TextEditingController();
-  final TextEditingController heightController = TextEditingController();
-  final TextEditingController ageController = TextEditingController();
+  int selectedWeight = 70;
+  int selectedHeight = 170;
+  int selectedAge = 25;
 
   bool isLoading = false;
 
-  void saveProfile() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
+  void saveProfile() {
     setState(() => isLoading = true);
 
-    bool success = await ApiService.updateProfile(
-      double.parse(weightController.text),
-      double.parse(heightController.text),
-      int.parse(ageController.text),
-    );
+    widget.registrationData.weight = selectedWeight;
+    widget.registrationData.height = selectedHeight;
+    widget.registrationData.age = selectedAge;
 
     setState(() => isLoading = false);
 
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => TrainingProgramScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error when saving the profile"), backgroundColor: Colors.red),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrainingProgramScreen(registrationData: widget.registrationData),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.from(alpha: 255, red: 255, green: 255, blue: 255),
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text(
+              "About Your Body",
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
+            ),
+            SizedBox(height: 40),
+            Row(
               children: [
-                SizedBox(height: 0),
-                Text(
-                  "About Your Body",
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
-                  ),
-                SizedBox(height: 100),
-                _buildWeightField(),
-                SizedBox(height: 30),
-                _buildHeightField(),
-                SizedBox(height: 30),
-                _buildAgeField(),
-                SizedBox(height: 40),
-                _buildSaveButton(),
+                Expanded(
+                  child: _buildPicker("Weight (kg)", 30, 300, selectedWeight, (val) {
+                    setState(() => selectedWeight = val);
+                  }),
+                ),
+                Expanded(
+                  child: _buildPicker("Height (cm)", 100, 250, selectedHeight, (val) {
+                    setState(() => selectedHeight = val);
+                  }),
+                ),
+                Expanded(
+                  child: _buildPicker("Age", 12, 100, selectedAge, (val) {
+                    setState(() => selectedAge = val);
+                  }),
+                ),
               ],
             ),
+            Spacer(),
+            ElevatedButton(
+              onPressed: isLoading ? null : saveProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                minimumSize: Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: isLoading
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text("Save"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+    Widget _buildPicker(String label, int min, int max, int selected, ValueChanged<int> onChanged) {
+    final items = List<Widget>.generate(max - min + 1, (index) {
+      final value = min + index;
+      return Center(
+        child: Text(
+          value.toString(),
+          style: TextStyle(fontSize: 20),
+        ),
+      );
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        SizedBox(
+          height: 120,
+          child: CupertinoPicker(
+            scrollController: FixedExtentScrollController(initialItem: selected - min),
+            itemExtent: 32,
+            diameterRatio: 1.1,
+            onSelectedItemChanged: (index) => onChanged(min + index),
+            children: items,
           ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildWeightField() {
-    return TextFormField(
-      controller: weightController,
-      keyboardType: TextInputType.number,
-      decoration: _inputDecoration("Weight (kg)"),
-      validator: _validateWeight,
-    );
-  }
-
-  Widget _buildHeightField() {
-    return TextFormField(
-      controller: heightController,
-      keyboardType: TextInputType.number,
-      decoration: _inputDecoration("Height (cm)"),
-      validator: _validateHeight,
-    );
-  }
-
-  Widget _buildAgeField() {
-    return TextFormField(
-      controller: ageController,
-      keyboardType: TextInputType.number,
-      decoration: _inputDecoration("Age"),
-      validator: _validateAge,
-    );
-  }
-
-  Widget _buildSaveButton() {
-    return ElevatedButton(
-      onPressed: isLoading ? null : saveProfile,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
-        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
-        minimumSize: Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: isLoading ? CircularProgressIndicator(color: Colors.white) : Text("Save"),
-    );
-  }
-
-  String? _validateWeight(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Enter your weight";
-    }
-    final double? weight = double.tryParse(value);
-    if (weight == null || weight < 30 || weight > 300) {
-      return "Weight must be between 30 and 300 kg";
-    }
-    return null;
-  }
-
-  String? _validateHeight(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Enter your height";
-    }
-    final double? height = double.tryParse(value);
-    if (height == null || height < 100 || height > 250) {
-      return "Height must be between 100 and 250 cm";
-    }
-    return null;
-  }
-
-  String? _validateAge(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Enter your age";
-    }
-    final int? age = int.tryParse(value);
-    if (age == null || age < 12 || age > 100) {
-      return "Age must be between 12 and 100 years";
-    }
-    return null;
-  }
-
-  InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
-        ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
-    );
-  }
 }

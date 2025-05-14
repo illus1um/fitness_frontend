@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = "https://fitness-deploy.onrender.com"; // Backend server
+  static const String baseUrl = "http://127.0.0.1:8000"; // FastAPI сервер
 
   static Future<bool> login(String username, String password) async {
     try {
@@ -99,6 +99,7 @@ class ApiService {
   static Future<bool> updateProfile(double weight, double height, int age) async {
     try {
       String? token = await AuthService.getAccessToken();
+      print("Token: $token");
       if (token == null) return false;
 
       final response = await http.post(
@@ -113,7 +114,6 @@ class ApiService {
           "age": age,
         }),
       );
-
       return response.statusCode == 200;
     } catch (e) {
       print("Ошибка при обновлении профиля: $e");
@@ -321,6 +321,28 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       print("Ошибка при сбросе пароля: $e");
+      return false;
+    }
+  }
+
+    /// Проверка доступности username
+  static Future<bool> isUsernameAvailable(String username) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/auth/check-username?username=$username'));
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Ошибка при проверке username: $e");
+      return false;
+    }
+  }
+
+  /// Проверка доступности email
+  static Future<bool> isEmailAvailable(String email) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/auth/check-email?email=$email'));
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Ошибка при проверке email: $e");
       return false;
     }
   }

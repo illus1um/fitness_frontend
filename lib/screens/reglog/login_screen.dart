@@ -4,6 +4,8 @@ import 'forgot_password_screen.dart';
 import 'complete_profile_screen.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
+import 'package:fitness_app/models/registration_data.dart';
+
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -22,36 +24,52 @@ class _LoginScreenState extends State<LoginScreen> {
   final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_.-]+$');
 
   void login() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
 
-    setState(() => isLoading = true);
+  setState(() => isLoading = true);
 
-    bool success = await ApiService.login(
-      usernameController.text,
-      passwordController.text,
-    );
+  bool success = await ApiService.login(
+    usernameController.text,
+    passwordController.text,
+  );
 
-    setState(() => isLoading = false);
+  setState(() => isLoading = false);
 
-    if (success) {
-      bool profileCompleted = await ApiService.checkProfileStatus();
+  if (success) {
+    bool profileCompleted = await ApiService.checkProfileStatus();
+
+    if (profileCompleted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else {
+      // создаём пустой RegistrationData для передачи
+      RegistrationData regData = RegistrationData(
+        username: usernameController.text,
+        password: passwordController.text,
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => profileCompleted ? HomeScreen() : CompleteProfileScreen(),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Login error. Check your username and password."),
-          backgroundColor: Colors.red,
+          builder: (context) => CompleteProfileScreen(registrationData: regData),
         ),
       );
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Login error. Check your username and password."),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -63,28 +81,65 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildToggleButtons(context, true),
-                SizedBox(height: 100),
-                _buildInputField("Username", usernameController, validator: _validateUsername),
-                _buildPasswordField(),
-                SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-                    ),
-                    child: Text(
-                      "Forgot password?",
-                      style: TextStyle(color: const Color.fromARGB(255, 199, 169, 127), fontWeight: FontWeight.w900),
+                SizedBox(height: 40),
+                Center(
+                  child: Text(
+                    "STRENVY",
+                    style: TextStyle(
+                      fontSize: 35,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
                 SizedBox(height: 20),
-                _buildLoginButton(),
+                _buildToggleButtons(context, true),
+                SizedBox(height: 40),
+
+                /// Обёртка для полей и кнопки логина
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF4F4F4), // светло-серый
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 5,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInputField("Username", usernameController, validator: _validateUsername),
+                      _buildPasswordField(),
+                      SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+                          ),
+                          child: Text(
+                            "Forgot password?",
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 162, 162, 162),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      _buildLoginButton(),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -94,12 +149,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
+
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
-    return Align(
+  return Align(
     alignment: Alignment.topCenter,
     child: Container(
       width: double.infinity,
-      height: 40,
+      height: 50,
       margin: EdgeInsets.only(top: 40),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -124,12 +180,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  color: !isLogin ? Color.fromARGB(255, 199, 127, 127) : Color.fromARGB(255, 219, 200, 173),
+                  color: !isLogin
+                      ? Color.fromARGB(255, 199, 127, 127)
+                      : Color.fromARGB(255, 219, 200, 173),
+                  border: Border.all(
+                    color: !isLogin ? Colors.black : Colors.transparent,
+                    width: 2,
+                  ),
                 ),
                 child: Text(
                   "Registration",
                   style: TextStyle(
-                    color: !isLogin ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
+                    color: !isLogin
+                        ? Colors.white
+                        : const Color.fromARGB(255, 0, 0, 0),
                   ),
                 ),
               ),
@@ -152,13 +216,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  color: isLogin ? Color.fromARGB(255, 199, 169, 127) : const Color.fromARGB(0, 227, 212, 212),
+                  color: isLogin
+                      ? Color.fromARGB(255, 199, 169, 127)
+                      : const Color.fromARGB(0, 227, 212, 212),
+                  border: Border.all(
+                    color: isLogin ? Colors.black : Colors.transparent,
+                    width: 2,
+                  ),
                 ),
                 child: Text(
                   "Login",
                   style: TextStyle(
-                    color: isLogin ? const Color.fromARGB(255, 0, 0, 0) : Colors.brown[700],
-                    fontWeight: FontWeight.bold,
+                    color: isLogin
+                        ? const Color.fromARGB(255, 0, 0, 0)
+                        : Colors.brown[700],
                   ),
                 ),
               ),
@@ -171,9 +242,10 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 
+
   Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 15.0),
       child: TextFormField(
         controller: controller,
         cursorColor: Color.fromARGB(255, 199, 169, 127),
@@ -236,13 +308,13 @@ class _LoginScreenState extends State<LoginScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        minimumSize: Size(double.infinity, 40),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+        minimumSize: Size(double.infinity, 45),
+        shape: RoundedRectangleBorder( // Устанавливаем закругление углов
+          borderRadius: BorderRadius.circular(12), // Радиус закругления
         ),
       ),
       child: isLoading 
-        ? CircularProgressIndicator(color: Colors.white) 
+        ? CircularProgressIndicator(color: const Color.fromARGB(255, 255, 255, 255)) 
         : Text("Login"),
     );
   }

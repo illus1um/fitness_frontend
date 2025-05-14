@@ -131,10 +131,38 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
       ),
       validator: (value) {
-        if (value == null || value.isEmpty) return "This field is required";
-        if (isConfirm && value != _newPasswordController.text) return "Passwords do not match";
+        if (isConfirm) {
+          if (value != _newPasswordController.text) return "Passwords do not match";
+        } else if (label == "New Password") {
+          return _validatePassword(value);
+        }
         return null;
       },
     );
   }
+
+  String? _validatePassword(String? value) {
+  if (value == null || value.isEmpty) {
+    return "Password is required";
+  } else if (value.length < 8 || value.length > 32) {
+    return "Password must be between 8 and 32 characters";
+  }
+
+  final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(value);
+  final hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
+  final hasDigit = RegExp(r'\d').hasMatch(value);
+  final hasSpecialChar = RegExp(r'[_!@#\$%^&*(),.?":{}|<>]').hasMatch(value);
+
+  if (!hasLetter) {
+    return "Password must contain at least one letter";
+  } else if (!hasUppercase) {
+    return "Password must contain at least one uppercase letter";
+  } else if (!hasDigit) {
+    return "Password must contain at least one digit";
+  } else if (!hasSpecialChar) {
+    return "Password must contain at least one special character";
+  }
+
+  return null;
+}
 }

@@ -1,30 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:fitness_app/models/registration_data.dart';
 import 'package:fitness_app/services/api_service.dart';
 import '../home_screen.dart';
 
 class TrainingExperienceScreen extends StatefulWidget {
+  final RegistrationData registrationData;
+
+  const TrainingExperienceScreen({Key? key, required this.registrationData}) : super(key: key);
+
   @override
   _TrainingExperienceScreenState createState() => _TrainingExperienceScreenState();
 }
 
 class _TrainingExperienceScreenState extends State<TrainingExperienceScreen> {
-  void setTrainingExperience(String experience) async {
-    bool success = await ApiService.setTrainingExperience(experience);
-
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error while maintaining the training level"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  bool isLoading = false;
 
   final List<Map<String, String>> experiences = [
     {"level": "1", "name": "No experience", "description": "Didn't do any fitness"},
@@ -32,6 +21,96 @@ class _TrainingExperienceScreenState extends State<TrainingExperienceScreen> {
     {"level": "3", "name": "Experienced", "description": "Have almost 1 year of experience"},
     {"level": "4", "name": "Pro", "description": "Have a lot of experience"},
   ];
+
+  void completeRegistration(String experience) async {
+  setState(() => isLoading = true);
+
+  widget.registrationData.difficulty = experience;
+
+  // 1. Регистрируем пользователя
+  final registerSuccess = await ApiService.register(
+    widget.registrationData.username,
+    widget.registrationData.email!,
+    widget.registrationData.password,
+    widget.registrationData.firstName!,
+    widget.registrationData.lastName!,
+    widget.registrationData.gender!,
+  );
+
+  if (registerSuccess) {
+      bool loginSuccess = await ApiService.login(widget.registrationData.username, widget.registrationData.password);
+      if (loginSuccess) {
+        bool profileCompleted = await ApiService.checkProfileStatus();
+        if (profileCompleted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+        } else {
+          print("error");
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Registration error. Check the data."),
+        backgroundColor: Colors.red,
+      ));
+    }
+
+  if (!registerSuccess) {
+    showError("Registration failed");
+    return;
+  }
+
+  final profileSuccess = await ApiService.updateProfile(
+    widget.registrationData.weight!.toDouble(),
+    widget.registrationData.height!.toDouble(),
+    widget.registrationData.age!,
+  );
+
+  if (!profileSuccess) {
+    showError("Failed to update profile");
+    return;
+  }
+
+  // 3. Устанавливаем программу
+  final programSuccess = await ApiService.setTrainingProgram(widget.registrationData.trainingProgram!);
+  if (!programSuccess) {
+    showError("Failed to set training program");
+    return;
+  }
+
+  // 4. Устанавливаем локацию
+  final locationSuccess = await ApiService.setTrainingLocation(widget.registrationData.location!);
+  if (!locationSuccess) {
+    showError("Failed to set training location");
+    return;
+  }
+
+  // 5. Устанавливаем опыт
+  final experienceSuccess = await ApiService.setTrainingExperience(widget.registrationData.difficulty!);
+  if (!experienceSuccess) {
+    showError("Failed to set training experience");
+    return;
+  }
+
+  setState(() => isLoading = false);
+
+  // Всё успешно — переходим на домашний экран
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => HomeScreen()),
+    (route) => false,
+  );
+}
+
+void showError(String message) {
+  setState(() => isLoading = false);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message), backgroundColor: Colors.red),
+  );
+}
+
 
   @override
 Widget build(BuildContext context) {
@@ -73,7 +152,7 @@ Widget build(BuildContext context) {
 
   Widget _buildExperienceCard(String level, String name, String description) {
     return GestureDetector(
-      onTap: () => setTrainingExperience(name),
+      onTap: () => completeRegistration(name),
       child: Container(
         decoration: BoxDecoration(
           color: Color.fromARGB(255, 219, 200, 173),
