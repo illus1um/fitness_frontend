@@ -315,89 +315,326 @@ class _NotificationSettingsScreenState
   }
 
   void _pickInterval() {
-    final presets = <Map<String, Duration>>[
-      {'30 min': Duration(minutes: 30)},
-      {'1 h': Duration(hours: 1)},
-      {'1 h 30 min': Duration(hours: 1, minutes: 30)},
-      {'2 h': Duration(hours: 2)},
-      {'2 h 30 min': Duration(hours: 2, minutes: 30)},
-      {'3 h': Duration(hours: 3)},
-    ];
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final cardBgColor = isDarkMode ? Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    // Текущий выбранный интервал в минутах
+    int _currentMinutes = intervalHours * 60 + intervalMinutes;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: goldAccent,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Center(
-              child: Text(
-                "Select Interval",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            // Список предустановленных интервалов в минутах
+            final List<int> presetIntervals = [30, 60, 90, 120, 150, 180, 240];
+            
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-            ),
-          ),
-          SizedBox(
-            height: 300,
-            child: ListView(
-              children: presets.map((preset) {
-                final label = preset.keys.first;
-                final duration = preset.values.first;
-                final isSelected = intervalHours == duration.inHours && 
-                                  intervalMinutes == duration.inMinutes.remainder(60);
-                
-                return ListTile(
-                  leading: Container(
-                    width: 42,
-                    height: 42,
+              child: Column(
+                children: [
+                  // Заголовок
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: isSelected ? goldAccent.withOpacity(0.1) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(21),
-                      border: Border.all(
-                        color: isSelected ? goldAccent : Colors.grey.withOpacity(0.3),
-                        width: 1,
+                      color: goldAccent,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Select Interval",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    child: Icon(
-                      Icons.schedule,
-                      color: isSelected ? goldAccent : Colors.grey,
+                  ),
+                  
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Визуальный слайдер интервала
+                          Text(
+                            "Interval duration:",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          
+                          // Текущее значение с большим отображением
+                          Container(
+                            margin: EdgeInsets.only(bottom: 30),
+                            padding: EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: cardBgColor,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: goldAccent.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 0,
+                                )
+                              ],
+                              border: Border.all(
+                                color: goldAccent.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.timer_outlined,
+                                      size: 32,
+                                      color: goldAccent,
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      _formatIntervalDisplay(_currentMinutes),
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                        color: goldAccent,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "between reminders",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Простой слайдер
+                          Column(
+                            children: [
+                              Slider(
+                                min: 15,
+                                max: 240,
+                                divisions: 15, // 15 минутные интервалы
+                                value: _currentMinutes.toDouble(),
+                                activeColor: goldAccent,
+                                inactiveColor: goldAccent.withOpacity(0.2),
+                                onChanged: (double value) {
+                                  setModalState(() {
+                                    _currentMinutes = value.round();
+                                  });
+                                },
+                              ),
+                              // Метки интервалов под слайдером
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "15m", 
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      "1h", 
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      "2h", 
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      "4h", 
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 40),
+                          
+                          // Секция быстрого выбора
+                          Text(
+                            "Quick select:",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          
+                          // Бейджи быстрого выбора
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: presetIntervals.map((minutes) {
+                              final bool isSelected = _currentMinutes == minutes;
+                              return InkWell(
+                                onTap: () {
+                                  setModalState(() {
+                                    _currentMinutes = minutes;
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 14, 
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected 
+                                        ? goldAccent 
+                                        : isDarkMode 
+                                            ? Colors.grey[800] 
+                                            : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: isSelected ? [
+                                      BoxShadow(
+                                        color: goldAccent.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 2),
+                                      )
+                                    ] : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.access_time_filled_rounded,
+                                        size: 16,
+                                        color: isSelected 
+                                            ? Colors.white 
+                                            : goldAccent,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        _formatIntervalDisplay(minutes),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected 
+                                              ? Colors.white 
+                                              : isDarkMode 
+                                                  ? Colors.white 
+                                                  : Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  title: Text(
-                    label,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? goldAccent : null,
+                  
+                  // Кнопки действий
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: cardBgColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, -5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            "Cancel",
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            // Устанавливаем новый интервал
+                            setState(() {
+                              intervalHours = _currentMinutes ~/ 60;
+                              intervalMinutes = _currentMinutes % 60;
+                            });
+                            _saveSettings();
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: goldAccent,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: Text(
+                            "Apply",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  onTap: () {
-                    setState(() {
-                      intervalHours = duration.inHours;
-                      intervalMinutes = duration.inMinutes.remainder(60);
-                    });
-                    _saveSettings();
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
+  }
+  
+  // Форматирование отображения интервала
+  String _formatIntervalDisplay(int minutes) {
+    if (minutes < 60) {
+      return "$minutes min";
+    } else if (minutes % 60 == 0) {
+      return "${minutes ~/ 60} h";
+    } else {
+      return "${minutes ~/ 60} h ${minutes % 60} min";
+    }
   }
 
   String _formatTime(TimeOfDay t) {
