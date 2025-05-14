@@ -82,7 +82,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _startWorkout() async {
     if (userData == null) return;
     if (_plan != null) {
-      _goToPlan();
+      // Instead of navigating to another page, just scroll to the calendar section
+      setState(() {}); // Trigger a rebuild to ensure calendar is shown
       return;
     }
 
@@ -91,6 +92,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final startDate = DateTime.now();
     await PlanCache.saveStartDate(startDate);
 
+    // Add a small delay to show generation animation
+    await Future.delayed(Duration(milliseconds: 800));
+
     final plan = await PlanGenerator.generatePlan(
       program:    userData!['training_program'],
       location:   userData!['training_location'],
@@ -98,7 +102,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       dayCount:   15,
     );
 
-    setState(() => _isGenerating = false);
+    // Add another small delay for animation
+    await Future.delayed(Duration(milliseconds: 500));
 
     await PlanCache.savePlan(plan);
     _prepareWorkoutDays(plan, startDate);
@@ -108,17 +113,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     if (plan.isNotEmpty) {
       int firstDayIndex = plan[0].dayIndex;
       _availableDays.add(firstDayIndex);
-      print('DEBUG: Added first day (index=$firstDayIndex) to available days');
     }
 
     setState(() {
       _plan = plan;
       _startDate = startDate;
       _progress = [];
+      _isGenerating = false; // Turn off generating state
     });
 
-    // Сразу открываем план тренировок
-    _goToPlan();
+    // Scrolling animation to see the calendar (optional)
+    if (context.mounted) {
+      // To be implemented if needed - scroll to calendar
+    }
   }
 
   void _prepareWorkoutDays(List<DayInfo> plan, DateTime sd) {
@@ -320,43 +327,48 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     const SizedBox(height: 16),
 
                     // Calendar container with gradient background
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFFC7A97F).withOpacity(0.05),
-                            Color(0xFFC7A97F).withOpacity(0.15),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                    AnimatedOpacity(
+                      opacity: _isGenerating ? 0.3 : 1.0,
+                      duration: Duration(milliseconds: 500),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFC7A97F).withOpacity(0.05),
+                              Color(0xFFC7A97F).withOpacity(0.15),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
                           ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      // Using LayoutBuilder instead of fixed height container for flexibility
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          // Calculate the available height
-                          return _buildTableCalendarWithSize();
-                        },
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        // Using LayoutBuilder instead of fixed height container for flexibility
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calculate the available height
+                            return _buildTableCalendarWithSize();
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
-                  ] else ...[
-                    const SizedBox(height: 32),
-                    _buildStartWorkoutButton(),
-                    const SizedBox(height: 32),
                   ],
 
-                  _buildContinueWorkoutButton(),
+                  // Always show either Start Workout or the button to view the plan
+                  _isGenerating
+                      ? _buildGeneratingPlanIndicator()
+                      : (_plan == null 
+                          ? _buildStartWorkoutButton()
+                          : _buildViewPlanButton()),
                 ],
               ),
             ),
@@ -364,6 +376,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   Widget _buildStartWorkoutButton() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       height: 60,
       decoration: BoxDecoration(
@@ -378,9 +392,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFFC7A97F).withOpacity(0.4),
+            color: Color.fromARGB(255, 199, 160, 106).withOpacity(isDarkMode ? 0.3 : 0.1),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 1),
             spreadRadius: 0,
           ),
         ],
@@ -419,8 +433,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  Widget _buildContinueWorkoutButton() {
+  Widget _buildViewPlanButton() {
     final isEnabled = _plan != null;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
       height: 60,
@@ -436,16 +451,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 end: Alignment.centerRight,
               )
             : LinearGradient(
-                colors: [Colors.grey.shade300, Colors.grey.shade400],
+                colors: isDarkMode
+                    ? [Colors.grey.shade800, Colors.grey.shade700]
+                    : [Colors.grey.shade300, Colors.grey.shade400],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
         boxShadow: isEnabled
             ? [
                 BoxShadow(
-                  color: Color(0xFFC7A97F).withOpacity(0.4),
+                  color: Color.fromARGB(255, 199, 160, 106).withOpacity(isDarkMode ? 0.3 : 0.1),
                   blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 1),
                   spreadRadius: 0,
                 ),
               ]
@@ -453,6 +470,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       ),
       child: ElevatedButton.icon(
         onPressed: isEnabled ? _goToPlan : null,
+        icon: Icon(
+          Icons.fitness_center, 
+          color: isEnabled ? Colors.white : Colors.grey.shade700,
+          size: 24,
+        ),
         label: Text(
           "Workout Plan",
           style: TextStyle(
@@ -477,29 +499,46 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  // Build calendar with adjustable size based on number of rows
+  Widget _buildGeneratingPlanIndicator() {
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7A97F)),
+        ),
+        SizedBox(height: 16),
+        Text(
+          "Generating your personalized plan...",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFFC7A97F),
+          ),
+        ),
+        SizedBox(height: 20),
+      ],
+    );
+  }
+
   Widget _buildTableCalendarWithSize() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
     final DateTime firstDay = _startDate!;
     final DateTime lastDay = _startDate!.add(Duration(days: (_plan!.length - 1) * 2));
     
-    // Calculate number of rows that will be displayed
-    // Get the first day of the month we're viewing
     final DateTime firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
     
-    // Find what day of the week the 1st falls on (0 = Monday with StartingDayOfWeek.monday)
     int firstWeekdayOfMonth = firstDayOfMonth.weekday;
-    if (firstWeekdayOfMonth == 7) firstWeekdayOfMonth = 0; // Convert Sunday from 7 to 0
-    
-    // Calculate days in month
+    if (firstWeekdayOfMonth == 7) firstWeekdayOfMonth = 0;
+
     final int daysInMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0).day;
     
-    // Calculate total cells needed (previous month days showing + days in month)
     final int totalCells = firstWeekdayOfMonth + daysInMonth;
-    
-    // Calculate number of rows (divide by 7 days per week and round up)
+
     final int numberOfRows = (totalCells / 7).ceil();
-    
-    // Adjust row height based on number of rows
+
     final rowHeight = numberOfRows > 5 ? 42.0 : 46.0;
     
     return TableCalendar(
@@ -511,7 +550,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         CalendarFormat.month: 'Month',
       },
       calendarFormat: CalendarFormat.month,
-      sixWeekMonthsEnforced: false, // Allow flexible height for months with fewer weeks
+      sixWeekMonthsEnforced: false,
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
@@ -521,19 +560,23 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ) ?? TextStyle(),
         leftChevronIcon: Container(
           decoration: BoxDecoration(
-            color: Color(0xFFC7A97F).withOpacity(0.1),
+            color: isDarkMode
+                ? Color(0xFF3A3225) // Darker gold for dark mode
+                : goldColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(8),
-          child: Icon(Icons.chevron_left, color: Color(0xFFC7A97F), size: 22),
+          child: Icon(Icons.chevron_left, color: goldColor, size: 22),
         ),
         rightChevronIcon: Container(
           decoration: BoxDecoration(
-            color: Color(0xFFC7A97F).withOpacity(0.1),
+            color: isDarkMode
+                ? Color(0xFF3A3225) // Darker gold for dark mode
+                : goldColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(8),
-          child: Icon(Icons.chevron_right, color: Color(0xFFC7A97F), size: 22),
+          child: Icon(Icons.chevron_right, color: goldColor, size: 22),
         ),
         headerPadding: const EdgeInsets.symmetric(vertical: 10),
         headerMargin: const EdgeInsets.only(bottom: 6),
@@ -543,25 +586,25 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       calendarStyle: CalendarStyle(
         defaultTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
           fontSize: 16,
-          color: Colors.grey,
+          color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
         ) ?? TextStyle(),
         disabledTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
             .copyWith(
-              color: Colors.black,
+              color: isDarkMode ? Colors.white : Colors.black,
               fontSize: 16,
             ),
         todayTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
             .copyWith(
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: isDarkMode ? Colors.black : Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
         todayDecoration: BoxDecoration(
-          color: Color(0xFFC7A97F),
+          color: goldColor,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Color(0xFFC7A97F).withOpacity(0.4),
+              color: goldColor.withOpacity(0.4),
               blurRadius: 8,
               spreadRadius: 1,
             ),
@@ -569,16 +612,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ),
         selectedTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
             .copyWith(
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: isDarkMode ? Colors.black : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
         selectedDecoration: BoxDecoration(
-          color: Color(0xFFC7A97F),
+          color: goldColor,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Color(0xFFC7A97F).withOpacity(0.4),
+              color: goldColor.withOpacity(0.4),
               blurRadius: 8,
               spreadRadius: 1,
             ),
@@ -586,11 +629,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ),
         weekendTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
             .copyWith(
-              color: Colors.grey,
+              color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
               fontSize: 16,
             ),
         markerDecoration: BoxDecoration(
-          color: Color(0xFFC7A97F),
+          color: goldColor,
           shape: BoxShape.circle,
         ),
         outsideDaysVisible: false,
@@ -617,11 +660,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 width: 6, // Slightly smaller marker
                 height: 6,
                 decoration: BoxDecoration(
-                  color: Color(0xFFC7A97F),
+                  color: goldColor,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFFC7A97F).withOpacity(0.3),
+                      color: goldColor.withOpacity(0.3),
                       blurRadius: 3,
                       spreadRadius: 0.5,
                     ),
@@ -633,6 +676,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           return null;
         },
         defaultBuilder: (ctx, day, focused) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+          final goldColor = Color(0xFFC7A97F);
+          
           final simpleDay = DateTime(day.year, day.month, day.day);
           if (_startDate == null) return null;
           
@@ -657,16 +703,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               margin: EdgeInsets.all(2),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: enabled ? Color(0xFFC7A97F).withOpacity(0.15) : Colors.transparent,
+                color: enabled 
+                    ? (isDarkMode ? Color(0xFF3A3225) : goldColor.withOpacity(0.15))
+                    : Colors.transparent,
                 border: enabled
                     ? Border.all(
-                        color: Color(0xFFC7A97F),
+                        color: goldColor,
                         width: 2,
                       )
                     : null,
                 boxShadow: enabled ? [
                   BoxShadow(
-                    color: Color(0xFFC7A97F).withOpacity(0.2),
+                    color: goldColor.withOpacity(isDarkMode ? 0.3 : 0.2),
                     blurRadius: 5,
                     spreadRadius: 0.5,
                   )
@@ -677,8 +725,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   '${day.day}',
                   style: (Theme.of(context).textTheme.bodyMedium ?? TextStyle()).copyWith(
                     color: enabled
-                        ? Color(0xFFC7A97F)
-                        : Colors.black,
+                        ? goldColor
+                        : (isDarkMode ? Colors.white : Colors.black),
                     fontWeight: enabled ? FontWeight.bold : FontWeight.normal,
                     fontSize: numberOfRows > 5 ? 14 : 16,
                   ),
@@ -688,16 +736,21 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           );
         },
         dowBuilder: (context, day) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+          final goldColor = Color(0xFFC7A97F);
+          
           final text = DateFormat.E().format(day);
           final isWeekend = day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
           
           return Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6), // Reduced padding
+              padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: isDarkMode 
+                        ? Colors.grey.shade800 
+                        : Colors.grey.withOpacity(0.2),
                     width: 1,
                   ),
                 ),
@@ -707,7 +760,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
-                  color: isWeekend ? Color(0xFFC7A97F) : Color(0xFFC7A97F),
+                  color: goldColor,
                 ),
               ),
             ),
@@ -767,17 +820,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   Widget _buildInfoCard() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
+            color: isDarkMode 
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            spreadRadius: isDarkMode ? 0 : 1,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -786,20 +842,39 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           _buildInfoTile(
             icon: Icons.flag,
             title: "Goal",
-            value:
-                userData!["training_program"] ?? "Not set",
+            value: userData!["training_program"] ?? "Not set",
+            isFirst: true,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: isDarkMode 
+                  ? Colors.grey.shade800
+                  : Colors.grey.withOpacity(0.1),
+            ),
           ),
           _buildInfoTile(
             icon: Icons.location_on,
             title: "Location",
-            value:
-                userData!["training_location"] ?? "Not set",
+            value: userData!["training_location"] ?? "Not set",
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: isDarkMode 
+                  ? Colors.grey.shade800
+                  : Colors.grey.withOpacity(0.1),
+            ),
           ),
           _buildInfoTile(
             icon: Icons.emoji_events,
             title: "Experience",
-            value:
-                userData!["training_experience"] ?? "Not set",
+            value: userData!["training_experience"] ?? "Not set",
+            isLast: true,
           ),
         ],
       ),
@@ -810,17 +885,69 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     required IconData icon,
     required String title,
     required String value,
+    bool isFirst = false,
+    bool isLast = false,
   }) {
-    return ListTile(
-      leading:
-          Icon(icon, color: Theme.of(context).iconTheme.color),
-      title: Text(title,
-          style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(value,
-          style:
-              const TextStyle(fontWeight: FontWeight.w600)),
-      contentPadding:
-          const EdgeInsets.symmetric(vertical: 4),
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
+    return Container(
+      padding: EdgeInsets.only(
+        top: isFirst ? 16 : 12,
+        bottom: isLast ? 16 : 12,
+        left: 16,
+        right: 16,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isDarkMode 
+                  ? Color(0xFF3A3225)  // Darker gold for dark mode
+                  : goldColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                color: goldColor,
+                size: 22,
+              ),
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode
+                        ? Colors.grey.shade400
+                        : Colors.grey.shade600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

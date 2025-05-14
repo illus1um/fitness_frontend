@@ -64,7 +64,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     final bool isDayCompleted = _isDayCompleted();
     
     return Scaffold(
-      appBar: AppBar(title: Text('Day ${widget.day.dayIndex + 0} Exercises')),
+      appBar: AppBar(title: Text('Day ${widget.day.dayIndex} Exercises')),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(
