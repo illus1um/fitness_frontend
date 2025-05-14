@@ -1,9 +1,8 @@
-// lib/screens/workout/workout_screen.dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/services/plan_generator.dart';
 import 'package:fitness_app/services/plan_cache.dart';
@@ -194,33 +193,50 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
-        titleTextStyle: theme.textTheme.titleLarge ?? TextStyle(),
+        titleTextStyle: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+        ) ?? TextStyle(),
         leftChevronIcon: Icon(Icons.chevron_left, color: theme.iconTheme.color),
         rightChevronIcon: Icon(Icons.chevron_right, color: theme.iconTheme.color),
       ),
-      rowHeight: 40,
+      rowHeight: 45,
       calendarStyle: CalendarStyle(
-        defaultTextStyle: theme.textTheme.bodyMedium ?? TextStyle(),
+        defaultTextStyle: theme.textTheme.bodyMedium?.copyWith(
+          fontSize: 16,
+        ) ?? TextStyle(),
         disabledTextStyle: (theme.textTheme.bodyMedium ?? TextStyle())
             .copyWith(color: theme.disabledColor),
         todayTextStyle: (theme.textTheme.bodyMedium ?? TextStyle())
-            .copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
+            .copyWith(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
         todayDecoration: BoxDecoration(
           color: colorScheme.primary,
           shape: BoxShape.circle,
         ),
         selectedTextStyle: (theme.textTheme.bodyMedium ?? TextStyle())
-            .copyWith(color: colorScheme.onPrimary),
+            .copyWith(
+              color: colorScheme.onPrimary,
+              fontSize: 16,
+            ),
         selectedDecoration: BoxDecoration(
           color: colorScheme.secondary,
           shape: BoxShape.circle,
         ),
         weekendTextStyle: (theme.textTheme.bodyMedium ?? TextStyle())
-            .copyWith(color: colorScheme.error),
+            .copyWith(
+              color: colorScheme.error,
+              fontSize: 16,
+            ),
         markerDecoration: BoxDecoration(
           color: colorScheme.secondary,
           shape: BoxShape.circle,
         ),
+        outsideDaysVisible: false,
+        cellMargin: EdgeInsets.all(4),
+        cellPadding: EdgeInsets.zero,
       ),
       enabledDayPredicate: (day) {
         final diff = day.difference(
@@ -238,48 +254,64 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
           ).inDays;
           final enabled = diff >= 0 && diff % 2 == 0 && _isDayOpen(diff ~/ 2);
-          final txtColor = enabled
-              ? (isWorkout
-                  ? colorScheme.onPrimary
-                  : theme.textTheme.bodyMedium?.color ?? Colors.black)
-              : theme.disabledColor;
-          return Center(
+          final idx = diff ~/ 2;
+          
+          return Tooltip(
+            message: isWorkout ? 'Training Day ${idx + 1}' : 'Rest Day',
             child: Container(
-              width: 36,
-              height: 36,
-              decoration: isWorkout
-                  ? BoxDecoration(
-                      color: enabled
-                          ? colorScheme.primary
-                          : theme.disabledColor,
-                      shape: BoxShape.circle,
-                    )
-                  : null,
-              alignment: Alignment.center,
-              child: Text(
-                '${day.day}',
-                style: (theme.textTheme.bodyMedium ?? TextStyle()).copyWith(
-                  color: txtColor,
-                  fontWeight:
-                      isWorkout ? FontWeight.bold : FontWeight.normal,
+              margin: EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isWorkout 
+                    ? (enabled ? colorScheme.primary.withOpacity(0.2) : theme.disabledColor.withOpacity(0.2))
+                    : null,
+                border: isWorkout 
+                    ? Border.all(
+                        color: enabled ? colorScheme.primary : theme.disabledColor,
+                        width: 2,
+                      )
+                    : null,
+              ),
+              child: Center(
+                child: Text(
+                  '${day.day}',
+                  style: (theme.textTheme.bodyMedium ?? TextStyle()).copyWith(
+                    color: enabled
+                        ? (isWorkout
+                            ? colorScheme.primary
+                            : theme.textTheme.bodyMedium?.color ?? Colors.black)
+                        : theme.disabledColor,
+                    fontWeight: isWorkout ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
           );
         },
+        dowBuilder: (context, day) {
+          final text = DateFormat.E().format(day);
+          return Center(
+            child: Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          );
+        },
       ),
-      onDaySelected: (sel, foc) {
-        final diff = sel.difference(
-          DateTime(
-            _startDate!.year,
-            _startDate!.month,
-            _startDate!.day,
-          ),
+      onDaySelected: (selectedDay, focusedDay) {
+        setState(() {
+          _focusedDay = focusedDay;
+        });
+        
+        final diff = selectedDay.difference(
+          DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
         ).inDays;
         final idx = diff ~/ 2;
-        if (idx >= 0 &&
-            idx < _plan!.length &&
-            _isDayOpen(idx)) {
+        if (idx >= 0 && idx < _plan!.length && _isDayOpen(idx)) {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -290,7 +322,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           );
         }
       },
-      onPageChanged: (f) => setState(() => _focusedDay = f),
+      onPageChanged: (focusedDay) {
+        setState(() {
+          _focusedDay = focusedDay;
+        });
+      },
     );
   }
 
