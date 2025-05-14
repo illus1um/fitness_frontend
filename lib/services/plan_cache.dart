@@ -12,8 +12,11 @@ class PlanCache {
     final prefs = await SharedPreferences.getInstance();
     // 1. сохраняем сам план
     await prefs.setString(_planKey, json.encode(plan.map((d) => d.toJson()).toList()));
-    // 2. сохраняем дату старта (сейчас)
-    await prefs.setString(_startKey, DateTime.now().toIso8601String());
+  }
+
+  static Future<void> saveStartDate(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_startKey, date.toIso8601String());
   }
 
   static Future<List<DayInfo>?> loadPlan() async {

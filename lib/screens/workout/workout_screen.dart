@@ -50,15 +50,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
   }
 
-  void _prepareWorkoutDays(List<DayInfo> plan, DateTime sd) {
-    _workoutDays.clear();
-    for (int i = 0; i < plan.length; i++) {
-      final day = DateTime(sd.year, sd.month, sd.day)
-          .add(Duration(days: i * 2));
-      _workoutDays.add(day);
-    }
-  }
-
   Future<void> _startWorkout() async {
     if (userData == null) return;
     if (_plan != null) {
@@ -67,6 +58,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
 
     setState(() => _isGenerating = true);
+
+    final startDate = DateTime.now();
+    await PlanCache.saveStartDate(startDate);
 
     final plan = await PlanGenerator.generatePlan(
       program:    userData!['training_program'],
@@ -78,15 +72,25 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     setState(() => _isGenerating = false);
 
     await PlanCache.savePlan(plan);
-    final sd = await PlanCache.loadStartDate();
-    if (sd != null) _prepareWorkoutDays(plan, sd);
+    _prepareWorkoutDays(plan, startDate);
 
     setState(() {
       _plan = plan;
-      _startDate = sd;
+      _startDate = startDate;
     });
 
     _goToPlan();
+  }
+
+  void _prepareWorkoutDays(List<DayInfo> plan, DateTime sd) {
+    _workoutDays.clear();
+    final startDate = DateTime(sd.year, sd.month, sd.day);
+    for (int i = 0; i < plan.length; i++) {
+      final workoutDay = startDate.add(Duration(days: i * 2));
+      // Сохраняем только дату без времени
+      _workoutDays.add(DateTime(workoutDay.year, workoutDay.month, workoutDay.day));
+      print('Added workout day: ${workoutDay.toString()}');
+    }
   }
 
   void _goToPlan() {
@@ -133,7 +137,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
                   if (_plan != null && _startDate != null) ...[
                     Text(
-                      'Your Training Schedule',
+                      'Training Schedule',
                       style: Theme.of(context).textTheme.titleLarge,
                       textAlign: TextAlign.center,
                     ),
@@ -238,36 +242,52 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         cellMargin: EdgeInsets.all(4),
         cellPadding: EdgeInsets.zero,
       ),
-      enabledDayPredicate: (day) {
-        final diff = day.difference(
-          DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
-        ).inDays;
-        if (diff < 0 || diff % 2 != 0) return false;
-        final idx = diff ~/ 2;
-        return idx < _plan!.length && _isDayOpen(idx);
+      eventLoader: (day) {
+        final simpleDay = DateTime(day.year, day.month, day.day);
+        final isWorkout = _workoutDays.any((d) =>
+          d.year == simpleDay.year && d.month == simpleDay.month && d.day == simpleDay.day
+        );
+        print('eventLoader: $simpleDay isWorkout=$isWorkout');
+        if (isWorkout) {
+          return ['workout'];
+        }
+        return [];
       },
+      enabledDayPredicate: (day) => true,
       calendarBuilders: CalendarBuilders(
+        markerBuilder: (context, day, events) {
+          if (events.isNotEmpty) {
+            return Positioned(
+              bottom: 4,
+              child: Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: Color(0xFFC7A97F),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }
+          return null;
+        },
         defaultBuilder: (ctx, day, focused) {
           final simpleDay = DateTime(day.year, day.month, day.day);
-          final isWorkout = _workoutDays.contains(simpleDay);
           final diff = day.difference(
             DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
           ).inDays;
           final enabled = diff >= 0 && diff % 2 == 0 && _isDayOpen(diff ~/ 2);
           final idx = diff ~/ 2;
-          
           return Tooltip(
-            message: isWorkout ? 'Training Day ${idx + 1}' : 'Rest Day',
+            message: enabled ? 'Training Day ${idx + 1}' : 'Rest Day',
             child: Container(
               margin: EdgeInsets.all(2),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isWorkout 
-                    ? (enabled ? colorScheme.primary.withOpacity(0.2) : theme.disabledColor.withOpacity(0.2))
-                    : null,
-                border: isWorkout 
+                color: enabled ? colorScheme.primary.withOpacity(0.08) : null,
+                border: enabled
                     ? Border.all(
-                        color: enabled ? colorScheme.primary : theme.disabledColor,
+                        color: colorScheme.primary,
                         width: 2,
                       )
                     : null,
@@ -277,11 +297,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   '${day.day}',
                   style: (theme.textTheme.bodyMedium ?? TextStyle()).copyWith(
                     color: enabled
-                        ? (isWorkout
-                            ? colorScheme.primary
-                            : theme.textTheme.bodyMedium?.color ?? Colors.black)
+                        ? colorScheme.primary
                         : theme.disabledColor,
-                    fontWeight: isWorkout ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: enabled ? FontWeight.bold : FontWeight.normal,
                     fontSize: 16,
                   ),
                 ),
