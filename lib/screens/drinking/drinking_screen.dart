@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/screens/drinking/history_screen.dart';
@@ -9,7 +8,6 @@ import 'notification_settings_screen.dart';
 
 class DrinkingScreen extends StatefulWidget {
   final String username;
-
   DrinkingScreen({required this.username});
 
   @override
@@ -17,10 +15,12 @@ class DrinkingScreen extends StatefulWidget {
 }
 
 class _DrinkingScreenState extends State<DrinkingScreen> {
-  double dailyWaterTarget = 2.0;
-  double currentWaterIntake = 0.0;
+  double dailyWaterTarget = 2.0; // in liters
+  double currentWaterIntake = 0.0; // in liters
   List<double> _intakeHistory = [];
   List<double> _undoHistory = [];
+  String _waterUnit = 'L'; // added
+  static const double _litersToFlOz = 33.814;
 
   @override
   void initState() {
@@ -28,10 +28,12 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
     _loadUserData();
   }
 
-  /// 📌 Загрузка данных профиля пользователя
   Future<void> _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final profile = await ApiService.getUserProfile();
+
+    // load unit
+    _waterUnit = prefs.getString('water_unit') ?? 'L';
 
     if (profile != null) {
       double weight = profile["weight"] ?? 70.0;
@@ -47,10 +49,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
       String? savedDate = prefs.getString(dateKey);
 
       if (savedDate != today) {
-        // Новый день — сохраняем вчерашние данные
         double yesterdayIntake = prefs.getDouble(userKey) ?? 0.0;
         await _saveToHistory(savedDate ?? today, yesterdayIntake);
-
         await prefs.setDouble(userKey, 0.0);
         await prefs.setString(dateKey, today);
         currentWaterIntake = 0.0;
@@ -64,7 +64,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
     }
   }
 
-  /// 📌 Расчёт дневной нормы воды
   double _calculateDailyWaterTarget(double weight, int age, bool isMale) {
     double baseWater = isMale ? weight * 0.035 : weight * 0.031;
     if (age > 30 && age <= 55) baseWater *= 0.95;
@@ -72,21 +71,19 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
     return double.parse(baseWater.toStringAsFixed(2));
   }
 
-  /// 📌 Обновление воды
-  Future<void> _updateWaterIntake(double amount) async {
+  Future<void> _updateWaterIntake(double amountLiters) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String userKey = "water_${widget.username}";
 
     setState(() {
-      _intakeHistory.add(amount);
-      currentWaterIntake = min(currentWaterIntake + amount, dailyWaterTarget);
+      _intakeHistory.add(amountLiters);
+      currentWaterIntake = min(currentWaterIntake + amountLiters, dailyWaterTarget);
       _undoHistory.clear();
     });
 
     await prefs.setDouble(userKey, currentWaterIntake);
   }
 
-  /// 📌 Undo
   Future<void> _undoLastIntake() async {
     if (_intakeHistory.isNotEmpty) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -102,7 +99,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
     }
   }
 
-  /// 📌 Redo
   Future<void> _redoLastIntake() async {
     if (_undoHistory.isNotEmpty) {
       double redoAmount = _undoHistory.removeLast();
@@ -110,7 +106,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
     }
   }
 
-  /// 📌 Сохраняем прогресс в историю
   Future<void> _saveToHistory(String date, double intake) async {
     if (intake == 0.0) return;
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -127,113 +122,149 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
     await prefs.setString(historyKey, json.encode(history));
   }
 
-  /// 📌 Кастомное красивое окно для ввода воды
   void _showCustomWaterDialog() {
-  TextEditingController customController = TextEditingController();
+    TextEditingController customController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (context) => Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Enter amount (${_waterUnit})",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: customController,
+                cursorColor: Color.fromARGB(255, 199, 169, 127),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  hintText: _waterUnit == 'L' ? "e.g. 0.3" : "e.g. 10.1",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color.fromARGB(255, 199, 169, 127), width: 2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Color.fromARGB(255, 199, 169, 127),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text("CANCEL", style: TextStyle(fontSize: 16, letterSpacing: 1)),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    ),
+                    onPressed: () {
+                      double value = double.tryParse(customController.text) ?? 0;
+                      double amountLiters = _waterUnit == 'fl oz'
+                          ? value / _litersToFlOz
+                          : value;
+                      if (amountLiters > 0) {
+                        _updateWaterIntake(amountLiters);
+                      }
+                      Navigator.pop(context);
+                    },
+                    child: Text("ADD", style: TextStyle(color: Colors.white, letterSpacing: 1)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-      backgroundColor: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+    );
+  }
+
+  double _convertToDisplay(double liters) {
+    return _waterUnit == 'fl oz' ? liters * _litersToFlOz : liters;
+  }
+
+  String get _unitLabel => _waterUnit;
+
+  Widget _buildWaterButton(String label, double amountLiters, IconData icon, {bool isCustom = false}) {
+    final displayValue = isCustom
+        ? 'Custom'
+        : _convertToDisplay(amountLiters).toStringAsFixed(1);
+    return GestureDetector(
+      onTap: () => isCustom ? _showCustomWaterDialog() : _updateWaterIntake(amountLiters),
+      child: Container(
+        width: 70,
+        height: 70,
+        decoration: BoxDecoration(
+          color: Color.fromARGB(255, 199, 169, 127),
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              "Enter amount (liters)",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 0, 0, 0),
-              ),
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: customController,
-              cursorColor: Color.fromARGB(255, 199, 169, 127), // 📌 Цвет каретки
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                hintText: "e.g. 0.3",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromARGB(255, 199, 169, 127), width: 2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Color.fromARGB(255, 199, 169, 127), // 📌 Бежевый текст
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    "CANCEL",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black, // 📌 Чёрная кнопка
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  ),
-                  onPressed: () {
-                    double amount = double.tryParse(customController.text) ?? 0;
-                    if (amount > 0) {
-                      _updateWaterIntake(amount);
-                    }
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    "ADD",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            Icon(icon, color: Colors.white, size: 24),
+            SizedBox(height: 5),
+            Text('$displayValue $_unitLabel', style: TextStyle(fontSize: 12, color: Colors.white)),
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
+  Widget _buildUndoRedoButton(String label, Function onTap, Color color, IconData icon) {
+    return GestureDetector(
+      onTap: () => onTap(),
+      child: Container(
+        width: 100,
+        height: 70,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            SizedBox(height: 5),
+            Text(label, style: TextStyle(fontSize: 16, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double circleSize = screenWidth * 0.6;
+    final displayIntake = _convertToDisplay(currentWaterIntake);
+    final displayTarget = _convertToDisplay(dailyWaterTarget);
 
     return Scaffold(
       appBar: AppBar(
         title: Text("Water Tracker"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.notifications, color: Colors.black),
+            icon: Icon(Icons.notifications, color: Color.fromARGB(255, 199, 169, 127)),
             tooltip: "Notification Settings",
             onPressed: () {
               Navigator.push(
@@ -245,7 +276,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.history, color: Colors.black),
+            icon: Icon(Icons.history, color: Color.fromARGB(255, 199, 169, 127)),
             tooltip: "History",
             onPressed: () {
               Navigator.push(
@@ -268,11 +299,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
                 children: [
                   Text(
                     "Daily Drink Target",
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 199, 169, 127),
-                    ),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127)),
                   ),
                   SizedBox(height: 30),
                   TweenAnimationBuilder(
@@ -292,22 +319,17 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
                               value: progress,
                               strokeWidth: 14,
                               backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color.fromARGB(255, 85, 150, 193),
-                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 85, 150, 193)),
                             ),
                           ),
                           Column(
                             children: [
                               Text(
                                 "${(progress * 100).toInt()}%",
-                                style: TextStyle(
-                                  fontSize: 42,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                "${currentWaterIntake.toStringAsFixed(2)} L / ${dailyWaterTarget.toStringAsFixed(2)} L",
+                                "${displayIntake.toStringAsFixed(1)} $_unitLabel / ${displayTarget.toStringAsFixed(1)} $_unitLabel",
                                 style: TextStyle(fontSize: 16),
                               ),
                             ],
@@ -335,52 +357,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  /// 📌 Кнопка добавления воды
-  Widget _buildWaterButton(String label, double amount, IconData icon, {bool isCustom = false}) {
-    return GestureDetector(
-      onTap: () => isCustom ? _showCustomWaterDialog() : _updateWaterIntake(amount),
-      child: Container(
-        width: 70,
-        height: 70,
-        decoration: BoxDecoration(
-          color: Color.fromARGB(255, 199, 169, 127),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 24),
-            SizedBox(height: 5),
-            Text(label, style: TextStyle(fontSize: 16, color: Colors.white)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 📌 Кнопки Undo/Redo
-  Widget _buildUndoRedoButton(String label, Function onTap, Color color, IconData icon) {
-    return GestureDetector(
-      onTap: () => onTap(),
-      child: Container(
-        width: 100,
-        height: 70,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 24),
-            SizedBox(height: 5),
-            Text(label, style: TextStyle(fontSize: 16, color: Colors.white)),
-          ],
         ),
       ),
     );

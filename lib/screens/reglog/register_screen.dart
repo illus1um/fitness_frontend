@@ -223,8 +223,7 @@ Widget build(BuildContext context) {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
-          fillColor: Colors.white,
-          filled: true,
+          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         validator: validator,
@@ -325,14 +324,14 @@ Widget _buildPasswordFields() {
             ),
             child: Row(
               children: [
-                // 🔹 Кнопка "Male"
+
                 Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => gender = true),
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: gender ? Color.fromARGB(255, 199, 169, 127) : Colors.white,
+                        color: gender ? Color.fromARGB(255, 199, 169, 127) : Theme.of(context).canvasColor,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           bottomLeft: Radius.circular(20),
@@ -342,14 +341,13 @@ Widget _buildPasswordFields() {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (gender) // 🔹 Галочка только если выбран "Male"
-                              Icon(Icons.check, size: 16, color: Colors.black),
-                            SizedBox(width: gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
+                            if (gender)
+                              Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
+                            SizedBox(width: gender ? 6 : 0),
                             Text(
                               "Male",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.black,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -360,14 +358,13 @@ Widget _buildPasswordFields() {
                   ),
                 ),
 
-                // 🔹 Кнопка "Female"
                 Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => gender = false),
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: !gender ? Color.fromARGB(255, 199, 169, 127) : Colors.white,
+                        color: !gender ? Color.fromARGB(255, 199, 169, 127) : Theme.of(context).canvasColor,
                         borderRadius: BorderRadius.only(
                           topRight: Radius.circular(20),
                           bottomRight: Radius.circular(20),
@@ -377,14 +374,13 @@ Widget _buildPasswordFields() {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (!gender) // 🔹 Галочка только если выбран "Female"
-                              Icon(Icons.check, size: 16, color: Colors.black),
-                            SizedBox(width: !gender ? 6 : 0), // 🔹 Отступ между галочкой и текстом
+                            if (!gender)
+                              Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
+                            SizedBox(width: !gender ? 6 : 0),
                             Text(
                               "Female",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.black,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),

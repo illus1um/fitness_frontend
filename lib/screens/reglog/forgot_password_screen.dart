@@ -8,13 +8,13 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _formKey = GlobalKey<FormState>(); // Ключ формы для валидации
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   bool isLoading = false;
 
   void sendResetCode() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Если email некорректный, не отправляем запрос
+      return;
     }
 
     setState(() => isLoading = true);
@@ -43,23 +43,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         title: Text("Forgot Password?"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Закрытие клавиатуры при скролле
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
-            key: _formKey, // Подключаем форму
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: 40),
                 Text(
                   "Enter your email to receive a password reset code.",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20),
@@ -74,7 +73,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  /// Поле для ввода email с валидацией
   Widget _buildEmailField() {
     return TextFormField(
       controller: emailController,
@@ -82,25 +80,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         labelText: "Email",
-        labelStyle: TextStyle(color: Colors.black),
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
         ),
-        fillColor: Colors.white,
-        filled: true,
+        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),  
-      validator: _validateEmail, // Функция валидации
+      validator: _validateEmail,
     );
   }
 
-  /// Кнопка отправки кода сброса пароля
   Widget _buildResetButton() {
     return ElevatedButton(
       onPressed: isLoading ? null : sendResetCode,
@@ -114,7 +109,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  /// Валидация email
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return "Email is required";

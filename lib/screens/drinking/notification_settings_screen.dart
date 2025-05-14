@@ -200,7 +200,7 @@ class _NotificationSettingsScreenState
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).primaryColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -237,8 +237,6 @@ class _NotificationSettingsScreenState
       appBar: AppBar(
         title: Text("Notification Settings"),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -314,7 +312,7 @@ class _NotificationSettingsScreenState
                         "Notifications will be sent from ${_formatTime(startTime)} "
                         "to ${_formatTime(endTime)} every ${intervalHours}h ${intervalMinutes}m.",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                        style: TextStyle(fontSize: 16, color: const Color.fromARGB(255, 121, 121, 121)),
                       ),
                     ),
                   ],
@@ -331,16 +329,7 @@ class _NotificationSettingsScreenState
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(25),
-            blurRadius: 6,
-            spreadRadius: 2,
-            offset: Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

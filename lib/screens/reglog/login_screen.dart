@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>(); // Ключ для формы
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -21,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   bool isPasswordVisible = false;
 
-  // Регулярное выражение для username (разрешены буквы, цифры, _, -, .)
   final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_.-]+$');
 
   void login() async {
@@ -249,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.symmetric(vertical: 15.0),
       child: TextFormField(
         controller: controller,
-        cursorColor: Color.fromARGB(255, 199, 169, 127), // <<< цвет каретки
+        cursorColor: Color.fromARGB(255, 199, 169, 127),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
@@ -262,8 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
-          fillColor: const Color.fromARGB(255, 255, 255, 255),
-          filled: true,
+          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         validator: validator,
@@ -291,8 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
           ),
-          fillColor: const Color.fromARGB(255, 255, 255, 255),
-          filled: true,
+          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           suffixIcon: IconButton(
             icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
@@ -321,8 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
         : Text("Login"),
     );
   }
-  
-    /// Валидация username
+
   String? _validateUsername(String? value) {
     if (value == null || value.isEmpty) {
       return "Username is required";
@@ -334,7 +330,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  /// Валидация пароля
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return "Password is required";
@@ -344,6 +339,3 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 }
-
-//Color.fromARGB(255, 219, 200, 173), light
-//Color.fromARGB(255, 199, 169, 127) dark

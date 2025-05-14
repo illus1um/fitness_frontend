@@ -116,21 +116,20 @@ void showError(String message) {
 Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
-      backgroundColor: Color(255),
       elevation: 0,
       centerTitle: true,
-      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
     ),
     body: Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center, // 🔹 Центрируем весь Column
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Center( // 🔹 Центрируем заголовок
+          Center(
             child: Text(
               "Difficulty level",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ),
           SizedBox(height: 40),
@@ -162,7 +161,6 @@ Widget build(BuildContext context) {
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Row(
           children: [
-            // 🔹 Круглая иконка с номером
             Container(
               width: 40,
               height: 40,
@@ -179,7 +177,6 @@ Widget build(BuildContext context) {
             ),
             SizedBox(width: 12),
 
-            // 🔹 Описание уровня
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,6 +199,3 @@ Widget build(BuildContext context) {
     );
   }
 }
-
-//Color.fromARGB(255, 219, 200, 173),
-//Color.fromARGB(255, 199, 169, 127)

@@ -3,129 +3,140 @@ import 'package:flutter/material.dart';
 class ExerciseDetailScreen extends StatelessWidget {
   final Map<String, dynamic> exercise;
 
-  ExerciseDetailScreen(this.exercise);
+  const ExerciseDetailScreen(this.exercise, {Key? key}) : super(key: key);
 
   String _capitalize(String text) {
-  if (text.isEmpty) return text;
-  return text[0].toUpperCase() + text.substring(1);
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Извлекаем инструкции
-    List<dynamic>? instructions = exercise["instructions"];
+    final theme = Theme.of(context);
+    final textStyle = theme.textTheme.bodyMedium!;
+    final headerStyle = theme.textTheme.titleMedium!
+        .copyWith(fontWeight: FontWeight.bold);
+    final numberStyle = textStyle.copyWith(
+      fontWeight: FontWeight.bold,
+      color: theme.colorScheme.onPrimary,
+    );
+    final circleColor =Color.fromARGB(255, 199, 169, 127);
+    final placeholderStyle = textStyle.copyWith(
+      fontStyle: FontStyle.italic,
+      color: theme.disabledColor,
+    );
+    final nameStyle = theme.textTheme.headlineSmall!
+        .copyWith(fontWeight: FontWeight.bold);
+    final targetLabelStyle = textStyle;
+    final targetValueStyle = textStyle.copyWith(fontWeight: FontWeight.w600);
+
+    final List<dynamic>? instructions = exercise["instructions"];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_capitalize(exercise["name"] ?? "Exercise")),
+        title: Text(
+          _capitalize(exercise["name"] ?? "Exercise"),
+          style: theme.textTheme.titleLarge,
+        ),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
-        scrolledUnderElevation: 0, 
+        scrolledUnderElevation: 0,
       ),
-      body: SingleChildScrollView( // ✅ Делаем весь экран прокручиваемым
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🔹 GIF изображения
-              Center(
-                child: Image.asset(
-                  exercise["gif"] ?? "assets/images/placeholder.png",
-                  height: 350,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    print("⚠ Ошибка загрузки гифки: ${exercise["gif"]}");
-                    return Icon(Icons.image_not_supported, size: 100, color: Colors.grey);
-                  },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // GIF или изображение
+            Center(
+              child: Image.asset(
+                exercise["gif"] ?? "assets/images/placeholder.png",
+                height: 350,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.image_not_supported,
+                    size: 100,
+                    color: theme.iconTheme.color,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Название упражнения
+            Text(
+              _capitalize(exercise["name"] ?? "Unknown Exercise"),
+              style: nameStyle,
+            ),
+            const SizedBox(height: 10),
+
+            // Основная мышца
+            Row(
+              children: [
+                Icon(Icons.fitness_center, color: theme.iconTheme.color),
+                const SizedBox(width: 8),
+                Text("Target: ", style: targetLabelStyle),
+                Text(
+                  exercise["target"] ?? "Unknown",
+                  style: targetValueStyle,
                 ),
-              ),
-              SizedBox(height: 20),
+              ],
+            ),
+            const SizedBox(height: 20),
 
-              // 🔹 Название упражнения
-              Text(
-                _capitalize(exercise["name"] ?? "Unknown Exercise"),
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
+            // Заголовок секции инструкций
+            Text("Instructions", style: headerStyle),
+            const SizedBox(height: 10),
 
-              SizedBox(height: 10),
-
-              // 🔹 Основная мышца
-              Row(
-                children: [
-                  Icon(Icons.fitness_center, color: Colors.black54),
-                  SizedBox(width: 8),
-                  Text("Target: "),
-                  Text(
-                    exercise["target"] ?? "Unknown",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-
-              // 🔹 Инструкция по выполнению
-              Text(
-                "Instructions",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-
-              // 🔹 Проверяем, есть ли инструкции
-              if (instructions != null && instructions.isNotEmpty)
-                ListView.builder(
-                  shrinkWrap: true, // ✅ Отключаем бесконечную прокрутку
-                  physics: NeverScrollableScrollPhysics(), // ✅ Используем общий скролл
-                  itemCount: instructions.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 🔹 Кружок с номером шага
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: Color.fromARGB(255, 199, 169, 127),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                "${index + 1}",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+            if (instructions != null && instructions.isNotEmpty)
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: instructions.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Номер шага
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: circleColor,
+                            shape: BoxShape.circle,
                           ),
-                          SizedBox(width: 12),
-
-                          // 🔹 Текст инструкции
-                          Expanded(
+                          child: Center(
                             child: Text(
-                              instructions[index],
-                              style: TextStyle(fontSize: 16, color: Colors.black87),
+                              '${index + 1}',
+                              style: numberStyle,
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                )
-              else
-                Center(
-                  child: Text(
-                    "Instructions not available.",
-                    style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey),
-                  ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Текст инструкции
+                        Expanded(
+                          child: Text(
+                            instructions[index],
+                            style: textStyle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              )
+            else
+              Center(
+                child: Text(
+                  "Instructions not available.",
+                  style: placeholderStyle,
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

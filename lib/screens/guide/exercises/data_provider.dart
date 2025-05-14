@@ -12,7 +12,7 @@ class DataProvider {
       String muscleGroup = exercise["bodyPart"];
       String name = exercise["name"];
       String target = exercise["target"] ?? "Unknown";
-      String equipment = (exercise["equipment"] ?? "Bodyweight").toLowerCase().replaceAll(" ", ""); // ✅ Приводим к единому формату
+      String equipment = (exercise["equipment"] ?? "Bodyweight").toLowerCase().replaceAll(" ", "");
       String gif = "assets/gifs/${exercise["gifUrl"].split('/').last}.gif";
       List<String> instructions = (exercise["instructions"] as List<dynamic>?)
               ?.map((e) => e.toString())

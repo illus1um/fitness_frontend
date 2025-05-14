@@ -12,17 +12,17 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _formKey = GlobalKey<FormState>(); // Ключ формы
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController codeController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
   
   bool isLoading = false;
-  bool isPasswordVisible = false; // Для скрытия пароля
+  bool isPasswordVisible = false;
 
   void verifyCodeAndResetPassword() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Если данные некорректны, не отправляем запрос
+      return;
     }
 
     setState(() => isLoading = true);
@@ -63,7 +63,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       appBar: AppBar(
         title: Text("Reset Password"),
         centerTitle: true,
-        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
@@ -79,7 +78,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 SizedBox(height: 40),
                 Text(
                   "Enter the reset code sent to your email and set a new password.",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20),
@@ -96,61 +95,57 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  /// Поле для ввода кода сброса пароля
   Widget _buildCodeField() {
     return TextFormField(
       controller: codeController,
+      cursorColor: Color.fromARGB(255, 199, 169, 127),
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
         labelText: "Enter the code",
-        labelStyle: TextStyle(color: Colors.black),
+        labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
         ),
-        fillColor: Colors.white,
-        filled: true,
+        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
       validator: _validateCode,
     );
   }
 
-  /// Поле для ввода нового пароля
   Widget _buildPasswordField() {
     return TextFormField(
       controller: newPasswordController,
       obscureText: !isPasswordVisible,
       decoration: InputDecoration(
         labelText: "New Password",
-        labelStyle: TextStyle(color: Colors.black),
+        labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
+          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
+          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
         ),
         suffixIcon: IconButton(
           icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
           onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
         ),
-        fillColor: Colors.white,
-        filled: true,
+        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
       validator: _validatePassword,
     );
   }
 
-  /// Кнопка сброса пароля
   Widget _buildResetButton() {
     return ElevatedButton(
       onPressed: isLoading ? null : verifyCodeAndResetPassword,
@@ -164,7 +159,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  /// Валидация кода
   String? _validateCode(String? value) {
     if (value == null || value.isEmpty) {
       return "Enter the reset code";
@@ -174,7 +168,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return null;
   }
 
-  /// Валидация пароля
   String? _validatePassword(String? value) {
   if (value == null || value.isEmpty) {
     return "Password is required";

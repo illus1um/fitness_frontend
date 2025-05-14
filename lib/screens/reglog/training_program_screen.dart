@@ -37,22 +37,21 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
-      backgroundColor: Colors.white,
       elevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
     ),
     body: Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center, // 🔹 Меняем с start на center
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Align( // 🔹 Центрируем текст вручную
+          Align(
             alignment: Alignment.center,
             child: Text(
               "Choose training program",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500, color: Colors.black),
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
             ),
           ),
           SizedBox(height: 26), 
@@ -129,7 +128,3 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
     );
   }
 }
-
-
-//Color.fromARGB(255, 219, 200, 173),
-//Color.fromARGB(255, 199, 169, 127)

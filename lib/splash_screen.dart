@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart'; // путь поправь на свой
+import 'services/auth_service.dart';
 import 'screens/home_screen.dart';
-import 'screens/reglog/login_screen.dart'; // ваш экран логина
+import 'screens/reglog/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -18,13 +18,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLogin() async {
     String? token = await AuthService.getAccessToken();
     if (token != null && token.isNotEmpty) {
-      // Токен есть => кидаем на HomeScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),
       );
     } else {
-      // Токена нет => кидаем на LoginScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -35,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: CircularProgressIndicator()), // Крутилка пока проверяем токен
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
