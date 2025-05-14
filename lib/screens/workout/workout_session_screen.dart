@@ -8,6 +8,7 @@ import '../../models/exercise_info.dart';
 import '../../models/progress_entry.dart';
 import '../../services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'workout_summary_screen.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
   final DayInfo day;
@@ -179,29 +180,63 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   }
 
   void _showFinishDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text('Congratulations!'),
-        content: Text('Day ${widget.day.dayIndex} workout completed.'),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              // Вызываем коллбэк завершения
-              if (widget.onComplete != null) {
-                await widget.onComplete!();
-              }
-              Navigator.pop(context); // Закрываем диалог
-              Navigator.pop(context); // Возвращаемся на экран дня
-            },
-            child: const Text('Done'),
-          ),
-        ],
+    // Получаем данные о завершенной тренировке
+    final completedWorkout = widget.day.exercises.map((ex) {
+      final progress = _getExerciseProgress(ex.id);
+      return {
+        'exercise': ex,
+        'sets_completed': progress,
+      };
+    }).toList();
+    
+    // Дата завершения
+    final completionDate = DateTime.now();
+    
+    // Переходим на экран итогов
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WorkoutSummaryScreen(
+          day: widget.day,
+          completedExercises: completedWorkout,
+          completionDate: completionDate,
+          onFinish: () async {
+            // Вызываем коллбэк завершения
+            if (widget.onComplete != null) {
+              await widget.onComplete!();
+            }
+            
+            // Закрываем все экраны и возвращаемся на главную страницу
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        ),
       ),
     );
   }
   
+  // Получаем прогресс по конкретному упражнению
+  int _getExerciseProgress(String exerciseId) {
+    // Находим упражнение по ID
+    final exercise = widget.day.exercises.firstWhere(
+      (e) => e.id == exerciseId, 
+      orElse: () => widget.day.exercises[0]
+    );
+    
+    // Если это текущее упражнение, возвращаем текущий прогресс
+    if (widget.day.exercises[exIndex].id == exerciseId) {
+      return currentSet;
+    }
+    
+    // Для завершенных упражнений возвращаем полное количество сетов
+    // Для еще не начатых - возвращаем 0
+    final index = widget.day.exercises.indexOf(exercise);
+    if (index < exIndex) {
+      return exercise.sets; // Предыдущие упражнения считаются выполненными
+    } else {
+      return 0; // Будущие упражнения еще не начаты
+    }
+  }
+
   void _showInstructionsScreen() {
     final ex = widget.day.exercises[exIndex];
     Navigator.push(

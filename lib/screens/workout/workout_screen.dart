@@ -7,6 +7,7 @@ import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/services/plan_generator.dart';
 import 'package:fitness_app/services/plan_cache.dart';
 import 'package:fitness_app/screens/workout/workout_plan_screen.dart';
+import 'package:fitness_app/screens/workout/workout_history_screen.dart';
 import '../../models/day_info.dart';
 import '../../models/progress_entry.dart';
 
@@ -283,6 +284,19 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       appBar: AppBar(
         title: const Text("Workout Overview"),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WorkoutHistoryScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: userData == null
           ? const Center(child: CircularProgressIndicator())
