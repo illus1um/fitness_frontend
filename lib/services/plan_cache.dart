@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/day_info.dart';
 import '../models/progress_entry.dart';
+import 'api_service.dart';
 
 class PlanCache {
   static const _planKey = 'current_plan';
@@ -41,6 +42,8 @@ class PlanCache {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_planKey);
     await prefs.remove(_startKey);
+    await prefs.remove(_progressKey);
+    await ApiService.clearProgress();
   }
 
   // Saving workout progress

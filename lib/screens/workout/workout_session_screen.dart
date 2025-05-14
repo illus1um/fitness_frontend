@@ -7,6 +7,7 @@ import '../../models/day_info.dart';
 import '../../models/exercise_info.dart';
 import '../../models/progress_entry.dart';
 import '../../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
   final DayInfo day;

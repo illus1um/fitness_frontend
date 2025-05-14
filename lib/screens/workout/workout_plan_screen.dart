@@ -102,6 +102,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
   
   // Обработчик завершения дня тренировки
   Future<void> _onDayComplete() async {
+    // Обновляем прогресс
     await _loadProgress();
     
     // Вызываем коллбэк, если он задан
@@ -169,7 +170,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                       onComplete: _onDayComplete,
                     ),
                   ),
-                )
+                ).then((_) => _loadProgress())
               : () {
                   // Показываем сообщение, что день недоступен
                   ScaffoldMessenger.of(context).showSnackBar(

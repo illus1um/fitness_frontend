@@ -50,6 +50,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   
   // Обработчик завершения тренировки
   Future<void> _onSessionComplete() async {
+    // Обновляем прогресс текущего дня
     await _loadDayProgress();
     
     // Если день полностью завершен, вызываем коллбэк
@@ -63,7 +64,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     final bool isDayCompleted = _isDayCompleted();
     
     return Scaffold(
-      appBar: AppBar(title: Text('Day ${widget.day.dayIndex + 1} Exercises')),
+      appBar: AppBar(title: Text('Day ${widget.day.dayIndex + 0} Exercises')),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(

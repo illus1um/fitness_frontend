@@ -370,6 +370,19 @@ class ApiService {
     return resp.statusCode == 200;
   }
 
+  /// DELETE /progress/
+  static Future<bool> clearProgress() async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return false;
+    final resp = await http.delete(
+      Uri.parse('$baseUrl/progress/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return resp.statusCode == 200;
+  }
+
     /// Проверка доступности username
   static Future<bool> isUsernameAvailable(String username) async {
     try {
