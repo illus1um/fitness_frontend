@@ -32,11 +32,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   bool isPaused = false;
   Timer? timer;
   int secondsLeft = 0;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
     exIndex = widget.startIndex;
+    _pageController = PageController(initialPage: exIndex);
     _loadCurrentProgress();
   }
   
@@ -145,6 +147,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         isResting = false;
       });
       
+      // Анимированный переход к следующему упражнению
+      _pageController.animateToPage(
+        exIndex,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      
       _loadCurrentProgress();
     } else {
       _showFinishDialog();
@@ -157,6 +166,14 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       setState(() {
         exIndex--;
       });
+      
+      // Анимированный переход к предыдущему упражнению
+      _pageController.animateToPage(
+        exIndex,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      
       _loadCurrentProgress();
     }
   }
@@ -167,7 +184,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         title: const Text('Congratulations!'),
-        content: Text('Day ${widget.day.dayIndex + 1} workout completed.'),
+        content: Text('Day ${widget.day.dayIndex} workout completed.'),
         actions: [
           TextButton(
             onPressed: () async {
@@ -198,6 +215,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   @override
   void dispose() {
     timer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -251,108 +269,133 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       body: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Изображение упражнения и кнопка информации
-                  Stack(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.day.exercises.length,
+              physics: const NeverScrollableScrollPhysics(), // Отключаем свайп для контроля через кнопки
+              onPageChanged: (index) {
+                if (index != exIndex) {
+                  // Если страница изменилась через PageView (например через жест), 
+                  // синхронизируем exIndex и загружаем прогресс
+                  setState(() {
+                    exIndex = index;
+                  });
+                  _loadCurrentProgress();
+                }
+              },
+              itemBuilder: (context, index) {
+                final currentEx = widget.day.exercises[index];
+                return SingleChildScrollView(
+                  child: Column(
                     children: [
-                      Container(
-                        height: 250,
-                        width: double.infinity,
-                        child: Image.asset(
-                          ex.assetGifPath,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.broken_image, size: 64),
-                        ),
-                      ),
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: InkWell(
-                          onTap: _showInstructionsScreen,
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.8),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.info_outline,
-                              color: theme.colorScheme.onPrimary,
-                              size: 24,
+                      // Изображение упражнения и кнопка информации
+                      Stack(
+                        children: [
+                          Container(
+                            height: 250,
+                            width: double.infinity,
+                            child: Image.asset(
+                              currentEx.assetGifPath,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.broken_image, size: 64),
                             ),
                           ),
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context, 
+                                  MaterialPageRoute(
+                                    builder: (context) => ExerciseInstructionsScreen(exercise: currentEx),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary.withOpacity(0.8),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.info_outline,
+                                  color: theme.colorScheme.onPrimary,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      // Exercise details
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Exercise name
+                            Container(
+                              width: double.infinity,
+                              child: Text(
+                                currentEx.name,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            
+                            // Target muscle
+                            Row(
+                              children: [
+                                Icon(Icons.fitness_center, color: theme.iconTheme.color),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Target: ",
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  currentEx.target,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            
+                            // Equipment
+                            Row(
+                              children: [
+                                Icon(Icons.sports_gymnastics, color: theme.iconTheme.color),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Equipment: ",
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  currentEx.equipment,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  
-                  // Exercise details
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Exercise name
-                        Container(
-                          width: double.infinity,
-                          child: Text(
-                            ex.name,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        
-                        // Target muscle
-                        Row(
-                          children: [
-                            Icon(Icons.fitness_center, color: theme.iconTheme.color),
-                            SizedBox(width: 8),
-                            Text(
-                              "Target: ",
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              ex.target,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        
-                        // Equipment
-                        Row(
-                          children: [
-                            Icon(Icons.sports_gymnastics, color: theme.iconTheme.color),
-                            SizedBox(width: 8),
-                            Text(
-                              "Equipment: ",
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              ex.equipment,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
           
