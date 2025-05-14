@@ -144,7 +144,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                 : Theme.of(context).primaryColor,
             ),
             title: Text(
-              '${day.dayIndex + 1} тренировка',
+              '${day.dayIndex + 0} тренировка',
               style: TextStyle(
                 color: isAvailable ? null : Colors.grey,
               ),

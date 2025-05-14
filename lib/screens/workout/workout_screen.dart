@@ -286,10 +286,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // Календарь фиксированной высоты
-                    SizedBox(
-                      height: 320,
-                      child: _buildTableCalendar(),
+                    // Календарь с адаптивной высотой
+                    SingleChildScrollView(
+                      child: Container(
+                        height: 350, // Увеличиваем высоту для месяцев с 6 неделями
+                        child: _buildTableCalendar(),
+                      ),
                     ),
                     const SizedBox(height: 24),
                   ] else ...[
@@ -337,6 +339,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       firstDay: _startDate!,
       lastDay: _startDate!.add(Duration(days: (_plan!.length - 1) * 2)),
       focusedDay: _focusedDay,
+      startingDayOfWeek: StartingDayOfWeek.monday,
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
@@ -451,30 +454,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       ),
               ),
               child: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Text(
-                      '${day.day}',
-                      style: (theme.textTheme.bodyMedium ?? TextStyle()).copyWith(
-                        color: enabled
-                            ? colorScheme.primary
-                            : theme.disabledColor,
-                        fontWeight: enabled ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 16,
-                      ),
-                    ),
-                    if (!enabled)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Icon(
-                          Icons.lock,
-                          size: 10,
-                          color: Colors.grey,
-                        ),
-                      ),
-                  ],
+                child: Text(
+                  '${day.day}',
+                  style: (theme.textTheme.bodyMedium ?? TextStyle()).copyWith(
+                    color: enabled
+                        ? colorScheme.primary
+                        : theme.disabledColor,
+                    fontWeight: enabled ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),

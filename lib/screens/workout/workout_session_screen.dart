@@ -30,12 +30,35 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   bool isPaused = false;
   Timer? timer;
   int secondsLeft = 0;
+  
+  // Для отслеживания веса/нагрузки
+  TextEditingController _weightController = TextEditingController(text: '0');
+  Map<String, String> _exerciseWeights = {};
+  
+  // Для отображения подсказок
+  bool _showInstructions = false;
 
   @override
   void initState() {
     super.initState();
     exIndex = widget.startIndex;
     _loadCurrentProgress();
+    _loadPreviousWeights();
+  }
+  
+  Future<void> _loadPreviousWeights() async {
+    // Здесь можно загрузить веса из предыдущих тренировок
+    // Это заглушка, которую можно заменить на реальную загрузку из БД/API
+    setState(() {
+      _exerciseWeights = {};
+      for (var ex in widget.day.exercises) {
+        _exerciseWeights[ex.id] = '0';
+      }
+    });
+    
+    // Устанавливаем текущий вес для упражнения
+    final ex = widget.day.exercises[exIndex];
+    _weightController.text = _exerciseWeights[ex.id] ?? '0';
   }
   
   Future<void> _loadCurrentProgress() async {
@@ -101,6 +124,10 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
 
   Future<void> _saveProgress() async {
     final ex = widget.day.exercises[exIndex];
+    
+    // Сохраняем вес/нагрузку для текущего упражнения
+    _exerciseWeights[ex.id] = _weightController.text;
+    
     await ApiService.saveProgress(ProgressEntry(
       dayIndex: widget.day.dayIndex,
       exerciseId: ex.id,
@@ -108,17 +135,63 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       completedAt: DateTime.now(),
     ));
   }
+  
+  void _skipExercise() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Пропустить упражнение?'),
+        content: Text('Вы действительно хотите пропустить текущее упражнение?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _nextExercise();
+            },
+            child: Text('Пропустить'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _nextExercise() {
+    timer?.cancel();
+    
     if (exIndex < widget.day.exercises.length - 1) {
       setState(() {
         exIndex++;
         currentSet = 0;
         isResting = false;
+        _showInstructions = false;
       });
-      _startPhase();
+      
+      // Устанавливаем вес для нового упражнения
+      final ex = widget.day.exercises[exIndex];
+      _weightController.text = _exerciseWeights[ex.id] ?? '0';
+      
+      _loadCurrentProgress();
     } else {
       _showFinishDialog();
+    }
+  }
+  
+  void _previousExercise() {
+    if (exIndex > 0) {
+      timer?.cancel();
+      setState(() {
+        exIndex--;
+        _showInstructions = false;
+      });
+      _loadCurrentProgress();
+      
+      // Устанавливаем вес для предыдущего упражнения
+      final ex = widget.day.exercises[exIndex];
+      _weightController.text = _exerciseWeights[ex.id] ?? '0';
     }
   }
 
@@ -149,6 +222,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   @override
   void dispose() {
     timer?.cancel();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -159,9 +233,35 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     final ex = widget.day.exercises[exIndex];
     final phaseTotal = isResting ? ex.restSec : ex.durationSec;
     final phaseDone = phaseTotal - secondsLeft;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Завершить тренировку?'),
+                content: Text('Ваш прогресс будет сохранен, но тренировка не будет завершена.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Отмена'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Закрываем диалог
+                      Navigator.pop(context); // Возвращаемся на экран дня
+                    },
+                    child: Text('Выйти'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
         title: Text('${exIndex + 1}/${widget.day.exercises.length} ${ex.name}'),
         actions: [
           IconButton(
@@ -176,15 +276,106 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       body: Column(
         children: [
           Expanded(
-            child: Center(
-              child: Image.asset(
-                ex.assetGifPath,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.broken_image, size: 64),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Изображение упражнения
+                  Container(
+                    height: 200,
+                    width: double.infinity,
+                    child: Image.asset(
+                      ex.assetGifPath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.broken_image, size: 64),
+                    ),
+                  ),
+                  
+                  // Информация об упражнении
+                  ExpansionPanelList(
+                    elevation: 0,
+                    expandedHeaderPadding: EdgeInsets.zero,
+                    expansionCallback: (_, isExpanded) {
+                      setState(() {
+                        _showInstructions = !_showInstructions;
+                      });
+                    },
+                    children: [
+                      ExpansionPanel(
+                        headerBuilder: (context, isExpanded) {
+                          return ListTile(
+                            title: Text('Инструкции по выполнению', 
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                            leading: Icon(Icons.info_outline),
+                          );
+                        },
+                        body: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Целевая группа мышц: ${ex.target}'),
+                              SizedBox(height: 8),
+                              Text('Оборудование: ${ex.equipment}'),
+                              SizedBox(height: 16),
+                              if (ex.instructions.isNotEmpty) ...[
+                                Text('Как выполнять:', 
+                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                                SizedBox(height: 8),
+                                ...ex.instructions.asMap().entries.map((entry) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('${entry.key + 1}. ', 
+                                          style: TextStyle(fontWeight: FontWeight.bold)),
+                                        Expanded(child: Text(entry.value)),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ] else
+                                Text('Нет подробных инструкций для этого упражнения.'),
+                            ],
+                          ),
+                        ),
+                        isExpanded: _showInstructions,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
+          
+          // Панель с весом/нагрузкой
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Theme.of(context).cardColor,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text('Вес/нагрузка:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Container(
+                  width: 100,
+                  child: TextField(
+                    controller: _weightController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      suffix: Text('кг'),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Индикаторы прогресса
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(
@@ -194,32 +385,75 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   radius: 50,
                   lineWidth: 6,
                   percent: _pct(phaseDone, phaseTotal),
-                  center: Text('$secondsLeft'),
+                  center: Text(
+                    '$secondsLeft',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                   footer: Text(isResting ? 'Отдых' : 'Секунд'),
+                  progressColor: isResting ? Colors.blue : Theme.of(context).primaryColor,
                 ),
                 CircularPercentIndicator(
                   radius: 50,
                   lineWidth: 6,
                   percent: _pct(currentSet, ex.sets),
-                  center: Text('$currentSet/${ex.sets}'),
+                  center: Text(
+                    '$currentSet/${ex.sets}',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                   footer: const Text('Подходов'),
+                  progressColor: Theme.of(context).primaryColor,
                 ),
               ],
             ),
           ),
-          Padding(
+          
+          // Кнопки управления
+          Container(
             padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: isPaused ? null : () {
-                timer?.cancel();
-                _onPhaseComplete();
-              },
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-              child: Text(isResting
-                  ? 'Завершить отдых'
-                  : currentSet < ex.sets
-                      ? 'Завершить подход'
-                      : 'Далее'),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    if (exIndex > 0)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: OutlinedButton(
+                            onPressed: _previousExercise,
+                            child: Text('Предыдущее'),
+                            style: OutlinedButton.styleFrom(minimumSize: Size(0, 40)),
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: OutlinedButton(
+                          onPressed: _skipExercise,
+                          child: Text('Пропустить'),
+                          style: OutlinedButton.styleFrom(minimumSize: Size(0, 40)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: isPaused ? null : () {
+                    timer?.cancel();
+                    _onPhaseComplete();
+                  },
+                  style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                  child: Text(
+                    isResting
+                        ? 'ЗАВЕРШИТЬ ОТДЫХ'
+                        : currentSet < ex.sets
+                            ? 'ЗАВЕРШИТЬ ПОДХОД'
+                            : 'СЛЕДУЮЩЕЕ УПРАЖНЕНИЕ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
