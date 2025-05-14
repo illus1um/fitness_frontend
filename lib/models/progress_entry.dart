@@ -16,7 +16,9 @@ class ProgressEntry {
       dayIndex: json['day_index'] as int,
       exerciseId: json['exercise_id'] as String,
       setsCompleted: json['sets_completed'] as int,
-      completedAt: DateTime.parse(json['completed_at'] as String),
+      completedAt: json['completed_at'] != null 
+        ? DateTime.parse(json['completed_at'] as String)
+        : DateTime.now(),
     );
   }
 
@@ -24,5 +26,6 @@ class ProgressEntry {
         'day_index': dayIndex,
         'exercise_id': exerciseId,
         'sets_completed': setsCompleted,
+        'completed_at': completedAt.toIso8601String(),
       };
 }

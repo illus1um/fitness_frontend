@@ -52,13 +52,21 @@ class PlanCache {
 
   // Loading workout progress
   static Future<List<ProgressEntry>> loadProgress() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_progressKey);
-    if (jsonStr == null) return [];
-    
-    final List<dynamic> decoded = json.decode(jsonStr);
-    return decoded
-        .map((e) => ProgressEntry.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_progressKey);
+      if (jsonStr == null) return [];
+      
+      final List<dynamic> decoded = json.decode(jsonStr);
+      return decoded
+          .map((e) => ProgressEntry.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (e) {
+      print('Error loading progress: $e');
+      // В случае ошибки очищаем кэшированный прогресс и возвращаем пустой список
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_progressKey);
+      return [];
+    }
   }
 }

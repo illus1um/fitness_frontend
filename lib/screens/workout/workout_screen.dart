@@ -46,18 +46,34 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   Future<void> _loadCachedPlan() async {
-    final plan = await PlanCache.loadPlan();
-    final sd = await PlanCache.loadStartDate();
-    final progress = await PlanCache.loadProgress();
-    
-    if (plan != null && sd != null) {
-      _prepareWorkoutDays(plan, sd);
-      _updateAvailableDays(plan, sd, progress);
+    try {
+      final plan = await PlanCache.loadPlan();
+      final sd = await PlanCache.loadStartDate();
+      final progress = await PlanCache.loadProgress();
       
+      if (plan != null && sd != null) {
+        _prepareWorkoutDays(plan, sd);
+        _updateAvailableDays(plan, sd, progress);
+        
+        setState(() {
+          _plan = plan;
+          _startDate = sd;
+          _progress = progress;
+        });
+        
+        print('DEBUG: Plan loaded successfully with ${plan.length} days');
+      } else {
+        print('DEBUG: No plan or start date found in cache');
+      }
+    } catch (e) {
+      print('ERROR loading cached plan: $e');
+      // Восстанавливаемся после ошибки, очищая данные
       setState(() {
-        _plan = plan;
-        _startDate = sd;
-        _progress = progress;
+        _plan = null;
+        _startDate = null;
+        _progress = [];
+        _workoutDays.clear();
+        _availableDays.clear();
       });
     }
   }

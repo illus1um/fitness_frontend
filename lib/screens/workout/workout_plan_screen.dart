@@ -114,13 +114,13 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: Text('Тренировочный план')),
+        appBar: AppBar(title: Text('Workout Plan')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Тренировочный план')),
+      appBar: AppBar(title: Text('Workout Plan')),
       body: ListView.builder(
         itemCount: widget.days.length,
         itemBuilder: (_, i) {
@@ -144,7 +144,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                 : Theme.of(context).primaryColor,
             ),
             title: Text(
-              '${day.dayIndex + 0} тренировка',
+              'Workout ${day.dayIndex + 0}',
               style: TextStyle(
                 color: isAvailable ? null : Colors.grey,
               ),
@@ -174,7 +174,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                   // Показываем сообщение, что день недоступен
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Этот день тренировки пока недоступен. Сначала выполните предыдущие дни.'),
+                      content: Text('This workout day is not available yet. Complete previous days first.'),
                       duration: Duration(seconds: 2),
                     ),
                   );

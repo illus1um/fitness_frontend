@@ -63,7 +63,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     final bool isDayCompleted = _isDayCompleted();
     
     return Scaffold(
-      appBar: AppBar(title: Text('Упражнения дня ${widget.day.dayIndex + 1}')),
+      appBar: AppBar(title: Text('Day ${widget.day.dayIndex + 1} Exercises')),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -81,7 +81,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                       errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 60),
                     ),
                     title: Text(ex.name),
-                    subtitle: Text('$done/${ex.sets} подходов'),
+                    subtitle: Text('$done/${ex.sets} sets'),
                     trailing: isDone 
                         ? const Icon(Icons.check_circle, color: Colors.green) 
                         : const Icon(Icons.chevron_right),
@@ -108,7 +108,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Text(
-                  'Все упражнения выполнены!',
+                  'All exercises completed!',
                   style: TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
@@ -125,7 +125,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                   ),
                 ),
               ).then((_) => _loadDayProgress()),
-              child: const Text('НАЧАТЬ ТРЕНИРОВКУ'),
+              child: const Text('START WORKOUT'),
               style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
             ),
           ],

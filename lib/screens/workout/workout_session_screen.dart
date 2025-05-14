@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../models/day_info.dart';
+import '../../models/exercise_info.dart';
 import '../../models/progress_entry.dart';
 import '../../services/api_service.dart';
 
@@ -30,35 +31,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   bool isPaused = false;
   Timer? timer;
   int secondsLeft = 0;
-  
-  // Для отслеживания веса/нагрузки
-  TextEditingController _weightController = TextEditingController(text: '0');
-  Map<String, String> _exerciseWeights = {};
-  
-  // Для отображения подсказок
-  bool _showInstructions = false;
 
   @override
   void initState() {
     super.initState();
     exIndex = widget.startIndex;
     _loadCurrentProgress();
-    _loadPreviousWeights();
-  }
-  
-  Future<void> _loadPreviousWeights() async {
-    // Здесь можно загрузить веса из предыдущих тренировок
-    // Это заглушка, которую можно заменить на реальную загрузку из БД/API
-    setState(() {
-      _exerciseWeights = {};
-      for (var ex in widget.day.exercises) {
-        _exerciseWeights[ex.id] = '0';
-      }
-    });
-    
-    // Устанавливаем текущий вес для упражнения
-    final ex = widget.day.exercises[exIndex];
-    _weightController.text = _exerciseWeights[ex.id] ?? '0';
   }
   
   Future<void> _loadCurrentProgress() async {
@@ -125,9 +103,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   Future<void> _saveProgress() async {
     final ex = widget.day.exercises[exIndex];
     
-    // Сохраняем вес/нагрузку для текущего упражнения
-    _exerciseWeights[ex.id] = _weightController.text;
-    
     await ApiService.saveProgress(ProgressEntry(
       dayIndex: widget.day.dayIndex,
       exerciseId: ex.id,
@@ -140,19 +115,19 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Пропустить упражнение?'),
-        content: Text('Вы действительно хотите пропустить текущее упражнение?'),
+        title: Text('Skip Exercise?'),
+        content: Text('Do you really want to skip the current exercise?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Отмена'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _nextExercise();
             },
-            child: Text('Пропустить'),
+            child: Text('Skip'),
           ),
         ],
       ),
@@ -167,12 +142,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         exIndex++;
         currentSet = 0;
         isResting = false;
-        _showInstructions = false;
       });
-      
-      // Устанавливаем вес для нового упражнения
-      final ex = widget.day.exercises[exIndex];
-      _weightController.text = _exerciseWeights[ex.id] ?? '0';
       
       _loadCurrentProgress();
     } else {
@@ -185,13 +155,8 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       timer?.cancel();
       setState(() {
         exIndex--;
-        _showInstructions = false;
       });
       _loadCurrentProgress();
-      
-      // Устанавливаем вес для предыдущего упражнения
-      final ex = widget.day.exercises[exIndex];
-      _weightController.text = _exerciseWeights[ex.id] ?? '0';
     }
   }
 
@@ -200,8 +165,8 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('Поздравляем!'),
-        content: Text('Тренировка дня ${widget.day.dayIndex + 1} завершена.'),
+        title: const Text('Congratulations!'),
+        content: Text('Day ${widget.day.dayIndex + 1} workout completed.'),
         actions: [
           TextButton(
             onPressed: () async {
@@ -212,9 +177,19 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               Navigator.pop(context); // Закрываем диалог
               Navigator.pop(context); // Возвращаемся на экран дня
             },
-            child: const Text('Готово'),
+            child: const Text('Done'),
           ),
         ],
+      ),
+    );
+  }
+  
+  void _showInstructionsScreen() {
+    final ex = widget.day.exercises[exIndex];
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => ExerciseInstructionsScreen(exercise: ex),
       ),
     );
   }
@@ -222,7 +197,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   @override
   void dispose() {
     timer?.cancel();
-    _weightController.dispose();
     super.dispose();
   }
 
@@ -243,19 +217,19 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: Text('Завершить тренировку?'),
-                content: Text('Ваш прогресс будет сохранен, но тренировка не будет завершена.'),
+                title: Text('End Workout?'),
+                content: Text('Your progress will be saved, but the workout will not be completed.'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text('Отмена'),
+                    child: Text('Cancel'),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context); // Закрываем диалог
                       Navigator.pop(context); // Возвращаемся на экран дня
                     },
-                    child: Text('Выйти'),
+                    child: Text('Exit'),
                   ),
                 ],
               ),
@@ -279,99 +253,105 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // Изображение упражнения
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    child: Image.asset(
-                      ex.assetGifPath,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.broken_image, size: 64),
-                    ),
-                  ),
-                  
-                  // Информация об упражнении
-                  ExpansionPanelList(
-                    elevation: 0,
-                    expandedHeaderPadding: EdgeInsets.zero,
-                    expansionCallback: (_, isExpanded) {
-                      setState(() {
-                        _showInstructions = !_showInstructions;
-                      });
-                    },
+                  // Изображение упражнения и кнопка информации
+                  Stack(
                     children: [
-                      ExpansionPanel(
-                        headerBuilder: (context, isExpanded) {
-                          return ListTile(
-                            title: Text('Инструкции по выполнению', 
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                            leading: Icon(Icons.info_outline),
-                          );
-                        },
-                        body: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Целевая группа мышц: ${ex.target}'),
-                              SizedBox(height: 8),
-                              Text('Оборудование: ${ex.equipment}'),
-                              SizedBox(height: 16),
-                              if (ex.instructions.isNotEmpty) ...[
-                                Text('Как выполнять:', 
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
-                                SizedBox(height: 8),
-                                ...ex.instructions.asMap().entries.map((entry) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('${entry.key + 1}. ', 
-                                          style: TextStyle(fontWeight: FontWeight.bold)),
-                                        Expanded(child: Text(entry.value)),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ] else
-                                Text('Нет подробных инструкций для этого упражнения.'),
-                            ],
+                      Container(
+                        height: 250,
+                        width: double.infinity,
+                        child: Image.asset(
+                          ex.assetGifPath,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.broken_image, size: 64),
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: InkWell(
+                          onTap: _showInstructionsScreen,
+                          child: Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.8),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: theme.colorScheme.onPrimary,
+                              size: 24,
+                            ),
                           ),
                         ),
-                        isExpanded: _showInstructions,
                       ),
                     ],
                   ),
+                  
+                  // Exercise details
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Exercise name
+                        Container(
+                          width: double.infinity,
+                          child: Text(
+                            ex.name,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        
+                        // Target muscle
+                        Row(
+                          children: [
+                            Icon(Icons.fitness_center, color: theme.iconTheme.color),
+                            SizedBox(width: 8),
+                            Text(
+                              "Target: ",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              ex.target,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        
+                        // Equipment
+                        Row(
+                          children: [
+                            Icon(Icons.sports_gymnastics, color: theme.iconTheme.color),
+                            SizedBox(width: 8),
+                            Text(
+                              "Equipment: ",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              ex.equipment,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-          
-          // Панель с весом/нагрузкой
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Theme.of(context).cardColor,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text('Вес/нагрузка:', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                Container(
-                  width: 100,
-                  child: TextField(
-                    controller: _weightController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      suffix: Text('кг'),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
             ),
           ),
           
@@ -389,7 +369,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     '$secondsLeft',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
-                  footer: Text(isResting ? 'Отдых' : 'Секунд'),
+                  footer: Text(isResting ? 'Rest' : 'Seconds'),
                   progressColor: isResting ? Colors.blue : Theme.of(context).primaryColor,
                 ),
                 CircularPercentIndicator(
@@ -400,7 +380,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                     '$currentSet/${ex.sets}',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
-                  footer: const Text('Подходов'),
+                  footer: const Text('Sets'),
                   progressColor: Theme.of(context).primaryColor,
                 ),
               ],
@@ -420,7 +400,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                           padding: const EdgeInsets.only(right: 8.0),
                           child: OutlinedButton(
                             onPressed: _previousExercise,
-                            child: Text('Предыдущее'),
+                            child: Text('Previous'),
                             style: OutlinedButton.styleFrom(minimumSize: Size(0, 40)),
                           ),
                         ),
@@ -430,7 +410,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                         padding: const EdgeInsets.only(left: 8.0),
                         child: OutlinedButton(
                           onPressed: _skipExercise,
-                          child: Text('Пропустить'),
+                          child: Text('Skip'),
                           style: OutlinedButton.styleFrom(minimumSize: Size(0, 40)),
                         ),
                       ),
@@ -446,10 +426,10 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
                   child: Text(
                     isResting
-                        ? 'ЗАВЕРШИТЬ ОТДЫХ'
+                        ? 'FINISH REST'
                         : currentSet < ex.sets
-                            ? 'ЗАВЕРШИТЬ ПОДХОД'
-                            : 'СЛЕДУЮЩЕЕ УПРАЖНЕНИЕ',
+                            ? 'COMPLETE SET'
+                            : 'NEXT EXERCISE',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -457,6 +437,165 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// New screen for exercise instructions
+class ExerciseInstructionsScreen extends StatelessWidget {
+  final ExerciseInfo exercise;
+
+  const ExerciseInstructionsScreen({
+    required this.exercise,
+    Key? key,
+  }) : super(key: key);
+
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textStyle = theme.textTheme.bodyMedium!;
+    final headerStyle = theme.textTheme.titleMedium!
+        .copyWith(fontWeight: FontWeight.bold);
+    final numberStyle = textStyle.copyWith(
+      fontWeight: FontWeight.bold,
+      color: theme.colorScheme.onPrimary,
+    );
+    final circleColor = Color.fromARGB(255, 199, 169, 127);
+    final placeholderStyle = textStyle.copyWith(
+      fontStyle: FontStyle.italic,
+      color: theme.disabledColor,
+    );
+    final nameStyle = theme.textTheme.headlineSmall!
+        .copyWith(fontWeight: FontWeight.bold);
+    final targetLabelStyle = textStyle;
+    final targetValueStyle = textStyle.copyWith(fontWeight: FontWeight.w600);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          _capitalize(exercise.name),
+          style: theme.textTheme.titleLarge,
+        ),
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // GIF или изображение
+            Center(
+              child: Image.asset(
+                exercise.assetGifPath,
+                height: 350,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.image_not_supported,
+                    size: 100,
+                    color: theme.iconTheme.color,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Название упражнения
+            Text(
+              _capitalize(exercise.name),
+              style: nameStyle,
+            ),
+            const SizedBox(height: 10),
+
+            // Основная мышца
+            Row(
+              children: [
+                Icon(Icons.fitness_center, color: theme.iconTheme.color),
+                const SizedBox(width: 8),
+                Text("Target: ", style: targetLabelStyle),
+                Text(
+                  exercise.target,
+                  style: targetValueStyle,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            
+            // Оборудование
+            Row(
+              children: [
+                Icon(Icons.sports_gymnastics, color: theme.iconTheme.color),
+                const SizedBox(width: 8),
+                Text("Equipment: ", style: targetLabelStyle),
+                Text(
+                  exercise.equipment,
+                  style: targetValueStyle,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Заголовок секции инструкций
+            Text("Instructions", style: headerStyle),
+            const SizedBox(height: 10),
+
+            if (exercise.instructions.isNotEmpty)
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: exercise.instructions.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Номер шага
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: circleColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${index + 1}',
+                              style: numberStyle,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Текст инструкции
+                        Expanded(
+                          child: Text(
+                            exercise.instructions[index],
+                            style: textStyle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              )
+            else
+              Center(
+                child: Text(
+                  "Instructions not available.",
+                  style: placeholderStyle,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
