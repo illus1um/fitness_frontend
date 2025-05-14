@@ -22,7 +22,7 @@ class _NotificationSettingsScreenState
   TimeOfDay endTime = TimeOfDay(hour: 20, minute: 0);
   int intervalHours = 2;
   int intervalMinutes = 0;
-  
+
   // Gold accent color used throughout the app
   final Color goldAccent = Color(0xFFC7A97F);
 
@@ -504,7 +504,7 @@ class _NotificationSettingsScreenState
                             children: presetIntervals.map((minutes) {
                               final bool isSelected = _currentMinutes == minutes;
                               return InkWell(
-                                onTap: () {
+            onTap: () {
                                   setModalState(() {
                                     _currentMinutes = minutes;
                                   });
@@ -591,12 +591,12 @@ class _NotificationSettingsScreenState
                         ElevatedButton(
                           onPressed: () {
                             // Устанавливаем новый интервал
-                            setState(() {
+              setState(() {
                               intervalHours = _currentMinutes ~/ 60;
                               intervalMinutes = _currentMinutes % 60;
-                            });
-                            _saveSettings();
-                            Navigator.pop(context);
+              });
+              _saveSettings();
+              Navigator.pop(context);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: goldAccent,
@@ -659,10 +659,10 @@ class _NotificationSettingsScreenState
         color: backgroundColor,
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
                 // Header with illustration
                 Center(
                   child: Column(
@@ -717,8 +717,8 @@ class _NotificationSettingsScreenState
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                         Row(
                           children: [
                             Container(
@@ -736,8 +736,8 @@ class _NotificationSettingsScreenState
                               ),
                             ),
                             SizedBox(width: 12),
-                            Text(
-                              "Reminders",
+                Text(
+                  "Reminders",
                               style: TextStyle(
                                 fontSize: 18, 
                                 fontWeight: FontWeight.bold,
@@ -745,34 +745,34 @@ class _NotificationSettingsScreenState
                               ),
                             ),
                           ],
-                        ),
-                        Switch(
-                          value: notificationsEnabled,
+                ),
+                Switch(
+                  value: notificationsEnabled,
                           activeColor: goldAccent,
                           activeTrackColor: goldAccent.withOpacity(0.4),
                           inactiveThumbColor: isDarkMode ? Colors.grey[400] : Colors.grey[300],
                           inactiveTrackColor: isDarkMode 
                               ? Colors.grey.withOpacity(0.3) 
                               : Colors.grey.withOpacity(0.2),
-                          onChanged: (value) {
-                            setState(() => notificationsEnabled = value);
-                            _saveSettings();
-                          },
-                        ),
-                      ],
-                    ),
+                  onChanged: (value) {
+                    setState(() => notificationsEnabled = value);
+                    _saveSettings();
+                  },
+                ),
+              ],
+            ),
                   ),
                 ),
                 SizedBox(height: 20),
                 
                 // Settings Section
-                AbsorbPointer(
-                  absorbing: !notificationsEnabled,
+            AbsorbPointer(
+              absorbing: !notificationsEnabled,
                   child: AnimatedOpacity(
                     duration: Duration(milliseconds: 300),
-                    opacity: notificationsEnabled ? 1 : 0.5,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                opacity: notificationsEnabled ? 1 : 0.5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSettingsCard(
                           context: context,
@@ -783,11 +783,11 @@ class _NotificationSettingsScreenState
                         _buildSummaryCard(context, cardBackground),
                       ],
                     ),
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
         ),
       ),
     );
@@ -887,18 +887,18 @@ class _NotificationSettingsScreenState
           children: [
             Container(
               padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
+      decoration: BoxDecoration(
                 color: isDarkMode 
                     ? goldAccent.withOpacity(0.2) 
                     : goldAccent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
+        borderRadius: BorderRadius.circular(10),
+      ),
               child: Icon(icon, color: goldAccent, size: 20),
             ),
             SizedBox(width: 16),
-            Text(
-              title,
-              style: TextStyle(
+          Text(
+            title,
+            style: TextStyle(
                 fontSize: 16,
                 color: textColor,
               ),
