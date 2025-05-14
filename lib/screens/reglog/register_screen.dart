@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fitness_app/services/api_service.dart';
 import 'complete_profile_screen.dart'; // Страница для заполнения возраста, роста и веса
-import '../home_screen.dart';
 import 'login_screen.dart';
 import 'package:fitness_app/models/registration_data.dart';
+import 'package:fitness_app/services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -17,6 +16,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+  bool isConfirmPasswordVisible = false;
+
+
+  String? usernameErrorText;
+  String? emailErrorText;
+  String? confirmPasswordErrorText;
   
   bool gender = true;
   bool isLoading = false;
@@ -29,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     usernameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();
     super.dispose();
@@ -78,9 +85,9 @@ Widget build(BuildContext context) {
                   key: _formKey,
                   child: Column(
                     children: [
-                      _buildInputField("Username", usernameController, validator: _validateUsername),
-                      _buildInputField("Email", emailController, validator: _validateEmail),
-                      _buildPasswordField(),
+                      _buildInputField("Username", usernameController,validator: _validateUsername,errorText: usernameErrorText),
+                      _buildInputField("Email", emailController,validator: _validateEmail,errorText: emailErrorText),
+                      _buildPasswordFields(),
                       _buildInputField("Name", firstNameController, validator: _validateName),
                       _buildInputField("Last Name", lastNameController, validator: _validateName),
                       _buildGenderSwitch(),
@@ -102,11 +109,11 @@ Widget build(BuildContext context) {
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
   return Align(
-    alignment: Alignment.topCenter, // Фиксируем сверху
+    alignment: Alignment.topCenter,
     child: Container(
-      width: double.infinity, // Растягиваем на всю ширину
+      width: double.infinity,
       height: 50,
-      margin: EdgeInsets.only(top: 40), // Отступ сверху
+      margin: EdgeInsets.only(top: 40),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: Colors.brown[100],
@@ -130,13 +137,18 @@ Widget build(BuildContext context) {
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  color: !isLogin ? Color.fromARGB(255, 199, 169, 127)  : const Color.fromARGB(248, 0, 0, 0),
+                  color: !isLogin
+                      ? Color.fromARGB(255, 199, 169, 127)
+                      : const Color.fromARGB(248, 0, 0, 0),
+                  border: Border.all(
+                    color: !isLogin ? Colors.black : Colors.transparent,
+                    width: 2,
+                  ),
                 ),
                 child: Text(
                   "Registration",
                   style: TextStyle(
-                    color: !isLogin ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(255, 0, 0, 0),
-                    fontWeight: FontWeight.bold,
+                    color: const Color.fromARGB(255, 0, 0, 0),
                   ),
                 ),
               ),
@@ -159,12 +171,20 @@ Widget build(BuildContext context) {
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  color: isLogin ? Colors.brown[300] : Color.fromARGB(255, 219, 200, 173),
+                  color: isLogin
+                      ? Colors.brown[300]
+                      : Color.fromARGB(255, 219, 200, 173),
+                  border: Border.all(
+                    color: isLogin ? Colors.black : Colors.transparent,
+                    width: 2,
+                  ),
                 ),
                 child: Text(
                   "Login",
                   style: TextStyle(
-                    color: isLogin ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
+                    color: isLogin
+                        ? Colors.white
+                        : const Color.fromARGB(255, 0, 0, 0),
                   ),
                 ),
               ),
@@ -178,7 +198,13 @@ Widget build(BuildContext context) {
 
 
 
-  Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
+
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    String? Function(String?)? validator,
+    String? errorText,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
@@ -187,6 +213,7 @@ Widget build(BuildContext context) {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+          errorText: errorText, // ⬅ Показываем ошибку
           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -200,43 +227,88 @@ Widget build(BuildContext context) {
           filled: true,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        validator: validator, 
+        validator: validator,
       ),
     );
   }
 
 
-  Widget _buildPasswordField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 15.0),
-      child: TextFormField(
-        controller: passwordController,
-        cursorColor: Color.fromARGB(255, 199, 169, 127),
-        obscureText: !isPasswordVisible,
-        decoration: InputDecoration(
-          labelText: "Password",
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
-          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12), 
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)), // Обычная граница
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0), // Цвет при фокусе
-        ),
-        fillColor: const Color.fromARGB(255, 255, 255, 255), // Цвет фона при активации
-        filled: true, // Включаем заливку
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          suffixIcon: IconButton(
-            icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-            onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+
+Widget _buildPasswordFields() {
+  return Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 15.0),
+        child: TextFormField(
+          controller: passwordController,
+          cursorColor: Color.fromARGB(255, 199, 169, 127),
+          obscureText: !isPasswordVisible,
+          decoration: InputDecoration(
+            labelText: "Password",
+            labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
+            ),
+            fillColor: const Color.fromARGB(255, 255, 255, 255),
+            filled: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            suffixIcon: IconButton(
+              icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+              onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+            ),
           ),
+          validator: _validatePassword,
         ),
-        validator: _validatePassword,
       ),
-    );
-  }
+
+      // Confirm Password field
+      Padding(
+        padding: const EdgeInsets.only(bottom: 15.0),
+        child: TextFormField(
+          controller: confirmPasswordController,
+          cursorColor: Color.fromARGB(255, 199, 169, 127),
+          obscureText: !isConfirmPasswordVisible,
+          decoration: InputDecoration(
+            labelText: "Confirm Password",
+            labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
+            ),
+            fillColor: const Color.fromARGB(255, 255, 255, 255),
+            filled: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            suffixIcon: IconButton(
+              icon: Icon(isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off),
+              onPressed: () => setState(() => isConfirmPasswordVisible = !isConfirmPasswordVisible),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please confirm your password';
+            }
+            if (value != passwordController.text) {
+              return 'Passwords do not match';
+            }
+            return null;
+          },
+        ),
+      ),
+    ],
+  );
+}
+
 
   Widget _buildGenderSwitch() {
     return Padding(
@@ -394,37 +466,95 @@ String? _validatePassword(String? value) {
   Widget _buildRegisterButton() {
   return ElevatedButton(
     onPressed: isLoading
-        ? null
-        : () {
-            if (!_formKey.currentState!.validate()) return;
+    ? null
+    : () async {
+        if (!_formKey.currentState!.validate()) return;
 
-            final registrationData = RegistrationData(
-              username: usernameController.text,
-              email: emailController.text,
-              password: passwordController.text,
-              firstName: firstNameController.text,
-              lastName: lastNameController.text,
-              gender: gender,
-            );
+        setState(() {
+          isLoading = true;
+          usernameErrorText = null;
+          emailErrorText = null;
+          confirmPasswordErrorText = null;
+        });
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CompleteProfileScreen(
-                  registrationData: registrationData,
-                ),
+        final email = emailController.text.trim();
+        final username = usernameController.text.trim();
+        final password = passwordController.text;
+        final confirmPassword = confirmPasswordController.text;
+
+        if (password != confirmPassword) {
+          setState(() {
+            isLoading = false;
+            confirmPasswordErrorText = 'Passwords do not match.';
+          });
+          return;
+        }
+        bool emailTaken = false;
+        bool usernameTaken = false;
+
+        try {
+            // Проверка email
+            try {
+              final emailAvailable = await ApiService.isEmailAvailable(email);
+              if (!emailAvailable) emailTaken = true;
+            } catch (_) {
+              emailTaken = true; // Считаем email занят при ошибке
+            }
+
+            // Проверка username
+            try {
+              final usernameAvailable = await ApiService.isUsernameAvailable(username);
+              if (!usernameAvailable) usernameTaken = true;
+            } catch (_) {
+              usernameTaken = true; // Считаем username занят при ошибке
+            }
+
+            if (emailTaken || usernameTaken) {
+              setState(() {
+                isLoading = false;
+                emailErrorText = emailTaken ? "This email is already registered." : null;
+                usernameErrorText = usernameTaken ? "This username is already taken." : null;
+              });
+              return;
+            }
+
+          final registrationData = RegistrationData(
+            username: username,
+            email: email,
+            password: passwordController.text,
+            firstName: firstNameController.text.trim(),
+            lastName: lastNameController.text.trim(),
+            gender: gender,
+          );
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CompleteProfileScreen(
+                registrationData: registrationData,
               ),
-            );
-          },
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        } finally {
+          setState(() => isLoading = false);
+        }
+      },
+
+
     style: ElevatedButton.styleFrom(
       backgroundColor: Colors.black,
       foregroundColor: Colors.white,
-      minimumSize: Size(double.infinity, 45),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      minimumSize: Size(double.infinity, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
-    child: Text("Continue"),
+    child: isLoading
+        ? CircularProgressIndicator(color: Colors.white)
+        : Text("Continue", style: TextStyle(fontSize: 16)),
   );
 }
+
 }

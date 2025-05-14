@@ -152,12 +152,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
-    return Align(
-    alignment: Alignment.topCenter, // Фиксируем сверху
+  return Align(
+    alignment: Alignment.topCenter,
     child: Container(
-      width: double.infinity, // Растягиваем на всю ширину
+      width: double.infinity,
       height: 50,
-      margin: EdgeInsets.only(top: 40), // Отступ сверху
+      margin: EdgeInsets.only(top: 40),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: Colors.brown[100],
@@ -181,12 +181,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  color: !isLogin ? Color.fromARGB(255, 199, 127, 127) : Color.fromARGB(255, 219, 200, 173),
+                  color: !isLogin
+                      ? Color.fromARGB(255, 199, 127, 127)
+                      : Color.fromARGB(255, 219, 200, 173),
+                  border: Border.all(
+                    color: !isLogin ? Colors.black : Colors.transparent,
+                    width: 2,
+                  ),
                 ),
                 child: Text(
                   "Registration",
                   style: TextStyle(
-                    color: !isLogin ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
+                    color: !isLogin
+                        ? Colors.white
+                        : const Color.fromARGB(255, 0, 0, 0),
                   ),
                 ),
               ),
@@ -209,13 +217,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  color: isLogin ? Color.fromARGB(255, 199, 169, 127) : const Color.fromARGB(0, 227, 212, 212),
+                  color: isLogin
+                      ? Color.fromARGB(255, 199, 169, 127)
+                      : const Color.fromARGB(0, 227, 212, 212),
+                  border: Border.all(
+                    color: isLogin ? Colors.black : Colors.transparent,
+                    width: 2,
+                  ),
                 ),
                 child: Text(
                   "Login",
                   style: TextStyle(
-                    color: isLogin ? const Color.fromARGB(255, 0, 0, 0) : Colors.brown[700],
-                    fontWeight: FontWeight.bold,
+                    color: isLogin
+                        ? const Color.fromARGB(255, 0, 0, 0)
+                        : Colors.brown[700],
                   ),
                 ),
               ),
@@ -226,6 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 }
+
 
 
   Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {

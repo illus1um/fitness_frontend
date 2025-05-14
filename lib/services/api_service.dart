@@ -332,4 +332,26 @@ class ApiService {
       return false;
     }
   }
+
+    /// Проверка доступности username
+  static Future<bool> isUsernameAvailable(String username) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/auth/check-username?username=$username'));
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Ошибка при проверке username: $e");
+      return false;
+    }
+  }
+
+  /// Проверка доступности email
+  static Future<bool> isEmailAvailable(String email) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/auth/check-email?email=$email'));
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Ошибка при проверке email: $e");
+      return false;
+    }
+  }
 }
