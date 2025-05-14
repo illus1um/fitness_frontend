@@ -755,10 +755,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   ),
                 ),
               ),
-              child: Text(
-                text,
+            child: Text(
+              text,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.bold,
                   fontSize: 13,
                   color: goldColor,
                 ),

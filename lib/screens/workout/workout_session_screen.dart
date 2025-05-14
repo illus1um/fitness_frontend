@@ -34,6 +34,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   Timer? timer;
   int secondsLeft = 0;
   late PageController _pageController;
+  // Key for CircularPercentIndicator to preserve animation state
+  final GlobalKey<State<StatefulWidget>> _progressCircleKey = GlobalKey();
+  final GlobalKey<State<StatefulWidget>> _setsCircleKey = GlobalKey();
 
   @override
   void initState() {
@@ -116,22 +119,59 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   }
   
   void _skipExercise() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Skip Exercise?'),
-        content: Text('Do you really want to skip the current exercise?'),
+        backgroundColor: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Skip Exercise?',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Do you really want to skip the current exercise?',
+          style: TextStyle(
+            color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _nextExercise();
             },
-            child: Text('Skip'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: goldColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: Text(
+              'Skip',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -261,7 +301,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     final ex = widget.day.exercises[exIndex];
     final phaseTotal = isResting ? ex.restSec : ex.durationSec;
     final phaseDone = phaseTotal - secondsLeft;
-    final theme = Theme.of(context);
+    final timerPercent = _pct(phaseDone, phaseTotal);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
 
     return Scaffold(
       appBar: AppBar(
@@ -271,19 +313,53 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: Text('End Workout?'),
-                content: Text('Your progress will be saved, but the workout will not be completed.'),
+                backgroundColor: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: Text(
+                  'End Workout?',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: Text(
+                  'Your progress will be saved, but the workout will not be completed.',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+                  ),
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel'),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  TextButton(
+                  ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context); // Закрываем диалог
                       Navigator.pop(context); // Возвращаемся на экран дня
                     },
-                    child: Text('Exit'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: goldColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: Text(
+                      'Exit',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -291,13 +367,27 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           },
         ),
         title: Text('${exIndex + 1}/${widget.day.exercises.length} ${ex.name}'),
+        centerTitle: true,
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(isPaused ? Icons.play_arrow : Icons.pause),
-            onPressed: () {
-              setState(() => isPaused = !isPaused);
-              if (!isPaused) _startTimer();
-            },
+          Container(
+            margin: EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: isDarkMode 
+                  ? Color(0xFF3A3225)
+                  : goldColor.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(
+                isPaused ? Icons.play_arrow : Icons.pause,
+                color: goldColor,
+              ),
+              onPressed: () {
+                setState(() => isPaused = !isPaused);
+                if (!isPaused) _startTimer();
+              },
+            ),
           ),
         ],
       ),
@@ -307,11 +397,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             child: PageView.builder(
               controller: _pageController,
               itemCount: widget.day.exercises.length,
-              physics: const NeverScrollableScrollPhysics(), // Отключаем свайп для контроля через кнопки
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (index) {
                 if (index != exIndex) {
-                  // Если страница изменилась через PageView (например через жест), 
-                  // синхронизируем exIndex и загружаем прогресс
                   setState(() {
                     exIndex = index;
                   });
@@ -323,110 +411,140 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 return SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Изображение упражнения и кнопка информации
-                      Stack(
-                        children: [
-                          Container(
-                            height: 250,
-                            width: double.infinity,
-                            child: Image.asset(
-                              currentEx.assetGifPath,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) =>
-                                  const Icon(Icons.broken_image, size: 64),
+                      // Exercise image and info button with improved styling
+                      Container(
+                        height: 280,
+                        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDarkMode
+                                  ? Colors.black.withOpacity(0.3)
+                                  : Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              spreadRadius: isDarkMode ? 0 : 1,
+                              offset: Offset(0, 3),
                             ),
-                          ),
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context, 
-                                  MaterialPageRoute(
-                                    builder: (context) => ExerciseInstructionsScreen(exercise: currentEx),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary.withOpacity(0.8),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.info_outline,
-                                  color: theme.colorScheme.onPrimary,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      // Exercise details
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          ],
+                        ),
+                        child: Stack(
                           children: [
-                            // Exercise name
-                            Container(
-                              width: double.infinity,
-                              child: Text(
-                                currentEx.name,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                            // Image
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                height: 280,
+                                width: double.infinity,
+                                color: isDarkMode ? Color(0xFF262626) : Colors.grey.shade100,
+                                child: Image.asset(
+                                  currentEx.assetGifPath,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => Center(
+                                    child: Icon(
+                                      Icons.fitness_center,
+                                      size: 80,
+                                      color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                                    ),
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ),
-                            SizedBox(height: 12),
                             
-                            // Target muscle
-                            Row(
-                              children: [
-                                Icon(Icons.fitness_center, color: theme.iconTheme.color),
-                                SizedBox(width: 8),
-                                Text(
-                                  "Target: ",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w500,
+                            // Info button
+                            Positioned(
+                              top: 16,
+                              right: 16,
+                              child: InkWell(
+                                onTap: () => _showInstructionsScreen(),
+                                child: Container(
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode 
+                                        ? Color(0xFF3A3225)
+                                        : goldColor.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        spreadRadius: 0,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.info_outline,
+                                    color: goldColor,
+                                    size: 24,
                                   ),
                                 ),
-                                Text(
-                                  currentEx.target,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            
-                            // Equipment
-                            Row(
-                              children: [
-                                Icon(Icons.sports_gymnastics, color: theme.iconTheme.color),
-                                SizedBox(width: 8),
-                                Text(
-                                  "Equipment: ",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  currentEx.equipment,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
                       ),
+                      
+                      // Exercise details with improved styling
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDarkMode
+                                  ? Colors.black.withOpacity(0.3)
+                                  : Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              spreadRadius: isDarkMode ? 0 : 1,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Exercise name
+                            Center(
+                              child: Text(
+                                currentEx.name,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode ? Colors.white : Colors.black,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            
+                            // Target muscle
+                            _buildDetailRow(
+                              context,
+                              Icons.fitness_center,
+                              "Target",
+                              currentEx.target,
+                              isDarkMode,
+                              goldColor,
+                            ),
+                            SizedBox(height: 12),
+                            
+                            // Equipment
+                            _buildDetailRow(
+                              context,
+                              Icons.sports_gymnastics,
+                              "Equipment",
+                              currentEx.equipment,
+                              isDarkMode,
+                              goldColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 24),
                     ],
                   ),
                 );
@@ -434,89 +552,341 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             ),
           ),
           
-          // Индикаторы прогресса
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                CircularPercentIndicator(
-                  radius: 50,
-                  lineWidth: 6,
-                  percent: _pct(phaseDone, phaseTotal),
-                  center: Text(
-                    '$secondsLeft',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  footer: Text(isResting ? 'Rest' : 'Seconds'),
-                  progressColor: isResting ? Colors.blue : Theme.of(context).primaryColor,
-                ),
-                CircularPercentIndicator(
-                  radius: 50,
-                  lineWidth: 6,
-                  percent: _pct(currentSet, ex.sets),
-                  center: Text(
-                    '$currentSet/${ex.sets}',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  footer: const Text('Sets'),
-                  progressColor: Theme.of(context).primaryColor,
+          // Enhanced progress indicators
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.1),
+                  blurRadius: 10,
+                  offset: Offset(0, -5),
+                  spreadRadius: 0,
                 ),
               ],
             ),
-          ),
-          
-          // Кнопки управления
-          Container(
-            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
+                // Progress indicators
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Timer indicator
+                    _buildProgressCircle(
+                      key: _progressCircleKey,
+                      pct: timerPercent,
+                      value: '$secondsLeft',
+                      label: isResting ? 'REST' : 'WORKOUT',
+                      color: isResting ? Colors.blue.shade400 : goldColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                    
+                    // Sets indicator 
+                    _buildProgressCircle(
+                      key: _setsCircleKey,
+                      pct: _pct(currentSet, ex.sets),
+                      value: '$currentSet/${ex.sets}',
+                      label: 'SETS',
+                      color: goldColor,
+                      isDarkMode: isDarkMode,
+                    ),
+                  ],
+                ),
+                
+                SizedBox(height: 24),
+                
+                // Control buttons
                 Row(
                   children: [
                     if (exIndex > 0)
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.only(right: 8.0),
-                          child: OutlinedButton(
+                          child: _buildControlButton(
+                            label: 'Previous',
+                            icon: Icons.arrow_back,
+                            isDarkMode: isDarkMode,
+                            goldColor: goldColor,
+                            isOutlined: true,
                             onPressed: _previousExercise,
-                            child: Text('Previous'),
-                            style: OutlinedButton.styleFrom(minimumSize: Size(0, 40)),
                           ),
                         ),
                       ),
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: OutlinedButton(
+                        padding: EdgeInsets.only(left: exIndex > 0 ? 8.0 : 0),
+                        child: _buildControlButton(
+                          label: 'Skip',
+                          icon: Icons.skip_next,
+                          isDarkMode: isDarkMode,
+                          goldColor: goldColor,
+                          isOutlined: true,
                           onPressed: _skipExercise,
-                          child: Text('Skip'),
-                          style: OutlinedButton.styleFrom(minimumSize: Size(0, 40)),
                         ),
                       ),
                     ),
                   ],
                 ),
+                
                 SizedBox(height: 16),
-                ElevatedButton(
+                
+                // Main action button
+                _buildMainActionButton(
+                  isResting: isResting,
+                  currentSet: currentSet,
+                  totalSets: ex.sets,
+                  isPaused: isPaused,
+                  isDarkMode: isDarkMode,
+                  goldColor: goldColor,
                   onPressed: isPaused ? null : () {
                     timer?.cancel();
                     _onPhaseComplete();
                   },
-                  style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-                  child: Text(
-                    isResting
-                        ? 'FINISH REST'
-                        : currentSet < ex.sets
-                            ? 'COMPLETE SET'
-                            : 'NEXT EXERCISE',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+  
+  Widget _buildProgressCircle({
+    Key? key,
+    required double pct,
+    required String value,
+    required String label,
+    required Color color,
+    required bool isDarkMode,
+  }) {
+    return CircularPercentIndicator(
+      key: key,
+      radius: 55,
+      lineWidth: 8,
+      animation: true,
+      animateFromLastPercent: true,
+      animationDuration: 1000,
+      percent: pct,
+      circularStrokeCap: CircularStrokeCap.round,
+      backgroundColor: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+      progressColor: color,
+      center: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : Colors.black,
+            ),
+          ),
+        ],
+      ),
+      footer: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildControlButton({
+    required String label,
+    required IconData icon,
+    required bool isDarkMode,
+    required Color goldColor,
+    required bool isOutlined,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: isOutlined ? Border.all(
+          color: goldColor,
+          width: 2,
+        ) : null,
+        boxShadow: isOutlined ? null : [
+          BoxShadow(
+            color: goldColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+        gradient: isOutlined ? null : LinearGradient(
+          colors: [
+            goldColor,
+            Color(0xFFD4B995),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onPressed,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isOutlined
+                      ? goldColor
+                      : Colors.white,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isOutlined
+                        ? goldColor
+                        : Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildMainActionButton({
+    required bool isResting,
+    required int currentSet,
+    required int totalSets,
+    required bool isPaused,
+    required bool isDarkMode,
+    required Color goldColor,
+    required VoidCallback? onPressed,
+  }) {
+    String buttonText = isResting
+        ? 'FINISH REST'
+        : currentSet < totalSets
+            ? 'COMPLETE SET'
+            : 'NEXT EXERCISE';
+            
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: isPaused 
+            ? null 
+            : LinearGradient(
+                colors: [
+                  goldColor,
+                  Color(0xFFD4B995),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+        color: isPaused 
+            ? (isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300)
+            : null,
+        boxShadow: isPaused 
+            ? null
+            : [
+                BoxShadow(
+                  color: goldColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(28),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onPressed,
+          child: Center(
+            child: Text(
+              buttonText,
+              style: TextStyle(
+                color: isPaused 
+                    ? (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700)
+                    : Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildDetailRow(
+    BuildContext context, 
+    IconData icon, 
+    String label, 
+    String value, 
+    bool isDarkMode,
+    Color goldColor
+  ) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: isDarkMode 
+                ? Color(0xFF3A3225)
+                : goldColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Icon(
+              icon, 
+              color: goldColor,
+              size: 20,
+            ),
+          ),
+        ),
+        SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -537,145 +907,296 @@ class ExerciseInstructionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textStyle = theme.textTheme.bodyMedium!;
-    final headerStyle = theme.textTheme.titleMedium!
-        .copyWith(fontWeight: FontWeight.bold);
-    final numberStyle = textStyle.copyWith(
-      fontWeight: FontWeight.bold,
-      color: theme.colorScheme.onPrimary,
-    );
-    final circleColor = Color.fromARGB(255, 199, 169, 127);
-    final placeholderStyle = textStyle.copyWith(
-      fontStyle: FontStyle.italic,
-      color: theme.disabledColor,
-    );
-    final nameStyle = theme.textTheme.headlineSmall!
-        .copyWith(fontWeight: FontWeight.bold);
-    final targetLabelStyle = textStyle;
-    final targetValueStyle = textStyle.copyWith(fontWeight: FontWeight.w600);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _capitalize(exercise.name),
-          style: theme.textTheme.titleLarge,
-        ),
+        title: Text(_capitalize(exercise.name)),
         centerTitle: true,
         elevation: 0,
-        scrolledUnderElevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // GIF или изображение
-            Center(
-              child: Image.asset(
-                exercise.assetGifPath,
-                height: 350,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.image_not_supported,
-                    size: 100,
-                    color: theme.iconTheme.color,
-                  );
-                },
+            // Image container with improved styling
+            Container(
+              height: 320,
+              width: double.infinity,
+              margin: EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    spreadRadius: isDarkMode ? 0 : 1,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  exercise.assetGifPath,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Icon(
+                        Icons.fitness_center,
+                        size: 80,
+                        color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-            const SizedBox(height: 20),
 
-            // Название упражнения
-            Text(
-              _capitalize(exercise.name),
-              style: nameStyle,
-            ),
-            const SizedBox(height: 10),
-
-            // Основная мышца
-            Row(
-              children: [
-                Icon(Icons.fitness_center, color: theme.iconTheme.color),
-                const SizedBox(width: 8),
-                Text("Target: ", style: targetLabelStyle),
-                Text(
-                  exercise.target,
-                  style: targetValueStyle,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // Оборудование
-            Row(
-              children: [
-                Icon(Icons.sports_gymnastics, color: theme.iconTheme.color),
-                const SizedBox(width: 8),
-                Text("Equipment: ", style: targetLabelStyle),
-                Text(
-                  exercise.equipment,
-                  style: targetValueStyle,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Заголовок секции инструкций
-            Text("Instructions", style: headerStyle),
-            const SizedBox(height: 10),
-
-            if (exercise.instructions.isNotEmpty)
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: exercise.instructions.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Номер шага
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: circleColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: numberStyle,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Текст инструкции
-                        Expanded(
-                          child: Text(
-                            exercise.instructions[index],
-                            style: textStyle,
-                          ),
-                        ),
-                      ],
+            // Exercise information with improved styling
+            Container(
+              width: double.infinity,
+              margin: EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    spreadRadius: isDarkMode ? 0 : 1,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Exercise name
+                  Text(
+                    _capitalize(exercise.name),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
-                  );
-                },
-              )
-            else
-              Center(
-                child: Text(
-                  "Instructions not available.",
-                  style: placeholderStyle,
-                ),
+                  ),
+                  SizedBox(height: 20),
+                  
+                  // Target and equipment info
+                  _buildInfoRow(
+                    context,
+                    Icons.fitness_center,
+                    "Target",
+                    exercise.target,
+                    isDarkMode,
+                    goldColor,
+                  ),
+                  SizedBox(height: 12),
+                  _buildInfoRow(
+                    context,
+                    Icons.sports_gymnastics,
+                    "Equipment",
+                    exercise.equipment,
+                    isDarkMode,
+                    goldColor,
+                  ),
+                ],
               ),
+            ),
+
+            // Instructions section with improved styling
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    spreadRadius: isDarkMode ? 0 : 1,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section header
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? Color(0xFF3A3225)
+                              : goldColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.format_list_numbered,
+                          color: goldColor,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        "Instructions",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+
+                  // Instructions list
+                  if (exercise.instructions.isNotEmpty)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: exercise.instructions.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Step number
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: goldColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 16),
+
+                              // Instruction text
+                              Expanded(
+                                child: Text(
+                                  exercise.instructions[index],
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    height: 1.5,
+                                    color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    )
+                  else
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 48,
+                              color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              "Instructions not available.",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontStyle: FontStyle.italic,
+                                color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+    bool isDarkMode,
+    Color goldColor,
+  ) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Color(0xFF3A3225)
+                : goldColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              color: goldColor,
+              size: 20,
+            ),
+          ),
+        ),
+        SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
