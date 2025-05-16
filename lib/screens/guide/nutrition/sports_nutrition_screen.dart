@@ -196,61 +196,174 @@ class SupplementDetailScreen extends StatelessWidget {
   const SupplementDetailScreen({Key? key, required this.supplement})
       : super(key: key);
 
-  List<TextSpan> _buildFormattedText(
-      BuildContext context, String details) {
+  List<Widget> _buildFormattedSections(BuildContext context, String details) {
     final theme = Theme.of(context);
-    final bodyStyle = theme.textTheme.bodyMedium!;
-    final headingStyle =
-        bodyStyle.copyWith(fontWeight: FontWeight.bold);
-
-    final lines = details.split('\n');
-    return lines.map<TextSpan>((line) {
-      if (line.trim().isEmpty) {
-        return const TextSpan(text: '\n');
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
+    // Define colors based on theme
+    final accentColor = isDarkMode ? const Color(0xFFB2996E) : const Color(0xFFC7A97F);
+    final bodyTextColor = isDarkMode ? Colors.grey[300] : Colors.grey[800];
+    
+    // Parse the details into sections
+    final sections = details.split('\n\n');
+    final result = <Widget>[];
+    
+    for (final section in sections) {
+      final parts = section.split(':\n');
+      if (parts.length == 2) {
+        final heading = parts[0].trim();
+        final content = parts[1].trim();
+        
+        // Add the section heading
+        result.add(
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Icon(
+                  _getIconForHeading(heading),
+                  color: accentColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  heading,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        
+        // Add the section content
+        result.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 32, bottom: 16),
+            child: Text(
+              content,
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.5,
+                color: bodyTextColor,
+              ),
+            ),
+          ),
+        );
+        
+        // Add a divider except after the last section
+        if (section != sections.last) {
+          result.add(
+            Divider(
+              color: isDarkMode ? Colors.grey[800] : Colors.grey[300],
+              thickness: 1,
+              height: 32,
+            ),
+          );
+        }
       }
-      final headingPattern = RegExp(
-          r'^(What it is:|Purpose:|How to take:|Who should avoid it:|Additional facts:|ℹAdditional facts:)');
-      if (headingPattern.hasMatch(line)) {
-        return TextSpan(text: '$line\n', style: headingStyle);
-      } else {
-        return TextSpan(text: '$line\n', style: bodyStyle);
-      }
-    }).toList();
+    }
+    
+    return result;
+  }
+  
+  IconData _getIconForHeading(String heading) {
+    switch (heading) {
+      case 'What it is':
+        return Icons.info_outline;
+      case 'Purpose':
+        return Icons.lightbulb_outline;
+      case 'How to take':
+        return Icons.schedule;
+      case 'Who should avoid it':
+        return Icons.warning_amber_outlined;
+      case 'Additional facts':
+      case 'ℹAdditional facts':
+        return Icons.tips_and_updates_outlined;
+      default:
+        return Icons.article_outlined;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
+    final accentColor = isDarkMode ? const Color(0xFFB2996E) : const Color(0xFFC7A97F);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(supplement['title']!),
+        title: Text(
+          supplement['title']!,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: theme.appBarTheme.foregroundColor,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                supplement['image']!,
-                width: screenWidth - 32,
-                height: screenWidth - 32,
-                fit: BoxFit.cover,
+            // Image with enhanced styling
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode 
+                      ? Colors.black.withOpacity(0.3) 
+                      : Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  supplement['image']!,
+                  width: screenWidth - 32,
+                  height: screenWidth - 32,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            RichText(
-              textAlign: TextAlign.justify,
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: _buildFormattedText(
-                    context, supplement['details']!),
+            
+            // Title with accent underline
+            Container(
+              margin: const EdgeInsets.only(top: 24, bottom: 16),
+              padding: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: accentColor,
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Text(
+                supplement['title']!,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
               ),
             ),
+            
+            // Content sections
+            ..._buildFormattedSections(context, supplement['details']!),
+            
+            const SizedBox(height: 24),
           ],
         ),
       ),

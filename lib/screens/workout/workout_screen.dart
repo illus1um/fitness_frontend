@@ -1,7 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/services/plan_generator.dart';
+import 'package:fitness_app/services/plan_cache.dart';
+import 'package:fitness_app/screens/workout/workout_plan_screen.dart';
+import 'package:fitness_app/screens/workout/workout_history_screen.dart';
+import '../../models/day_info.dart';
+import '../../models/progress_entry.dart';
 
 class WorkoutScreen extends StatefulWidget {
   @override
@@ -10,342 +18,947 @@ class WorkoutScreen extends StatefulWidget {
 
 class _WorkoutScreenState extends State<WorkoutScreen> {
   Map<String, dynamic>? userData;
-  List<Map<String, dynamic>> workoutExercises = [];
+  bool _isGenerating = false;
+  List<DayInfo>? _plan;
+  DateTime? _startDate;
+  DateTime _focusedDay = DateTime.now();
+
+  /// Набор чистых дат тренировочных дней (без времени)
+  final Set<DateTime> _workoutDays = {};
+  
+  /// Набор индексов доступных тренировочных дней
+  final Set<int> _availableDays = {};
+  
+  /// Прогресс пользователя
+  List<ProgressEntry> _progress = [];
 
   @override
   void initState() {
     super.initState();
-    loadUserData();
+    _loadUserData();
+    _loadCachedPlan();
   }
 
-  void loadUserData() async {
-    var data = await ApiService.getUserProfile();
-
+  Future<void> _loadUserData() async {
+    final data = await ApiService.getUserProfile();
     if (data != null) {
-      print("🔹 Полученные данные профиля: $data");
-      setState(() {
-        userData = data;
-      });
-      await loadExercises();
-    } else {
-      print("🔺 Ошибка загрузки данных профиля");
+      setState(() => userData = data);
     }
   }
 
-  Future<void> loadExercises() async {
-    String jsonString = await rootBundle.loadString('assets/ideal.json');
-    List<dynamic> jsonList = json.decode(jsonString);
-
-    List<Map<String, dynamic>> filteredExercises = [];
-
-    if (userData != null) {
-      String goal = userData!["training_program"];
-      String location = userData!["training_location"];
-      String experience = userData!["training_experience"];
-
-      print("📌 Фильтрация упражнений для: $goal, $location, $experience");
-
-      for (var exercise in jsonList) {
-        if (exercise["Training Program"] == goal &&
-            exercise["Training Location"] == location &&
-            exercise["Training Experience"] == experience) {
-          
-          String gifUrl = exercise["GIF URL"];
-          String gifFileName = gifUrl.split('/').last;
-
-          if (!gifFileName.endsWith(".gif")) {
-            gifFileName = "$gifFileName.gif";
-          }
-
-          String previewFileName = gifFileName.replaceAll('.gif', '.png');
-
-          String gifPath = "assets/gifs/$gifFileName";
-          String previewPath = "assets/gifs/$previewFileName";
-
-          filteredExercises.add({
-            "name": exercise["Exercise Name"],
-            "bodyPart": exercise["Body Part"],
-            "target": exercise["Target Muscle"],
-            "equipment": exercise["Equipment"],
-            "gif": gifPath,
-            "preview": previewPath,
-            "instructions": exercise["Instructions"] ?? [],
-          });
-        }
+  Future<void> _loadCachedPlan() async {
+    try {
+      final plan = await PlanCache.loadPlan();
+      final sd = await PlanCache.loadStartDate();
+      final progress = await PlanCache.loadProgress();
+      
+      if (plan != null && sd != null) {
+        _prepareWorkoutDays(plan, sd);
+        _updateAvailableDays(plan, sd, progress);
+        
+        setState(() {
+          _plan = plan;
+          _startDate = sd;
+          _progress = progress;
+        });
+        
+        print('DEBUG: Plan loaded successfully with ${plan.length} days');
+      } else {
+        print('DEBUG: No plan or start date found in cache');
       }
+    } catch (e) {
+      print('ERROR loading cached plan: $e');
+      // Восстанавливаемся после ошибки, очищая данные
+      setState(() {
+        _plan = null;
+        _startDate = null;
+        _progress = [];
+        _workoutDays.clear();
+        _availableDays.clear();
+      });
+    }
+  }
+
+  Future<void> _startWorkout() async {
+    if (userData == null) return;
+    if (_plan != null) {
+      // Instead of navigating to another page, just scroll to the calendar section
+      setState(() {}); // Trigger a rebuild to ensure calendar is shown
+      return;
+    }
+
+    setState(() => _isGenerating = true);
+
+    final startDate = DateTime.now();
+    await PlanCache.saveStartDate(startDate);
+
+    // Add a small delay to show generation animation
+    await Future.delayed(Duration(milliseconds: 800));
+
+    final plan = await PlanGenerator.generatePlan(
+      program:    userData!['training_program'],
+      location:   userData!['training_location'],
+      experience: userData!['training_experience'],
+      dayCount:   15,
+    );
+
+    // Add another small delay for animation
+    await Future.delayed(Duration(milliseconds: 500));
+
+    await PlanCache.savePlan(plan);
+    _prepareWorkoutDays(plan, startDate);
+    
+    // Принудительно добавляем первый день в доступные, так как мы только что создали план
+    // Получаем индекс первого дня (обычно это 1, так как в плане индексы начинаются с 1)
+    if (plan.isNotEmpty) {
+      int firstDayIndex = plan[0].dayIndex;
+      _availableDays.add(firstDayIndex);
     }
 
     setState(() {
-      workoutExercises = filteredExercises;
+      _plan = plan;
+      _startDate = startDate;
+      _progress = [];
+      _isGenerating = false; // Turn off generating state
     });
 
-    print("✅ Найдено ${workoutExercises.length} упражнений.");
+    // Scrolling animation to see the calendar (optional)
+    if (context.mounted) {
+      // To be implemented if needed - scroll to calendar
+    }
+  }
+
+  void _prepareWorkoutDays(List<DayInfo> plan, DateTime sd) {
+    _workoutDays.clear();
+    final startDate = DateTime(sd.year, sd.month, sd.day);
+    for (int i = 0; i < plan.length; i++) {
+      // Используем индекс дня для определения даты тренировки (каждый второй день)
+      final dayIndex = plan[i].dayIndex;
+      // Вычисляем смещение в днях от начальной даты (индексы в плане начинаются с 1)
+      // Поэтому для дня 1 смещение будет 0, для дня 2 - 2 и т.д.
+      final dayOffset = (dayIndex - 1) * 2;
+      final workoutDay = startDate.add(Duration(days: dayOffset));
+      // Сохраняем только дату без времени
+      _workoutDays.add(DateTime(workoutDay.year, workoutDay.month, workoutDay.day));
+      print('Added workout day: ${workoutDay.toString()} for day index $dayIndex');
+    }
+  }
+  
+  /// Обновляет набор доступных тренировочных дней
+  void _updateAvailableDays(List<DayInfo> plan, DateTime startDate, List<ProgressEntry> progress) {
+    _availableDays.clear();
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    
+    print('DEBUG: Today: $today');
+    
+    // Очищаем даты (без времени)
+    final cleanStartDate = DateTime(startDate.year, startDate.month, startDate.day);
+    print('DEBUG: Clean start date: $cleanStartDate');
+    
+    // Для удобства нормализуем план к индексам, которые мы используем (0, 1, 2, ...)
+    List<DayInfo> normalizedPlan = [];
+    for (int i = 0; i < plan.length; i++) {
+      // Находим день с индексом i+1 (так как в плане индексы от 1)
+      final day = plan.firstWhere((d) => d.dayIndex == i+1, orElse: () => DayInfo(
+        dayIndex: -1,
+        part: '',
+        exercises: [],
+      ));
+      
+      if (day.dayIndex != -1) {
+        normalizedPlan.add(day);
+      }
+    }
+    
+    print('DEBUG: Normalized plan days: ${normalizedPlan.map((d) => d.dayIndex).toList()}');
+    
+    // Проверяем каждый день тренировочного плана
+    for (int i = 0; i < normalizedPlan.length; i++) {
+      // Дата текущего дня
+      final currentDayDate = cleanStartDate.add(Duration(days: i * 2));
+      print('DEBUG: Checking day $i (dayIndex=${normalizedPlan[i].dayIndex}), date: $currentDayDate');
+      
+      // Дата не наступила - день недоступен
+      if (currentDayDate.isAfter(today)) {
+        print('DEBUG: Day $i is in the future, not available');
+        continue;
+      }
+      
+      // Первый день (i == 0) всегда доступен, если его дата <= сегодня (проверка выше)
+      if (i == 0) {
+        _availableDays.add(normalizedPlan[i].dayIndex);
+        print('DEBUG: First day (dayIndex=${normalizedPlan[i].dayIndex}) is available');
+        continue;
+      }
+      
+      // Для последующих дней проверяем, выполнен ли предыдущий день
+      final prevDay = normalizedPlan[i-1];
+      
+      // Предыдущий день не завершен - день недоступен
+      final prevDayCompleted = _isDayCompleted(prevDay.dayIndex, progress, plan);
+      print('DEBUG: Previous day (dayIndex=${prevDay.dayIndex}) completed: $prevDayCompleted');
+      
+      if (!prevDayCompleted) {
+        print('DEBUG: Day $i (dayIndex=${normalizedPlan[i].dayIndex}) not available - previous day not completed');
+        continue;
+      }
+      
+      // День доступен
+      _availableDays.add(normalizedPlan[i].dayIndex);
+      print('DEBUG: Day $i (dayIndex=${normalizedPlan[i].dayIndex}) is available');
+    }
+    
+    print('DEBUG: Available days: $_availableDays');
+  }
+  
+  /// Проверяет выполнение всех упражнений для конкретного дня
+  bool _isDayCompleted(int dayIndex, List<ProgressEntry> progress, List<DayInfo> plan) {
+    // Находим информацию о дне
+    final day = plan.firstWhere((d) => d.dayIndex == dayIndex, orElse: () => DayInfo(
+      dayIndex: -1,
+      part: '',
+      exercises: [],
+    ));
+    
+    if (day.dayIndex == -1 || day.exercises.isEmpty) {
+      print('DEBUG: Day $dayIndex not found or has no exercises');
+      return false;
+    }
+    
+    // Для каждого упражнения проверяем, выполнено ли оно полностью
+    int totalExercises = day.exercises.length;
+    int completedExercises = 0;
+    
+    for (var exercise in day.exercises) {
+      final entry = progress.firstWhere(
+        (p) => p.dayIndex == dayIndex && p.exerciseId == exercise.id,
+        orElse: () => ProgressEntry(
+          dayIndex: dayIndex,
+          exerciseId: exercise.id,
+          setsCompleted: 0,
+          completedAt: DateTime.now(),
+        ),
+      );
+      
+      if (entry.setsCompleted >= exercise.sets) {
+        completedExercises++;
+      }
+    }
+    
+    print('DEBUG: Day $dayIndex - Completed $completedExercises/$totalExercises exercises');
+    // Все упражнения выполнены
+    return completedExercises == totalExercises;
+  }
+
+  void _goToPlan() {
+    // Передаем все дни, а не только доступные
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WorkoutPlanScreen(
+          days: _plan!,
+          availableDays: _availableDays,
+          onWorkoutComplete: _onWorkoutComplete,
+        ),
+      ),
+    );
+  }
+  
+  /// Обработчик завершения тренировки
+  Future<void> _onWorkoutComplete() async {
+    // Загружаем актуальный прогресс
+    final updatedProgress = await ApiService.getProgress();
+    
+    // Сохраняем прогресс в кэш
+    await PlanCache.saveProgress(updatedProgress);
+    
+    // Обновляем список доступных дней
+    if (_plan != null && _startDate != null) {
+      _updateAvailableDays(_plan!, _startDate!, updatedProgress);
+      setState(() {
+        _progress = updatedProgress;
+      });
+    }
+  }
+
+  /// Проверяет, можно ли уже открыть тренировочный день с указанным индексом
+  bool _isDayOpen(int dayIndex) {
+    return _availableDays.contains(dayIndex);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Workout Plan"),
+        title: const Text("Workout Overview"),
         centerTitle: true,
-        elevation: 0,
-        scrolledUnderElevation: 0, 
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WorkoutHistoryScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: userData == null
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoCard(),
-                    // SizedBox(height: 20),
-                    // Text("Recommended Exercises", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127))),
-                    // SizedBox(height: 10),
-                    // workoutExercises.isEmpty
-                    //     ? Center(child: Text("No exercises found for your selection."))
-                    //     : ListView.builder(
-                    //         shrinkWrap: true,
-                    //         physics: NeverScrollableScrollPhysics(),
-                    //         itemCount: workoutExercises.length,
-                    //         itemBuilder: (context, index) {
-                    //           var exercise = workoutExercises[index];
-                    //           return _buildExerciseTile(exercise);
-                    //         },
-                    //       ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildInfoCard(),
+                  const SizedBox(height: 16),
+
+                  if (_plan != null && _startDate != null) ...[
+                    Text(
+                      'Training Schedule',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Calendar container with gradient background
+                    AnimatedOpacity(
+                      opacity: _isGenerating ? 0.3 : 1.0,
+                      duration: Duration(milliseconds: 500),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFC7A97F).withOpacity(0.05),
+                              Color(0xFFC7A97F).withOpacity(0.15),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        // Using LayoutBuilder instead of fixed height container for flexibility
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calculate the available height
+                            return _buildTableCalendarWithSize();
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                   ],
-                ),
+
+                  // Always show either Start Workout or the button to view the plan
+                  _isGenerating
+                      ? _buildGeneratingPlanIndicator()
+                      : (_plan == null 
+                          ? _buildStartWorkoutButton()
+                          : _buildViewPlanButton()),
+                ],
               ),
             ),
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _buildStartWorkoutButton() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
-      padding: EdgeInsets.all(16),
+      height: 60,
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFC7A97F),
+            Color(0xFFD4B995),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            spreadRadius: 2,
-            offset: Offset(0, 4),
+            color: Color.fromARGB(255, 199, 160, 106).withOpacity(isDarkMode ? 0.3 : 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: _isGenerating ? null : _startWorkout,
+        icon: _isGenerating
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Icon(Icons.fitness_center, color: Colors.white, size: 24),
+        label: Text(
+          _isGenerating ? "Generating plan..." : "Start Workout",
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          minimumSize: const Size.fromHeight(60),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewPlanButton() {
+    final isEnabled = _plan != null;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      height: 60,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: isEnabled
+            ? LinearGradient(
+                colors: [
+                  Color(0xFFC7A97F),
+                  Color(0xFFD4B995),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              )
+            : LinearGradient(
+                colors: isDarkMode
+                    ? [Colors.grey.shade800, Colors.grey.shade700]
+                    : [Colors.grey.shade300, Colors.grey.shade400],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+        boxShadow: isEnabled
+            ? [
+                BoxShadow(
+                  color: Color.fromARGB(255, 199, 160, 106).withOpacity(isDarkMode ? 0.3 : 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 1),
+                  spreadRadius: 0,
+                ),
+              ]
+            : null,
+      ),
+      child: ElevatedButton.icon(
+        onPressed: isEnabled ? _goToPlan : null,
+        icon: Icon(
+          Icons.fitness_center, 
+          color: isEnabled ? Colors.white : Colors.grey.shade700,
+          size: 24,
+        ),
+        label: Text(
+          "Workout Plan",
+          style: TextStyle(
+            color: isEnabled ? Colors.white : Colors.grey.shade700,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          minimumSize: const Size.fromHeight(60),
+          disabledForegroundColor: Colors.grey.shade600,
+          disabledBackgroundColor: Colors.transparent,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeneratingPlanIndicator() {
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7A97F)),
+        ),
+        SizedBox(height: 16),
+        Text(
+          "Generating your personalized plan...",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFFC7A97F),
+          ),
+        ),
+        SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildTableCalendarWithSize() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
+    final DateTime firstDay = _startDate!;
+    final DateTime lastDay = _startDate!.add(Duration(days: (_plan!.length - 1) * 2));
+    
+    final DateTime firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    
+    int firstWeekdayOfMonth = firstDayOfMonth.weekday;
+    if (firstWeekdayOfMonth == 7) firstWeekdayOfMonth = 0;
+
+    final int daysInMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0).day;
+    
+    final int totalCells = firstWeekdayOfMonth + daysInMonth;
+
+    final int numberOfRows = (totalCells / 7).ceil();
+
+    final rowHeight = numberOfRows > 5 ? 42.0 : 46.0;
+    
+    return TableCalendar(
+      firstDay: firstDay,
+      lastDay: lastDay,
+      focusedDay: _focusedDay,
+      startingDayOfWeek: StartingDayOfWeek.monday,
+      availableCalendarFormats: const {
+        CalendarFormat.month: 'Month',
+      },
+      calendarFormat: CalendarFormat.month,
+      sixWeekMonthsEnforced: false,
+      headerStyle: HeaderStyle(
+        formatButtonVisible: false,
+        titleCentered: true,
+        titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+        ) ?? TextStyle(),
+        leftChevronIcon: Container(
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Color(0xFF3A3225) // Darker gold for dark mode
+                : goldColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          padding: const EdgeInsets.all(8),
+          child: Icon(Icons.chevron_left, color: goldColor, size: 22),
+        ),
+        rightChevronIcon: Container(
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Color(0xFF3A3225) // Darker gold for dark mode
+                : goldColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          padding: const EdgeInsets.all(8),
+          child: Icon(Icons.chevron_right, color: goldColor, size: 22),
+        ),
+        headerPadding: const EdgeInsets.symmetric(vertical: 10),
+        headerMargin: const EdgeInsets.only(bottom: 6),
+      ),
+      rowHeight: rowHeight, // Dynamic row height
+      daysOfWeekHeight: 30, // Reduced further
+      calendarStyle: CalendarStyle(
+        defaultTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontSize: 16,
+          color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
+        ) ?? TextStyle(),
+        disabledTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
+            .copyWith(
+              color: isDarkMode ? Colors.white : Colors.black,
+              fontSize: 16,
+            ),
+        todayTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
+            .copyWith(
+              color: isDarkMode ? Colors.black : Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+        todayDecoration: BoxDecoration(
+          color: goldColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: goldColor.withOpacity(0.4),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        selectedTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
+            .copyWith(
+              color: isDarkMode ? Colors.black : Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+        selectedDecoration: BoxDecoration(
+          color: goldColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: goldColor.withOpacity(0.4),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        weekendTextStyle: (Theme.of(context).textTheme.bodyMedium ?? TextStyle())
+            .copyWith(
+              color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
+              fontSize: 16,
+            ),
+        markerDecoration: BoxDecoration(
+          color: goldColor,
+          shape: BoxShape.circle,
+        ),
+        outsideDaysVisible: false,
+        cellMargin: EdgeInsets.all(4), // Slightly reduced margin
+        cellPadding: EdgeInsets.zero,
+      ),
+      eventLoader: (day) {
+        final simpleDay = DateTime(day.year, day.month, day.day);
+        final isWorkout = _workoutDays.any((d) =>
+          d.year == simpleDay.year && d.month == simpleDay.month && d.day == simpleDay.day
+        );
+        if (isWorkout) {
+          return ['workout'];
+        }
+        return [];
+      },
+      enabledDayPredicate: (day) => true,
+      calendarBuilders: CalendarBuilders(
+        markerBuilder: (context, day, events) {
+          if (events.isNotEmpty) {
+            return Positioned(
+              bottom: 3, // Slightly reduced spacing
+              child: Container(
+                width: 6, // Slightly smaller marker
+                height: 6,
+                decoration: BoxDecoration(
+                  color: goldColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: goldColor.withOpacity(0.3),
+                      blurRadius: 3,
+                      spreadRadius: 0.5,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          return null;
+        },
+        defaultBuilder: (ctx, day, focused) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+          final goldColor = Color(0xFFC7A97F);
+          
+          final simpleDay = DateTime(day.year, day.month, day.day);
+          if (_startDate == null) return null;
+          
+          // Проверяем, находится ли день в списке тренировочных дней
+          final isWorkoutDay = _workoutDays.any((workoutDate) =>
+            workoutDate.year == simpleDay.year && 
+            workoutDate.month == simpleDay.month && 
+            workoutDate.day == simpleDay.day
+          );
+          
+          if (!isWorkoutDay) return null;
+          
+          // Вычисляем разницу в днях между днём календаря и начальной датой
+          final diff = simpleDay.difference(
+            DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
+          ).inDays;
+          
+          // Находим индекс тренировочного дня (учитывая, что тренировки каждые 2 дня)
+          final dayNumber = diff ~/ 2;
+          // В плане индексы начинаются с 1
+          final dayIndex = dayNumber + 1;
+          
+          // Проверяем, доступен ли день
+          final enabled = _isDayOpen(dayIndex);
+          
+          return Tooltip(
+            message: enabled ? 'Training Day $dayIndex' : 'Locked Training Day $dayIndex',
+            child: Container(
+              margin: EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: enabled 
+                    ? (isDarkMode ? Color(0xFF3A3225) : goldColor.withOpacity(0.15))
+                    : Colors.transparent,
+                border: enabled
+                    ? Border.all(
+                        color: goldColor,
+                        width: 2,
+                      )
+                    : null,
+                boxShadow: enabled ? [
+                  BoxShadow(
+                    color: goldColor.withOpacity(isDarkMode ? 0.3 : 0.2),
+                    blurRadius: 5,
+                    spreadRadius: 0.5,
+                  )
+                ] : null,
+              ),
+              child: Center(
+                child: Text(
+                  '${day.day}',
+                  style: (Theme.of(context).textTheme.bodyMedium ?? TextStyle()).copyWith(
+                    color: enabled
+                        ? goldColor
+                        : (isDarkMode ? Colors.white : Colors.black),
+                    fontWeight: enabled ? FontWeight.bold : FontWeight.normal,
+                    fontSize: numberOfRows > 5 ? 14 : 16,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+        dowBuilder: (context, day) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+          final goldColor = Color(0xFFC7A97F);
+          
+          final text = DateFormat.E().format(day);
+          final isWeekend = day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
+          
+          return Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDarkMode 
+                        ? Colors.grey.shade800 
+                        : Colors.grey.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+              ),
+            child: Text(
+              text,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: goldColor,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      onDaySelected: (selectedDay, focusedDay) {
+        setState(() {
+          _focusedDay = focusedDay;
+        });
+        
+        if (_startDate == null) return;
+        
+        final diff = selectedDay.difference(
+          DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
+        ).inDays;
+        
+        // Не тренировочный день
+        if (diff < 0 || diff % 2 != 0) {
+          return;
+        }
+        
+        // Вычисляем номер тренировочного дня (0-based)
+        final dayNumber = diff ~/ 2;
+        
+        // Индекс дня в плане (1-based, так как dayIndex в плане начинается с 1)
+        final targetDayIndex = dayNumber + 1;
+        
+        // Проверяем, есть ли день с таким индексом в плане
+        if (dayNumber < _plan!.length && _isDayOpen(targetDayIndex)) {
+          // Находим конкретный день для открытия
+          final dayToOpen = _plan!.firstWhere((d) => d.dayIndex == targetDayIndex, 
+            orElse: () => DayInfo(dayIndex: -1, part: '', exercises: []));
+            
+          if (dayToOpen.dayIndex == -1) {
+            return;
+          }
+          
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => WorkoutPlanScreen(
+                days: [dayToOpen],
+                availableDays: {targetDayIndex},
+                onWorkoutComplete: _onWorkoutComplete,
+              ),
+            ),
+          );
+        }
+      },
+      onPageChanged: (focusedDay) {
+        setState(() {
+          _focusedDay = focusedDay;
+        });
+      },
+    );
+  }
+
+  Widget _buildInfoCard() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode 
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            spreadRadius: isDarkMode ? 0 : 1,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         children: [
-          _buildInfoTile(Icons.flag, "Goal", userData?["training_program"] ?? "Not selected"),
-          _buildInfoTile(Icons.location_on, "Location", userData?["training_location"] ?? "Not selected"),
-          _buildInfoTile(Icons.emoji_events, "Experience", userData?["training_experience"] ?? "Not selected"),
+          _buildInfoTile(
+            icon: Icons.flag,
+            title: "Goal",
+            value: userData!["training_program"] ?? "Not set",
+            isFirst: true,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: isDarkMode 
+                  ? Colors.grey.shade800
+                  : Colors.grey.withOpacity(0.1),
+            ),
+          ),
+          _buildInfoTile(
+            icon: Icons.location_on,
+            title: "Location",
+            value: userData!["training_location"] ?? "Not set",
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: isDarkMode 
+                  ? Colors.grey.shade800
+                  : Colors.grey.withOpacity(0.1),
+            ),
+          ),
+          _buildInfoTile(
+            icon: Icons.emoji_events,
+            title: "Experience",
+            value: userData!["training_experience"] ?? "Not set",
+            isLast: true,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String title, String value) {
-    return ListTile(
-      leading: Icon(icon, color: Theme.of(context).iconTheme.color),
-      title: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      subtitle: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-      contentPadding: EdgeInsets.symmetric(vertical: 4),
-    );
-  }
-
-  Widget _buildExerciseTile(Map<String, dynamic> exercise) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Image.asset(
-          exercise["preview"],
-          width: 60,
-          height: 60,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            print("⚠ Ошибка загрузки превью: ${exercise["preview"]}");
-            return Icon(Icons.image_not_supported, size: 60, color: Colors.grey);
-          },
-        ),
-
-        title: Text(
-          exercise["name"],
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          "Target: ${exercise["target"]}\nEquipment: ${exercise["equipment"]}",
-          style: TextStyle(fontSize: 14, color: Colors.black54),
-        ),
-        trailing: Icon(Icons.chevron_right),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ExerciseDetailScreen(exercise)),
-          );
-        },
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String title,
+    required String value,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
+    return Container(
+      padding: EdgeInsets.only(
+        top: isFirst ? 16 : 12,
+        bottom: isLast ? 16 : 12,
+        left: 16,
+        right: 16,
       ),
-    );
-  }
-}
-
-class ExerciseDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> exercise;
-
-  ExerciseDetailScreen(this.exercise);
-
-  @override
-  _ExerciseDetailScreenState createState() => _ExerciseDetailScreenState();
-}
-
-class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
-  List<dynamic>? instructions;
-
-  @override
-  void initState() {
-    super.initState();
-    loadInstructions();
-  }
-
-  /// 📌 **Загружаем инструкции из `exercises.json`**
-  Future<void> loadInstructions() async {
-    try {
-      String jsonString = await rootBundle.loadString('assets/exercises.json');
-      List<dynamic> exercisesList = json.decode(jsonString);
-
-      // 🔹 Ищем упражнение по названию
-      var matchedExercise = exercisesList.firstWhere(
-        (ex) => ex["name"].toLowerCase() == widget.exercise["name"].toLowerCase(),
-        orElse: () => {},
-      );
-
-      setState(() {
-        instructions = matchedExercise.isNotEmpty ? matchedExercise["instructions"] : [];
-      });
-
-      print("✅ Инструкции загружены: ${instructions?.length} шагов");
-    } catch (e) {
-      print("❌ Ошибка загрузки инструкций: $e");
-      setState(() {
-        instructions = [];
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.exercise["name"] ?? "Exercise"),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView( // ✅ Делаем весь экран прокручиваемым
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🔹 GIF изображения
-              Center(
-                child: Image.asset(
-                  widget.exercise["gif"] ?? "assets/images/placeholder.png",
-                  height: 350,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    print("⚠ Ошибка загрузки гифки: ${widget.exercise["gif"]}");
-                    return Icon(Icons.image_not_supported, size: 100, color: Colors.grey);
-                  },
-                ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isDarkMode 
+                  ? Color(0xFF3A3225)  // Darker gold for dark mode
+                  : goldColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                color: goldColor,
+                size: 22,
               ),
-              SizedBox(height: 20),
-
-              // 🔹 Название упражнения
-              Text(
-                widget.exercise["name"] ?? "Unknown Exercise",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-
-              // 🔹 Основная мышца
-              Row(
-                children: [
-                  Icon(Icons.fitness_center, color: Colors.black54),
-                  SizedBox(width: 8),
-                  Text("Target: "),
-                  Text(
-                    widget.exercise["target"] ?? "Unknown",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-
-              // 🔹 Заголовок перед инструкциями
-              Text(
-                "Instructions",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-
-              // 🔹 Проверяем, есть ли инструкции
-              if (instructions != null && instructions!.isNotEmpty)
-                ListView.builder(
-                  shrinkWrap: true, // ✅ Отключаем бесконечную прокрутку
-                  physics: NeverScrollableScrollPhysics(), // ✅ Используем общий скролл
-                  itemCount: instructions!.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 🔹 Кружок с номером шага
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: Color.fromARGB(255, 199, 169, 127),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                "${index + 1}",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-
-                          // 🔹 Текст инструкции
-                          Expanded(
-                            child: Text(
-                              instructions![index],
-                              style: TextStyle(fontSize: 16, color: Colors.black87),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                )
-              else
-                Center(
-                  child: Text(
-                    "Instructions not available.",
-                    style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey),
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode
+                        ? Colors.grey.shade400
+                        : Colors.grey.shade600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

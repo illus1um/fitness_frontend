@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
+import '../../models/progress_entry.dart';
 
 class ApiService {
-  static const String baseUrl = "http://127.0.0.1:8000"; // FastAPI сервер
+  static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
 
   static Future<bool> login(String username, String password) async {
     try {
@@ -323,6 +324,63 @@ class ApiService {
       print("Ошибка при сбросе пароля: $e");
       return false;
     }
+  }
+
+  static Future<List<ProgressEntry>> getProgress() async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return [];
+    final resp = await http.get(
+      Uri.parse('$baseUrl/progress/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (resp.statusCode == 200) {
+      final List<dynamic> list = json.decode(resp.body);
+      return list.map((e) => ProgressEntry.fromJson(e)).toList();
+    }
+    return [];
+  }
+
+  /// GET /progress/{day}
+  static Future<List<ProgressEntry>> getDayProgress(int day) async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return [];
+    final resp = await http.get(
+      Uri.parse('$baseUrl/progress/$day'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (resp.statusCode == 200) {
+      final List<dynamic> list = json.decode(resp.body);
+      return list.map((e) => ProgressEntry.fromJson(e)).toList();
+    }
+    return [];
+  }
+
+  /// POST /progress/
+  static Future<bool> saveProgress(ProgressEntry entry) async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return false;
+    final resp = await http.post(
+      Uri.parse('$baseUrl/progress/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(entry.toJson()),
+    );
+    return resp.statusCode == 200;
+  }
+
+  /// DELETE /progress/
+  static Future<bool> clearProgress() async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return false;
+    final resp = await http.delete(
+      Uri.parse('$baseUrl/progress/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return resp.statusCode == 200;
   }
 
     /// Проверка доступности username
