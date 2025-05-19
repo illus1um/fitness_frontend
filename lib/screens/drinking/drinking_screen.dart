@@ -14,18 +14,40 @@ class DrinkingScreen extends StatefulWidget {
   _DrinkingScreenState createState() => _DrinkingScreenState();
 }
 
+// Добавим новый класс для хранения информации о приеме воды с временем добавления
+class WaterIntakeRecord {
+  final double amount;
+  final DateTime timestamp;
+  
+  WaterIntakeRecord(this.amount, this.timestamp);
+  
+  // Add toJson and fromJson methods for serialization
+  Map<String, dynamic> toJson() => {
+    'amount': amount,
+    'timestamp': timestamp.toIso8601String(),
+  };
+  
+  factory WaterIntakeRecord.fromJson(Map<String, dynamic> json) {
+    return WaterIntakeRecord(
+      json['amount'],
+      DateTime.parse(json['timestamp']),
+    );
+  }
+}
+
 class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProviderStateMixin {
   double dailyWaterTarget = 2.0; // in liters
   double currentWaterIntake = 0.0; // in liters
-  List<double> _intakeHistory = [];
+  // Заменим List<double> на List<WaterIntakeRecord>
+  List<WaterIntakeRecord> _intakeHistory = [];
   List<double> _undoHistory = [];
   String _waterUnit = 'L';
   static const double _litersToFlOz = 33.814;
   
   // Colors
-  final Color primaryColor = Color(0xFF4A6FE7); // Blue primary
-  final Color primaryLightColor = Color(0xFF6B8FF8); // Light blue
-  final Color secondaryColor = Color(0xFF2CC2EA); // Cyan secondary
+  final Color primaryColor = Color(0xFF4A6FE7); // Original blue primary
+  final Color primaryLightColor = Color(0xFF6B8FF8); // Original light blue
+  final Color secondaryColor = Color(0xFF2CC2EA); // Original cyan secondary
   final Color goldAccent = Color(0xFFC7A97F); // Gold accent from original design
   final Color accentColor = Color(0xFFFF6B6B); // Red accent for important actions
   
@@ -66,6 +88,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
 
       String userKey = "water_${widget.username}";
       String dateKey = "date_${widget.username}";
+      String historyKey = "intake_history_${widget.username}";
 
       String today = DateTime.now().toIso8601String().substring(0, 10);
       String? savedDate = prefs.getString(dateKey);
@@ -75,9 +98,24 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
         await _saveToHistory(savedDate ?? today, yesterdayIntake);
         await prefs.setDouble(userKey, 0.0);
         await prefs.setString(dateKey, today);
-        currentWaterIntake = 0.0;
+        // Clear today's intake history
+        await prefs.setString(historyKey, json.encode([]));
+        setState(() {
+          currentWaterIntake = 0.0;
+          _intakeHistory = [];
+        });
       } else {
         currentWaterIntake = prefs.getDouble(userKey) ?? 0.0;
+        // Load intake history
+        String? historyJson = prefs.getString(historyKey);
+        if (historyJson != null) {
+          List<dynamic> historyList = json.decode(historyJson);
+          setState(() {
+            _intakeHistory = historyList
+                .map((item) => WaterIntakeRecord.fromJson(item))
+                .toList();
+          });
+        }
       }
 
       setState(() {
@@ -101,15 +139,23 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String userKey = "water_${widget.username}";
+    String historyKey = "intake_history_${widget.username}";
     
     double newIntake = min(currentWaterIntake + amountLiters, dailyWaterTarget);
     
-    // Animate the progress change
+    // Create new record
+    WaterIntakeRecord newRecord = WaterIntakeRecord(amountLiters, DateTime.now());
+    
+    // Update history list in state
     setState(() {
       _isAdding = true;
-      _intakeHistory.add(amountLiters);
+      _intakeHistory.add(newRecord);
       _undoHistory.clear();
     });
+    
+    // Save updated history to SharedPreferences
+    List<Map<String, dynamic>> historyJson = _intakeHistory.map((record) => record.toJson()).toList();
+    await prefs.setString(historyKey, json.encode(historyJson));
     
     // Animate to new value
     double startValue = _progressController.value;
@@ -147,15 +193,21 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String userKey = "water_${widget.username}";
+    String historyKey = "intake_history_${widget.username}";
     
-    // Move lastAmount declaration outside setState
-    double lastAmount = _intakeHistory.removeLast();
+    // Изменим для работы с WaterIntakeRecord
+    WaterIntakeRecord lastRecord = _intakeHistory.removeLast();
+    double lastAmount = lastRecord.amount;
     double newIntake = max(0, currentWaterIntake - lastAmount);
     
     // Add to undo history
     setState(() {
       _undoHistory.add(lastAmount);
     });
+    
+    // Save updated history to SharedPreferences
+    List<Map<String, dynamic>> historyJson = _intakeHistory.map((record) => record.toJson()).toList();
+    await prefs.setString(historyKey, json.encode(historyJson));
     
     // Animate to new value
     double startValue = _progressController.value;
@@ -548,7 +600,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                       return CustomPaint(
                                         painter: CircularProgressPainter(
                                           progress: _progressController.value,
-                                          progressColor: primaryColor,
+                                          progressColor: Color(0xFF4D77E8),
                                           backgroundColor: isDarkMode 
                                             ? Color(0xFF3A3F50).withOpacity(0.3) 
                                             : Colors.grey[200]!,
@@ -575,7 +627,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                       style: TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
-                                        color: primaryColor,
+                                        color: Color(0xFF4D77E8),
                                       ),
                                     ),
                                   ),
@@ -612,8 +664,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                          secondaryColor.withOpacity(0.8),
-                                          primaryColor.withOpacity(0.9),
+                                          Color(0xFF39C2EA), // Slightly adjusted secondary
+                                          Color(0xFF4D77E8), // Matching indicator
                                         ],
                                       ),
                                     ),
@@ -809,42 +861,24 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Recent Activity",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => HistoryScreen(username: widget.username),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                "View History",
-                                style: TextStyle(
-                                  color: goldAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          "Recent Activity",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
                         ),
                         SizedBox(height: 16),
                         
-                        // Recent activity list
-                        ...List.generate(min(3, _intakeHistory.length), (index) {
-                          double amount = _intakeHistory[_intakeHistory.length - 1 - index];
-                          String displayAmount = _convertToDisplay(amount).toStringAsFixed(2);
+                        // Показываем все интейки за день с точным временем
+                        ...List.generate(_intakeHistory.length, (index) {
+                          // Получаем запись в обратном порядке (новые сверху)
+                          WaterIntakeRecord record = _intakeHistory[_intakeHistory.length - 1 - index];
+                          String displayAmount = _convertToDisplay(record.amount).toStringAsFixed(1);
+                          
+                          // Форматируем время в читаемом виде
+                          String formattedTime = _formatTime(record.timestamp);
                           
                           return Padding(
                             padding: EdgeInsets.only(bottom: 12),
@@ -859,7 +893,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                   ),
                                   child: Icon(
                                     Icons.water_drop_rounded,
-                                    color: primaryColor,
+                                    color: Color(0xFF6B9AC4),
                                   ),
                                 ),
                                 SizedBox(width: 12),
@@ -885,7 +919,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                   ),
                                 ),
                                 Text(
-                                  "${index == 0 ? 'Just now' : '${index * 5 + 5} min ago'}",
+                                  formattedTime,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
@@ -953,36 +987,39 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDarkMode ? Color(0xFF1A1A1A) : Colors.white;
     
-    return Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildBottomBarButton(
-            Icons.undo_rounded,
-            "Undo",
-            _undoLastIntake,
-            _intakeHistory.isNotEmpty,
-            goldAccent,  // Using gold accent
-          ),
-          SizedBox(width: 20), 
-          _buildBottomBarButton(
-            Icons.redo_rounded,
-            "Redo",
-            _redoLastIntake,
-            _undoHistory.isNotEmpty,
-            goldAccent,  // Using gold accent
-          ),
-        ],
+    return SizedBox(
+      height: 60, // Further reduced height
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildBottomBarButton(
+              Icons.undo_rounded,
+              "Undo",
+              _undoLastIntake,
+              _intakeHistory.isNotEmpty,
+              goldAccent,  // Using gold accent
+            ),
+            SizedBox(width: 20), 
+            _buildBottomBarButton(
+              Icons.redo_rounded,
+              "Redo",
+              _redoLastIntake,
+              _undoHistory.isNotEmpty,
+              goldAccent,  // Using gold accent
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -992,25 +1029,36 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     
     return InkWell(
       onTap: enabled ? () => onTap() : null,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8), // Further reduced padding
+        decoration: BoxDecoration(
+          color: enabled 
+            ? (isDarkMode ? Colors.grey[800] : color.withOpacity(0.1))
+            : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: enabled 
+            ? Border.all(color: color, width: 1.0) // Reduced border width
+            : Border.all(color: Colors.transparent),
+        ),
+        child: Row(  // Changed from Column to Row layout
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               color: enabled 
                 ? color 
                 : (isDarkMode ? Colors.grey[700] : Colors.grey[400]),
-              size: 20,
+              size: 22, // Further reduced icon size
             ),
-            SizedBox(height: 4),
+            SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
                 color: enabled 
-                  ? (isDarkMode ? Colors.white70 : Colors.black87)
+                  ? (isDarkMode ? Colors.white : Colors.black87)
                   : (isDarkMode ? Colors.grey[700] : Colors.grey[400]),
               ),
             ),
@@ -1018,6 +1066,26 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
         ),
       ),
     );
+  }
+
+  // Функция для форматирования времени
+  String _formatTime(DateTime time) {
+    DateTime now = DateTime.now();
+    int diffMinutes = now.difference(time).inMinutes;
+    
+    if (diffMinutes < 1) {
+      return "Just now";
+    } else if (diffMinutes < 60) {
+      return "$diffMinutes min ago";
+    } else {
+      int hours = time.hour;
+      int minutes = time.minute;
+      String period = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours == 0 ? 12 : hours;
+      String minuteStr = minutes < 10 ? "0$minutes" : "$minutes";
+      return "$hours:$minuteStr $period";
+    }
   }
 }
 
