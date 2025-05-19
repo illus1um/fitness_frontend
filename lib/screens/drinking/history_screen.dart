@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/models/water_intake.dart';
 import 'package:intl/intl.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -45,13 +46,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'history_${widget.username}';
-    final jsonStr = prefs.getString(key);
-    if (jsonStr != null) {
-      setState(() {
-        history = Map<String, double>.from(json.decode(jsonStr));
-      });
+    try {
+      final historyList = await ApiService.getWaterHistory(limit: 30);
+      
+      if (historyList.isNotEmpty) {
+        Map<String, double> historyMap = {};
+        for (var entry in historyList) {
+          historyMap[entry.date] = entry.amount;
+        }
+        
+        setState(() {
+          history = historyMap;
+        });
+      }
+    } catch (e) {
+      print('Error loading water history: $e');
+      // Show error to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load water history. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -177,12 +193,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: Text('Water Intake History'),
         centerTitle: true,
         actions: [
-          // Кнопка генерации тестовых данных
-          IconButton(
-            icon: Icon(Icons.science_outlined),
-            onPressed: _generateTestData,
-            tooltip: 'Generate test data',
-          ),
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _loadAllData,
@@ -656,59 +666,5 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-
-  // Функция для генерации тестовых данных
-  Future<void> _generateTestData() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final rand = Random();
-      final Map<String, double> testData = {};
-      
-      // Генерируем данные за последние 14 дней
-      final now = DateTime.now();
-      for (int i = 0; i < 14; i++) {
-        final date = now.subtract(Duration(days: i));
-        final dateStr = DateFormat('yyyy-MM-dd').format(date);
-        
-        // Случайное значение от 0.5 до 3.0 литра
-        final waterAmount = (rand.nextDouble() * 2.5 + 0.5).toDouble();
-        testData[dateStr] = double.parse(waterAmount.toStringAsFixed(2));
-      }
-      
-      // Сохраняем в SharedPreferences
-      final key = 'history_${widget.username}';
-      await prefs.setString(key, json.encode(testData));
-      
-      // Показываем снэкбар
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Тестовые данные успешно сгенерированы!'),
-          backgroundColor: goldAccent,
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      
-      // Обновляем UI
-      await _loadAllData();
-    } catch (e) {
-      print('Ошибка при генерации тестовых данных: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка при генерации тестовых данных'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
+  
 }

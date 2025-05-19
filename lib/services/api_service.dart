@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import '../../models/progress_entry.dart';
 import '../../models/day_info.dart';
+import '../models/water_intake.dart';
 
 class ApiService {
   static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
@@ -457,5 +458,157 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
     return resp.statusCode == 200;
+  }
+
+  // Water tracking endpoints
+  static Future<List<WaterIntakeHistory>> getWaterHistory({int limit = 30}) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/water/history?limit=$limit'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((item) => 
+          WaterIntakeHistory.fromJson(item as Map<String, dynamic>)
+        ).toList();
+      } else if (response.statusCode == 401) {
+        bool refreshed = await refreshAccessToken();
+        return refreshed ? await getWaterHistory(limit: limit) : [];
+      }
+      return [];
+    } catch (e) {
+      print("Error getting water history: $e");
+      return [];
+    }
+  }
+
+  static Future<DailyWaterIntake?> getDailyWaterIntake(String date) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return null;
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/water/daily/$date'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return DailyWaterIntake.fromJson(data);
+      } else if (response.statusCode == 401) {
+        bool refreshed = await refreshAccessToken();
+        return refreshed ? getDailyWaterIntake(date) : null;
+      }
+      return null;
+    } catch (e) {
+      print("Error getting daily water intake: $e");
+      return null;
+    }
+  }
+
+  static Future<bool> addWaterIntake(double amount, {List<WaterIntakeRecord>? records}) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final Map<String, dynamic> body = {
+        "amount": amount,
+      };
+
+      if (records != null && records.isNotEmpty) {
+        body["records"] = records.map((r) => r.toJson()).toList();
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/water/add'),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json"
+        },
+        body: jsonEncode(body),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print("Error adding water intake: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> addWaterRecord(WaterIntakeRecord record) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/water/records'),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json"
+        },
+        body: jsonEncode(record.toJson()),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print("Error adding water record: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> deleteWaterRecord(int recordId) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/water/records/$recordId'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error deleting water record: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> deleteDailyWaterIntake(String date) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/water/daily/$date'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error deleting daily water intake: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> deleteAllWaterData() async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/water/all'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error deleting all water data: $e");
+      return false;
+    }
   }
 }

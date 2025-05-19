@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/screens/drinking/history_screen.dart';
 import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/models/water_intake.dart';
 import 'notification_settings_screen.dart';
 import 'congratulation_screen.dart';
 
@@ -15,38 +15,18 @@ class DrinkingScreen extends StatefulWidget {
   _DrinkingScreenState createState() => _DrinkingScreenState();
 }
 
-// Добавим новый класс для хранения информации о приеме воды с временем добавления
-class WaterIntakeRecord {
-  final double amount;
-  final DateTime timestamp;
-  
-  WaterIntakeRecord(this.amount, this.timestamp);
-  
-  // Add toJson and fromJson methods for serialization
-  Map<String, dynamic> toJson() => {
-    'amount': amount,
-    'timestamp': timestamp.toIso8601String(),
-  };
-  
-  factory WaterIntakeRecord.fromJson(Map<String, dynamic> json) {
-    return WaterIntakeRecord(
-      json['amount'],
-      DateTime.parse(json['timestamp']),
-    );
-  }
-}
-
 class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProviderStateMixin {
   double dailyWaterTarget = 2.0; // in liters
   double currentWaterIntake = 0.0; // in liters
   // Track the actual water intake (uncapped) for proper undo/redo
   double actualWaterIntake = 0.0; 
-  // Заменим List<double> на List<WaterIntakeRecord>
   List<WaterIntakeRecord> _intakeHistory = [];
-  List<WaterIntakeRecord> _undoHistory = []; // Change to store full records
+  List<WaterIntakeRecord> _undoHistory = [];
   String _waterUnit = 'L';
   static const double _litersToFlOz = 33.814;
   bool _targetReachedAndCongratulated = false;
+  bool _isLoading = true;
+  String _today = DateTime.now().toIso8601String().substring(0, 10);
   
   // Colors
   final Color primaryColor = Color(0xFF4A6FE7); // Original blue primary
@@ -73,11 +53,14 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   @override
   void dispose() {
     _progressController.dispose();
-    _saveCurrentDataToHistory();
     super.dispose();
   }
 
   Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final profile = await ApiService.getUserProfile();
 
@@ -90,54 +73,43 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
       bool isMale = profile["gender"] ?? true;
 
       double calculatedWaterTarget = _calculateDailyWaterTarget(weight, age, isMale);
-
-      String userKey = "water_${widget.username}";
-      String actualUserKey = "actual_water_${widget.username}";
-      String dateKey = "date_${widget.username}";
-      String historyKey = "intake_history_${widget.username}";
-      String todayCongratsKey = "congrats_shown_${widget.username}_${DateTime.now().toIso8601String().substring(0, 10)}";
-
-      String today = DateTime.now().toIso8601String().substring(0, 10);
-      String? savedDate = prefs.getString(dateKey);
-
-      if (savedDate != today) {
-        double yesterdayIntake = prefs.getDouble(userKey) ?? 0.0;
-        await _saveToHistory(savedDate ?? today, yesterdayIntake);
-        await prefs.setDouble(userKey, 0.0);
-        await prefs.setDouble(actualUserKey, 0.0);
-        await prefs.setString(dateKey, today);
-        // Clear today's intake history
-        await prefs.setString(historyKey, json.encode([]));
+      
+      // Get today's water intake from the server
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final dailyIntake = await ApiService.getDailyWaterIntake(today);
+      
+      if (dailyIntake != null) {
         setState(() {
+          _today = today;
+          currentWaterIntake = dailyIntake.totalAmount;
+          actualWaterIntake = dailyIntake.totalAmount;
+          _intakeHistory = dailyIntake.records;
+          
+          // Check if target has been reached
+          _targetReachedAndCongratulated = currentWaterIntake >= calculatedWaterTarget;
+        });
+      } else {
+        setState(() {
+          _today = today;
           currentWaterIntake = 0.0;
           actualWaterIntake = 0.0;
           _intakeHistory = [];
           _undoHistory = [];
           _targetReachedAndCongratulated = false;
         });
-      } else {
-        currentWaterIntake = prefs.getDouble(userKey) ?? 0.0;
-        actualWaterIntake = prefs.getDouble(actualUserKey) ?? currentWaterIntake;
-        // Load intake history
-        String? historyJson = prefs.getString(historyKey);
-        if (historyJson != null) {
-          List<dynamic> historyList = json.decode(historyJson);
-          setState(() {
-            _intakeHistory = historyList
-                .map((item) => WaterIntakeRecord.fromJson(item))
-                .toList();
-          });
-        }
-        // Check if target has been reached and congratulated today
-        _targetReachedAndCongratulated = prefs.getBool(todayCongratsKey) ?? false;
       }
 
       setState(() {
         dailyWaterTarget = calculatedWaterTarget;
+        _isLoading = false;
       });
       
       // Initialize progress animation
       _progressController.value = currentWaterIntake / dailyWaterTarget;
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -154,22 +126,17 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     // Don't add more water if target is already reached
     if (currentWaterIntake >= dailyWaterTarget) return;
     
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String userKey = "water_${widget.username}";
-    String actualUserKey = "actual_water_${widget.username}";
-    String historyKey = "intake_history_${widget.username}";
-    
     // Calculate actual intake (uncapped) and displayed intake (capped at target)
     double newActualIntake = actualWaterIntake + amountLiters;
     double newDisplayedIntake = min(newActualIntake, dailyWaterTarget);
     
-    // Only add the amount that will actually be displayed (capped amount)
-    double displayedAmount = newDisplayedIntake - currentWaterIntake;
-    
     // Create new record with the requested amount (for accurate undo/redo)
-    WaterIntakeRecord newRecord = WaterIntakeRecord(amountLiters, DateTime.now());
+    WaterIntakeRecord newRecord = WaterIntakeRecord(
+      amount: amountLiters, 
+      timestamp: DateTime.now()
+    );
     
-    // Update history list in state
+    // First update locally for immediate UI feedback
     setState(() {
       _isAdding = true;
       _intakeHistory.add(newRecord);
@@ -178,24 +145,12 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
         _undoHistory.clear();
       }
       actualWaterIntake = newActualIntake;
+      currentWaterIntake = newDisplayedIntake;
     });
-    
-    // Save updated history to SharedPreferences
-    List<Map<String, dynamic>> historyJson = _intakeHistory.map((record) => record.toJson()).toList();
-    await prefs.setString(historyKey, json.encode(historyJson));
-    await prefs.setDouble(actualUserKey, actualWaterIntake);
     
     // Animate to new value
     double startValue = _progressController.value;
     double endValue = newDisplayedIntake / dailyWaterTarget;
-    
-    Animation<double> animation = Tween<double>(
-      begin: startValue,
-      end: endValue,
-    ).animate(CurvedAnimation(
-      parent: _progressController,
-      curve: Curves.easeOutCubic,
-    ));
     
     _progressController.value = startValue;
     _progressController.animateTo(endValue).then((_) {
@@ -204,28 +159,31 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
       });
     });
     
-    setState(() {
-      currentWaterIntake = newDisplayedIntake;
-    });
-    
-    await prefs.setDouble(userKey, newDisplayedIntake);
-    
-    // Also update the timestamp of the day to maintain daily history
-    String dateKey = "date_${widget.username}";
-    String today = DateTime.now().toIso8601String().substring(0, 10);
-    await prefs.setString(dateKey, today);
-    
-    // Update today's entry in history as well
-    // This ensures the history is kept up-to-date throughout the day
-    await _saveToHistory(today, newDisplayedIntake);
+    // Save to server
+    bool success = await ApiService.addWaterIntake(newDisplayedIntake, records: [newRecord]);
+    if (!success) {
+      // If server update fails, show error and revert local changes
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update water intake. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      
+      // Revert local changes if server update fails
+      setState(() {
+        _intakeHistory.removeLast();
+        actualWaterIntake = actualWaterIntake - amountLiters;
+        currentWaterIntake = min(actualWaterIntake, dailyWaterTarget);
+      });
+      
+      // Also revert animation
+      _progressController.animateTo(currentWaterIntake / dailyWaterTarget);
+      return;
+    }
     
     // Check if target is reached for the first time and show congratulation screen
-    String todayCongratsKey = "congrats_shown_${widget.username}_$today";
-    bool hasShownCongrats = prefs.getBool(todayCongratsKey) ?? false;
-    if (newDisplayedIntake >= dailyWaterTarget && !hasShownCongrats && !isRedo) {
-      // Mark congratulation as shown for today
-      await prefs.setBool(todayCongratsKey, true);
-      
+    if (newDisplayedIntake >= dailyWaterTarget && !_targetReachedAndCongratulated && !isRedo) {
       // Update state to disable undo
       setState(() {
         _targetReachedAndCongratulated = true;
@@ -253,13 +211,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     
     if (_intakeHistory.isEmpty) return;
     
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String userKey = "water_${widget.username}";
-    String actualUserKey = "actual_water_${widget.username}";
-    String historyKey = "intake_history_${widget.username}";
-    
     // Get the last record
-    WaterIntakeRecord lastRecord = _intakeHistory.removeLast();
+    WaterIntakeRecord lastRecord = _intakeHistory.last;
     double lastAmount = lastRecord.amount;
     
     // Update actual intake
@@ -267,41 +220,49 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     // Calculate new displayed intake (capped at target)
     double newDisplayedIntake = min(newActualIntake, dailyWaterTarget);
     
-    // Add to undo history
+    // First update locally for immediate UI feedback
     setState(() {
+      _intakeHistory.removeLast();
       _undoHistory.add(lastRecord);
       actualWaterIntake = newActualIntake;
+      currentWaterIntake = newDisplayedIntake;
     });
-    
-    // Save updated history to SharedPreferences
-    List<Map<String, dynamic>> historyJson = _intakeHistory.map((record) => record.toJson()).toList();
-    await prefs.setString(historyKey, json.encode(historyJson));
-    await prefs.setDouble(actualUserKey, newActualIntake);
     
     // Animate to new value
     double startValue = _progressController.value;
     double endValue = newDisplayedIntake / dailyWaterTarget;
     
-    Animation<double> animation = Tween<double>(
-      begin: startValue,
-      end: endValue,
-    ).animate(CurvedAnimation(
-      parent: _progressController,
-      curve: Curves.easeInCubic,
-    ));
-    
     _progressController.value = startValue;
     _progressController.animateTo(endValue);
     
-    setState(() {
-      currentWaterIntake = newDisplayedIntake;
-    });
+    // If the record has an ID (saved to server), delete it
+    if (lastRecord.id != null) {
+      bool success = await ApiService.deleteWaterRecord(lastRecord.id!);
+      if (!success) {
+        // If server update fails, show error and revert local changes
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to undo. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        
+        // Revert local changes
+        setState(() {
+          _undoHistory.removeLast();
+          _intakeHistory.add(lastRecord);
+          actualWaterIntake = actualWaterIntake + lastAmount;
+          currentWaterIntake = min(actualWaterIntake, dailyWaterTarget);
+        });
+        
+        // Also revert animation
+        _progressController.animateTo(currentWaterIntake / dailyWaterTarget);
+        return;
+      }
+    }
     
-    await prefs.setDouble(userKey, newDisplayedIntake);
-    
-    // Update today's entry in history after undo as well
-    String today = DateTime.now().toIso8601String().substring(0, 10);
-    await _saveToHistory(today, newDisplayedIntake);
+    // Update the daily total on the server
+    await ApiService.addWaterIntake(newDisplayedIntake);
   }
 
   Future<void> _redoLastIntake() async {
@@ -315,36 +276,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
       _undoHistory.removeLast();
       await _updateWaterIntake(recordToRedo.amount, isRedo: true);
     }
-  }
-
-  Future<void> _saveToHistory(String date, double intake) async {
-    if (intake == 0.0) return;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String historyKey = "history_${widget.username}";
-
-    Map<String, dynamic> history = {};
-    String? historyJson = prefs.getString(historyKey);
-
-    if (historyJson != null) {
-      history = json.decode(historyJson);
-    }
-
-    history[date] = intake;
-    await prefs.setString(historyKey, json.encode(history));
-  }
-
-  Future<void> _saveCurrentDataToHistory() async {
-    if (currentWaterIntake <= 0.0) return;
-    
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String dateKey = "date_${widget.username}";
-    String today = DateTime.now().toIso8601String().substring(0, 10);
-    
-    // Save today's data to history
-    await _saveToHistory(today, currentWaterIntake);
-    
-    // Don't reset current data, just save it to history as a backup
-    // This ensures the history is updated even if the user doesn't open the app tomorrow
   }
 
   double _convertToDisplay(double liters) {
@@ -579,7 +510,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                 MaterialPageRoute(
                   builder: (context) => HistoryScreen(username: widget.username),
                 ),
-              );
+              ).then((_) => _loadUserData()); // Reload data when returning from history
             },
           ),
           IconButton(
@@ -595,614 +526,637 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.all(20),
+      body: _isLoading 
+        ? Center(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Today's summary and status card
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDarkMode 
-                          ? Colors.black.withOpacity(0.3) 
-                          : Colors.black.withOpacity(0.05),
-                        blurRadius: 15,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Today's Hydration",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    displayIntake,
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "/ $displayTarget $_unitLabel",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          // Completely redesigned percentage indicator
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  isDarkMode ? Color(0xFF2F3443) : Colors.white,
-                                  isDarkMode ? Color(0xFF212730) : Color(0xFFF8F9FA),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isDarkMode 
-                                    ? Colors.black.withOpacity(0.2) 
-                                    : Colors.grey.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            padding: EdgeInsets.all(6),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Modern circular progress
-                                SizedBox(
-                                  width: 68,
-                                  height: 68,
-                                  child: AnimatedBuilder(
-                                    animation: _progressController,
-                                    builder: (context, child) {
-                                      return CustomPaint(
-                                        painter: CircularProgressPainter(
-                                          progress: _progressController.value,
-                                          progressColor: Color(0xFF4D77E8),
-                                          backgroundColor: isDarkMode 
-                                            ? Color(0xFF3A3F50).withOpacity(0.3) 
-                                            : Colors.grey[200]!,
-                                          strokeWidth: 8.0,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                
-                                // Percentage text with modern styling - properly centered
-                                Container(
-                                  padding: EdgeInsets.all(4),
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: isDarkMode ? Color(0xFF252A36) : Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      "${(progress * 100).toInt()}",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF4D77E8),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      SizedBox(height: 24),
-                      
-                      // Water visualization - matching the screenshot
-                      Container(
-                        height: 160,
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? Color(0xFF2A2A2A) : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Stack(
-                          children: [
-                            AnimatedBuilder(
-                              animation: _progressController,
-                              builder: (context, child) {
-                                return Positioned(
-                                  bottom: 0,
-                                  left: 0, 
-                                  right: 0,
-                                  height: 160 * _progressController.value,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.only(
-                                      bottomLeft: Radius.circular(24),
-                                      bottomRight: Radius.circular(24),
-                                      topLeft: _progressController.value >= 0.99 ? Radius.circular(24) : Radius.zero,
-                                      topRight: _progressController.value >= 0.99 ? Radius.circular(24) : Radius.zero,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Color(0xFF39C2EA), // Slightly adjusted secondary
-                                            Color(0xFF4D77E8), // Matching indicator
-                                          ],
-                                        ),
-                                      ),
-                                      child: CustomPaint(
-                                        painter: WavePainter(
-                                          _progressController.value,
-                                          Colors.white.withOpacity(0.1),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            
-                            // Goal achieved indicator
-                            if (_targetReachedAndCongratulated || progress >= 1.0)
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: goldAccent,
-                                    borderRadius: BorderRadius.only(
-                                      topRight: Radius.circular(24),
-                                      bottomLeft: Radius.circular(24),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.emoji_events_rounded,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        "Goal Achieved!",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      
-                      SizedBox(height: 24),
-                      
-                      // Quick actions
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: _buildActionButton(
-                              "Small",
-                              Icons.local_drink_rounded,
-                              0.2,
-                              primaryLightColor,
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: _buildActionButton(
-                              "Medium",
-                              Icons.water_rounded,
-                              0.4,
-                              primaryColor,
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: _buildActionButton(
-                              "Large",
-                              Icons.sports_bar_rounded,
-                              0.6,
-                              secondaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      SizedBox(height: 20),
-                      
-                      // Add Water button below the quick action buttons - full width matching the 3 buttons above
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isTargetReached ? Colors.grey : goldAccent,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
-                          ),
-                          onPressed: isTargetReached ? null : _showAmountSelectionSheet,
-                          child: Text(
-                            "Add Water",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(goldAccent),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  "Loading your water data...",
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
                   ),
                 ),
-                
-                SizedBox(height: 24),
-                
-                // Health insights card
-                Container(
-                  width: double.infinity,
+              ],
+            ),
+          )
+        : SafeArea(
+            child: RefreshIndicator(
+              color: goldAccent,
+              onRefresh: _loadUserData,
+              child: SingleChildScrollView(
+                physics: BouncingScrollPhysics(),
+                child: Padding(
                   padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDarkMode 
-                          ? Colors.black.withOpacity(0.3) 
-                          : Colors.black.withOpacity(0.05),
-                        blurRadius: 15,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Health title with icon
-                          Flexible(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.favorite_rounded,
-                                  color: goldAccent,
-                                ),
-                                SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    "Insights",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          SizedBox(width: 4), // Small gap
-                          
-                          // Achievement indicator - adapt to available space
-                          if (_targetReachedAndCongratulated || progress >= 1.0)
-                            Flexible(
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: goldAccent.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle_rounded,
-                                      color: goldAccent,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        "Goal Met",
-                                        style: TextStyle(
-                                          color: goldAccent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      
-                      // Benefits of water
-                      ...List.generate(3, (index) {
-                        List<String> benefits = [
-                          "Proper hydration improves energy levels and brain function",
-                          "Drinking water before meals can help reduce overall calorie intake",
-                          "Staying hydrated may help prevent headaches and migraines",
-                        ];
-                        
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: goldAccent.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    "${index + 1}",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: goldAccent,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  benefits[index],
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-                
-                SizedBox(height: 24),
-                
-                // Recent activity - Simplified and improved
-                if (_intakeHistory.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDarkMode 
-                            ? Colors.black.withOpacity(0.3) 
-                            : Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Today's Activity",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            Text(
-                              "${_intakeHistory.length} records",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                              ),
+                      // Today's summary and status card
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDarkMode 
+                                ? Colors.black.withOpacity(0.3) 
+                                : Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              offset: Offset(0, 5),
                             ),
                           ],
                         ),
-                        SizedBox(height: 8),
-                        
-                        Text(
-                          "Water intake by time of day",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                          ),
-                        ),
-                        
-                        SizedBox(height: 16),
-                        
-                        // Показываем все интейки за день с точным временем
-                        Container(
-                          height: min(240, _intakeHistory.length * 70.0), // Cap height
-                          child: ListView.builder(
-                            physics: BouncingScrollPhysics(),
-                            itemCount: _intakeHistory.length,
-                            reverse: true, // Newest first
-                            itemBuilder: (context, index) {
-                              // Get record in reverse order (newest first)
-                              WaterIntakeRecord record = _intakeHistory[_intakeHistory.length - 1 - index];
-                              String displayAmount = _convertToDisplay(record.amount).toStringAsFixed(1);
-                          
-                              // Format time as hour:minute AM/PM
-                              String formattedTime = _formatTime(record.timestamp);
-                              
-                              // Determine icon based on time of day
-                              IconData timeIcon;
-                              Color timeColor;
-                              
-                              int hour = record.timestamp.hour;
-                              if (hour >= 5 && hour < 12) {
-                                timeIcon = Icons.wb_sunny_outlined;
-                                timeColor = Colors.amber;
-                              } else if (hour >= 12 && hour < 17) {
-                                timeIcon = Icons.wb_sunny;
-                                timeColor = Colors.orange;
-                              } else if (hour >= 17 && hour < 21) {
-                                timeIcon = Icons.wb_twilight;
-                                timeColor = Colors.deepOrange;
-                              } else {
-                                timeIcon = Icons.nights_stay;
-                                timeColor = Colors.indigo;
-                              }
-                              
-                              return Padding(
-                                padding: EdgeInsets.only(bottom: 12),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Today's Hydration",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(
+                                          displayIntake,
+                                          style: TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          "/ $displayTarget $_unitLabel",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                // Completely redesigned percentage indicator
+                                Container(
+                                  width: 80,
+                                  height: 80,
                                   decoration: BoxDecoration(
-                                    color: isDarkMode ? Color(0xFF252A36).withOpacity(0.5) : Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(16),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        isDarkMode ? Color(0xFF2F3443) : Colors.white,
+                                        isDarkMode ? Color(0xFF212730) : Color(0xFFF8F9FA),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: isDarkMode 
+                                          ? Colors.black.withOpacity(0.2) 
+                                          : Colors.grey.withOpacity(0.2),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 5),
+                                      ),
+                                    ],
                                   ),
-                                  child: Row(
+                                  padding: EdgeInsets.all(6),
+                                  child: Stack(
+                                    alignment: Alignment.center,
                                     children: [
-                                      // Time icon
-                                      Container(
-                                        width: 42,
-                                        height: 42,
-                                        decoration: BoxDecoration(
-                                          color: timeColor.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          timeIcon,
-                                          color: timeColor,
-                                          size: 22,
-                                        ),
-                                      ),
-                                      SizedBox(width: 14),
-                                      
-                                      // Time and amount info
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              formattedTime,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                                color: textColor,
+                                      // Modern circular progress
+                                      SizedBox(
+                                        width: 68,
+                                        height: 68,
+                                        child: AnimatedBuilder(
+                                          animation: _progressController,
+                                          builder: (context, child) {
+                                            return CustomPaint(
+                                              painter: CircularProgressPainter(
+                                                progress: _progressController.value,
+                                                progressColor: Color(0xFF4D77E8),
+                                                backgroundColor: isDarkMode 
+                                                  ? Color(0xFF3A3F50).withOpacity(0.3) 
+                                                  : Colors.grey[200]!,
+                                                strokeWidth: 8.0,
                                               ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              "Added $displayAmount $_unitLabel",
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                              ),
-                                            ),
-                                          ],
+                                            );
+                                          },
                                         ),
                                       ),
                                       
-                                      // Water drop indicator showing relative amount
+                                      // Percentage text with modern styling - properly centered
                                       Container(
-                                        width: 42,
-                                        height: 42,
+                                        padding: EdgeInsets.all(4),
+                                        width: 50,
+                                        height: 50,
                                         decoration: BoxDecoration(
-                                          color: primaryColor.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: isDarkMode ? Color(0xFF252A36) : Colors.white,
+                                          shape: BoxShape.circle,
                                         ),
                                         child: Center(
-                                          child: Stack(
-                                            alignment: Alignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.water_drop,
-                                                color: primaryColor,
-                                                size: min(28, 16 + (record.amount / dailyWaterTarget) * 24),
-                                              ),
-                                            ],
+                                          child: Text(
+                                            "${(progress * 100).toInt()}",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF4D77E8),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
+                              ],
+                            ),
+                            
+                            SizedBox(height: 24),
+                            
+                            // Water visualization - matching the screenshot
+                            Container(
+                              height: 160,
+                              decoration: BoxDecoration(
+                                color: isDarkMode ? Color(0xFF2A2A2A) : Colors.grey[100],
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Stack(
+                                children: [
+                                  AnimatedBuilder(
+                                    animation: _progressController,
+                                    builder: (context, child) {
+                                      return Positioned(
+                                        bottom: 0,
+                                        left: 0, 
+                                        right: 0,
+                                        height: 160 * _progressController.value,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.only(
+                                            bottomLeft: Radius.circular(24),
+                                            bottomRight: Radius.circular(24),
+                                            topLeft: _progressController.value >= 0.99 ? Radius.circular(24) : Radius.zero,
+                                            topRight: _progressController.value >= 0.99 ? Radius.circular(24) : Radius.zero,
+                                          ),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: [
+                                                  Color(0xFF39C2EA), // Slightly adjusted secondary
+                                                  Color(0xFF4D77E8), // Matching indicator
+                                                ],
+                                              ),
+                                            ),
+                                            child: CustomPaint(
+                                              painter: WavePainter(
+                                                _progressController.value,
+                                                Colors.white.withOpacity(0.1),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  
+                                  // Goal achieved indicator
+                                  if (_targetReachedAndCongratulated || progress >= 1.0)
+                                    Positioned(
+                                      top: 0,
+                                      right: 0,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: goldAccent,
+                                          borderRadius: BorderRadius.only(
+                                            topRight: Radius.circular(24),
+                                            bottomLeft: Radius.circular(24),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.emoji_events_rounded,
+                                              color: Colors.white,
+                                              size: 18,
+                                            ),
+                                            SizedBox(width: 6),
+                                            Text(
+                                              "Goal Achieved!",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            
+                            SizedBox(height: 24),
+                            
+                            // Quick actions
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: _buildActionButton(
+                                    "Small",
+                                    Icons.local_drink_rounded,
+                                    0.2,
+                                    primaryLightColor,
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildActionButton(
+                                    "Medium",
+                                    Icons.water_rounded,
+                                    0.4,
+                                    primaryColor,
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildActionButton(
+                                    "Large",
+                                    Icons.sports_bar_rounded,
+                                    0.6,
+                                    secondaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            
+                            SizedBox(height: 20),
+                            
+                            // Add Water button below the quick action buttons - full width matching the 3 buttons above
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isTargetReached ? Colors.grey : goldAccent,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                onPressed: isTargetReached ? null : _showAmountSelectionSheet,
+                                child: Text(
+                                  "Add Water",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      SizedBox(height: 24),
+                      
+                      // Health insights card
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isDarkMode 
+                                ? Colors.black.withOpacity(0.3) 
+                                : Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // Health title with icon
+                                Flexible(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.favorite_rounded,
+                                        color: goldAccent,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          "Insights",
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                
+                                SizedBox(width: 4), // Small gap
+                                
+                                // Achievement indicator - adapt to available space
+                                if (_targetReachedAndCongratulated || progress >= 1.0)
+                                  Flexible(
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: goldAccent.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle_rounded,
+                                            color: goldAccent,
+                                            size: 14,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              "Goal Met",
+                                              style: TextStyle(
+                                                color: goldAccent,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            SizedBox(height: 16),
+                            
+                            // Benefits of water
+                            ...List.generate(3, (index) {
+                              List<String> benefits = [
+                                "Proper hydration improves energy levels and brain function",
+                                "Drinking water before meals can help reduce overall calorie intake",
+                                "Staying hydrated may help prevent headaches and migraines",
+                              ];
+                              
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: goldAccent.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          "${index + 1}",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: goldAccent,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        benefits[index],
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               );
-                            },
+                            }),
+                          ],
+                        ),
+                      ),
+                      
+                      SizedBox(height: 24),
+                      
+                      // Recent activity - Simplified and improved
+                      if (_intakeHistory.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDarkMode 
+                                  ? Colors.black.withOpacity(0.3) 
+                                  : Colors.black.withOpacity(0.05),
+                                blurRadius: 15,
+                                offset: Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Today's Activity",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    "${_intakeHistory.length} records",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              
+                              Text(
+                                "Water intake by time of day",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                ),
+                              ),
+                              
+                              SizedBox(height: 16),
+                              
+                              // Показываем все интейки за день с точным временем
+                              Container(
+                                height: min(240, _intakeHistory.length * 70.0), // Cap height
+                                child: ListView.builder(
+                                  physics: BouncingScrollPhysics(),
+                                  itemCount: _intakeHistory.length,
+                                  reverse: true, // Newest first
+                                  itemBuilder: (context, index) {
+                                    // Get record in reverse order (newest first)
+                                    WaterIntakeRecord record = _intakeHistory[_intakeHistory.length - 1 - index];
+                                    String displayAmount = _convertToDisplay(record.amount).toStringAsFixed(1);
+                                
+                                    // Format time as hour:minute AM/PM
+                                    String formattedTime = _formatTime(record.timestamp);
+                                    
+                                    // Determine icon based on time of day
+                                    IconData timeIcon;
+                                    Color timeColor;
+                                    
+                                    int hour = record.timestamp.hour;
+                                    if (hour >= 5 && hour < 12) {
+                                      timeIcon = Icons.wb_sunny_outlined;
+                                      timeColor = Colors.amber;
+                                    } else if (hour >= 12 && hour < 17) {
+                                      timeIcon = Icons.wb_sunny;
+                                      timeColor = Colors.orange;
+                                    } else if (hour >= 17 && hour < 21) {
+                                      timeIcon = Icons.wb_twilight;
+                                      timeColor = Colors.deepOrange;
+                                    } else {
+                                      timeIcon = Icons.nights_stay;
+                                      timeColor = Colors.indigo;
+                                    }
+                                    
+                                    return Padding(
+                                      padding: EdgeInsets.only(bottom: 12),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: isDarkMode ? Color(0xFF252A36).withOpacity(0.5) : Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            // Time icon
+                                            Container(
+                                              width: 42,
+                                              height: 42,
+                                              decoration: BoxDecoration(
+                                                color: timeColor.withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Icon(
+                                                timeIcon,
+                                                color: timeColor,
+                                                size: 22,
+                                              ),
+                                            ),
+                                            SizedBox(width: 14),
+                                            
+                                            // Time and amount info
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    formattedTime,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 16,
+                                                      color: textColor,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  Text(
+                                                    "Added $displayAmount $_unitLabel",
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            
+                                            // Water drop indicator showing relative amount
+                                            Container(
+                                              width: 42,
+                                              height: 42,
+                                              decoration: BoxDecoration(
+                                                color: primaryColor.withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Center(
+                                                child: Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.water_drop,
+                                                      color: primaryColor,
+                                                      size: min(28, 16 + (record.amount / dailyWaterTarget) * 24),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
-              ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
       bottomNavigationBar: _buildActionButtonBar(),
     );
   }
@@ -1310,7 +1264,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   
   Widget _buildBottomBarButton(IconData icon, String label, Function onTap, bool enabled, Color color) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isTargetReached = currentWaterIntake >= dailyWaterTarget;
     
     // Disable undo button if target has been reached and congratulated
     if (label == "Undo" && _targetReachedAndCongratulated) {
