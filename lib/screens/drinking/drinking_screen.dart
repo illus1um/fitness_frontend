@@ -913,49 +913,64 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.favorite_rounded,
-                                color: goldAccent,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                "Health Insights",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
+                          // Health title with icon
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.favorite_rounded,
+                                  color: goldAccent,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    "Insights",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           
-                          // Achievement indicator
+                          SizedBox(width: 4), // Small gap
+                          
+                          // Achievement indicator - adapt to available space
                           if (_targetReachedAndCongratulated || progress >= 1.0)
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: goldAccent.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle_rounded,
-                                    color: goldAccent,
-                                    size: 16,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "Today's Goal Met",
-                                    style: TextStyle(
+                            Flexible(
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: goldAccent.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_rounded,
                                       color: goldAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
+                                      size: 14,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        "Goal Met",
+                                        style: TextStyle(
+                                          color: goldAccent,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                         ],

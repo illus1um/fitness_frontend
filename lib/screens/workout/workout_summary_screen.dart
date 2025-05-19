@@ -188,7 +188,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -277,11 +277,12 @@ class WorkoutSummaryScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Изображение упражнения в контейнере с тенью
                             Container(
-                              width: 70,
-                              height: 70,
+                              width: 60,
+                              height: 60,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
@@ -297,14 +298,14 @@ class WorkoutSummaryScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 child: Image.asset(
                                   exercise.assetPreviewPath,
-                                  width: 70,
-                                  height: 70,
+                                  width: 60,
+                                  height: 60,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Container(
                                     color: isDarkMode ? const Color(0xFF262626) : Colors.grey[200],
                                     child: Icon(
                                       Icons.fitness_center,
-                                      size: 40,
+                                      size: 30,
                                       color: isDarkMode ? Colors.grey[700] : Colors.grey[400],
                                     ),
                                   ),
@@ -312,7 +313,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                               ),
                             ),
                             
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
                             
                             // Информация об упражнении с мини-прогрессом
                             Expanded(
@@ -325,9 +326,13 @@ class WorkoutSummaryScreen extends StatelessWidget {
                                       fontWeight: FontWeight.bold,
                                       color: isDarkMode ? Colors.white : Colors.black,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  Row(
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -346,7 +351,6 @@ class WorkoutSummaryScreen extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
@@ -383,12 +387,12 @@ class WorkoutSummaryScreen extends StatelessWidget {
                               ),
                             ),
                             
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             
                             // Счетчик выполненных сетов
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isDarkMode 
@@ -406,14 +410,14 @@ class WorkoutSummaryScreen extends StatelessWidget {
                                     '$completed/${exercise.sets}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                      fontSize: 14,
                                       color: completed >= exercise.sets ? Colors.green : goldColor,
                                     ),
                                   ),
                                   Text(
                                     'sets',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 9,
                                       color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                                     ),
                                   ),
@@ -510,39 +514,44 @@ class WorkoutSummaryScreen extends StatelessWidget {
     bool isDarkMode,
     Color goldColor,
   ) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF3A3225) : goldColor.withOpacity(0.15),
-            shape: BoxShape.circle,
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF3A3225) : goldColor.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon, 
+              color: goldColor,
+              size: 24,
+            ),
           ),
-          child: Icon(
-            icon, 
-            color: goldColor,
-            size: 24,
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: isDarkMode ? Colors.white : Colors.black,
+            ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: isDarkMode ? Colors.white : Colors.black,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-            fontSize: 12,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
   
