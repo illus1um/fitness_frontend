@@ -59,7 +59,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$field успешно обновлено')),
+          SnackBar(content: Text('$field successfully updated')),
         );
       }
     } else {

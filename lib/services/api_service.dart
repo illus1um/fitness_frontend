@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import '../../models/progress_entry.dart';
+import '../../models/day_info.dart';
 
 class ApiService {
   static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
@@ -403,5 +404,58 @@ class ApiService {
       print("Ошибка при проверке email: $e");
       return false;
     }
+  }
+
+  /// POST /plan/
+  static Future<bool> savePlan(List<DayInfo> plan, DateTime startDate) async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return false;
+    
+    final resp = await http.post(
+      Uri.parse('$baseUrl/plan/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'start_date': startDate.toIso8601String(),
+        'days': plan.map((d) => d.toJson()).toList(),
+      }),
+    );
+    return resp.statusCode == 200;
+  }
+
+  /// GET /plan/
+  static Future<Map<String, dynamic>?> getPlan() async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return null;
+    
+    final resp = await http.get(
+      Uri.parse('$baseUrl/plan/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body);
+      return {
+        'start_date': DateTime.parse(data['start_date']),
+        'days': (data['days'] as List)
+            .map((d) => DayInfo.fromJson(d))
+            .toList(),
+      };
+    }
+    return null;
+  }
+
+  /// DELETE /plan/
+  static Future<bool> clearPlan() async {
+    final token = await AuthService.getAccessToken();
+    if (token == null) return false;
+    
+    final resp = await http.delete(
+      Uri.parse('$baseUrl/plan/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return resp.statusCode == 200;
   }
 }

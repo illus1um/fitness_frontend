@@ -48,6 +48,32 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   Future<void> _loadCachedPlan() async {
     try {
+      // Сначала пробуем загрузить план с сервера
+      final serverPlan = await ApiService.getPlan();
+      if (serverPlan != null) {
+        final plan = serverPlan['days'] as List<DayInfo>;
+        final startDate = serverPlan['start_date'] as DateTime;
+        final progress = await ApiService.getProgress();
+        
+        // Сохраняем в кэш для офлайн доступа
+        await PlanCache.savePlan(plan);
+        await PlanCache.saveStartDate(startDate);
+        await PlanCache.saveProgress(progress);
+        
+        _prepareWorkoutDays(plan, startDate);
+        _updateAvailableDays(plan, startDate, progress);
+        
+        setState(() {
+          _plan = plan;
+          _startDate = startDate;
+          _progress = progress;
+        });
+        
+        print('DEBUG: Plan loaded from server with ${plan.length} days');
+        return;
+      }
+      
+      // Если на сервере нет плана, пробуем загрузить из кэша
       final plan = await PlanCache.loadPlan();
       final sd = await PlanCache.loadStartDate();
       final progress = await PlanCache.loadProgress();
@@ -62,12 +88,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           _progress = progress;
         });
         
-        print('DEBUG: Plan loaded successfully with ${plan.length} days');
+        // Если план есть в кэше, но нет на сервере, сохраняем его на сервер
+        await ApiService.savePlan(plan, sd);
+        
+        print('DEBUG: Plan loaded from cache and saved to server with ${plan.length} days');
       } else {
-        print('DEBUG: No plan or start date found in cache');
+        print('DEBUG: No plan found in cache or server');
       }
     } catch (e) {
-      print('ERROR loading cached plan: $e');
+      print('ERROR loading plan: $e');
       // Восстанавливаемся после ошибки, очищая данные
       setState(() {
         _plan = null;
@@ -89,6 +118,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
     setState(() => _isGenerating = true);
 
+    // Clear old progress and plan from server and cache
+    await ApiService.clearProgress();
+    await ApiService.clearPlan();
+    await PlanCache.clearPlan();
+
     final startDate = DateTime.now();
     await PlanCache.saveStartDate(startDate);
 
@@ -105,7 +139,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     // Add another small delay for animation
     await Future.delayed(Duration(milliseconds: 500));
 
+    // Save plan to both cache and server
     await PlanCache.savePlan(plan);
+    await ApiService.savePlan(plan, startDate);
+    
     _prepareWorkoutDays(plan, startDate);
     
     // Принудительно добавляем первый день в доступные, так как мы только что создали план

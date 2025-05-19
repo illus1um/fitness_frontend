@@ -285,7 +285,7 @@ class SupplementDetailScreen extends StatelessWidget {
         return Icons.tips_and_updates_outlined;
       default:
         return Icons.article_outlined;
-    }
+      }
   }
 
   @override
@@ -329,13 +329,13 @@ class SupplementDetailScreen extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  supplement['image']!,
-                  width: screenWidth - 32,
-                  height: screenWidth - 32,
-                  fit: BoxFit.cover,
-                ),
+              child: Image.asset(
+                supplement['image']!,
+                width: screenWidth - 32,
+                height: screenWidth - 32,
+                fit: BoxFit.cover,
               ),
+            ),
             ),
             
             // Title with accent underline
