@@ -750,73 +750,76 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             AnimatedBuilder(
                               animation: _progressController,
                               builder: (context, child) {
-                                return Stack(
-                                  alignment: Alignment.bottomCenter,
-                                  children: [
-                                    // Water fill with rounded top corners (per screenshot)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(24),
-                                      child: Container(
-                                        height: 160 * _progressController.value,
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              Color(0xFF39C2EA), // Slightly adjusted secondary
-                                              Color(0xFF4D77E8), // Matching indicator
-                                            ],
-                                          ),
+                                return Positioned(
+                                  bottom: 0,
+                                  left: 0, 
+                                  right: 0,
+                                  height: 160 * _progressController.value,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.only(
+                                      bottomLeft: Radius.circular(24),
+                                      bottomRight: Radius.circular(24),
+                                      topLeft: _progressController.value >= 0.99 ? Radius.circular(24) : Radius.zero,
+                                      topRight: _progressController.value >= 0.99 ? Radius.circular(24) : Radius.zero,
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Color(0xFF39C2EA), // Slightly adjusted secondary
+                                            Color(0xFF4D77E8), // Matching indicator
+                                          ],
                                         ),
-                                        child: CustomPaint(
-                                          painter: WavePainter(
-                                            _progressController.value,
-                                            Colors.white.withOpacity(0.1),
-                                          ),
+                                      ),
+                                      child: CustomPaint(
+                                        painter: WavePainter(
+                                          _progressController.value,
+                                          Colors.white.withOpacity(0.1),
                                         ),
                                       ),
                                     ),
-                                    
-                                    // Goal achieved indicator
-                                    if (_targetReachedAndCongratulated || progress >= 1.0)
-                                      Positioned(
-                                        top: 0,
-                                        right: 0,
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: goldAccent,
-                                            borderRadius: BorderRadius.only(
-                                              topRight: Radius.circular(24),
-                                              bottomLeft: Radius.circular(24),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.emoji_events_rounded,
-                                                color: Colors.white,
-                                                size: 18,
-                                              ),
-                                              SizedBox(width: 6),
-                                              Text(
-                                                "Goal Achieved!",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                  ],
+                                  ),
                                 );
                               },
                             ),
+                            
+                            // Goal achieved indicator
+                            if (_targetReachedAndCongratulated || progress >= 1.0)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: goldAccent,
+                                    borderRadius: BorderRadius.only(
+                                      topRight: Radius.circular(24),
+                                      bottomLeft: Radius.circular(24),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.emoji_events_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        "Goal Achieved!",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -1370,16 +1373,21 @@ class WavePainter extends CustomPainter {
     final height = size.height;
     
     final path = Path();
-    path.moveTo(0, height);
+    // Start at the top left instead of bottom
+    path.moveTo(0, 0);
     
-    // Smaller, more subtle wave pattern
+    // Draw waves at the top of the water
     for (int i = 0; i < width; i++) {
       final angle = (animationValue * 2 * pi) + (i / width * 4 * pi);
-      final y = height - sin(angle) * 3; // Reduced amplitude for subtler effect
+      // Waves at the top (0 + wave height)
+      final y = sin(angle) * 3; // Reduced amplitude for subtler effect
       path.lineTo(i.toDouble(), y);
     }
     
+    // Complete the path by going around the bottom of the container
+    path.lineTo(width, 0);
     path.lineTo(width, height);
+    path.lineTo(0, height);
     path.close();
     
     canvas.drawPath(path, paint);
