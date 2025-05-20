@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/theme_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../services/api_service.dart';
 
 class ProfileCard extends StatelessWidget {
   final String title;
@@ -142,35 +144,101 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
+    // Преобразуем относительный путь в полный URL
+    String? fullImageUrl;
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      fullImageUrl = ApiService.fixAvatarUrl(imageUrl);
+    }
+    
+    // Добавляем уникальный параметр к URL, чтобы избежать кеширования
+    String? cacheBreakingUrl;
+    if (fullImageUrl != null && fullImageUrl.isNotEmpty) {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      cacheBreakingUrl = fullImageUrl.contains('?') 
+          ? '$fullImageUrl&cache=$timestamp' 
+          : '$fullImageUrl?cache=$timestamp';
+      
+      print("Using full avatar URL: $cacheBreakingUrl");
+    }
+    
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: size * 2,
-        height: size * 2,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isDarkMode 
-              ? ThemeConstants.darkSurface 
-              : ThemeConstants.lightSurface,
-          boxShadow: isDarkMode 
-              ? ThemeConstants.darkElevation
-              : ThemeConstants.lightElevation,
-          image: imageUrl != null
-              ? DecorationImage(
-                  image: NetworkImage(imageUrl!),
-                  fit: BoxFit.cover,
-                )
-              : null,
-        ),
-        child: imageUrl == null
-            ? Icon(
-                Icons.person,
-                size: size,
-                color: isDarkMode 
-                    ? ThemeConstants.darkSubtext 
-                    : ThemeConstants.lightSubtext,
-              )
-            : null,
+      child: Stack(
+        children: [
+          Container(
+            width: size * 2,
+            height: size * 2,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDarkMode 
+                  ? ThemeConstants.darkSurface 
+                  : ThemeConstants.lightSurface,
+              boxShadow: isDarkMode 
+                  ? ThemeConstants.darkElevation
+                  : ThemeConstants.lightElevation,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(size),
+              child: fullImageUrl != null && fullImageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: cacheBreakingUrl!,
+                      maxWidthDiskCache: 250,
+                      maxHeightDiskCache: 250,
+                      placeholder: (context, url) => Center(
+                        child: CircularProgressIndicator(
+                          color: ThemeConstants.primaryGold,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) {
+                        print("Error loading avatar: $error for URL: $url");
+                        return Icon(
+                          Icons.person,
+                          size: size,
+                          color: isDarkMode 
+                              ? ThemeConstants.darkSubtext 
+                              : ThemeConstants.lightSubtext,
+                        );
+                      },
+                      fit: BoxFit.cover,
+                    )
+                  : Icon(
+                      Icons.person,
+                      size: size,
+                      color: isDarkMode 
+                          ? ThemeConstants.darkSubtext 
+                          : ThemeConstants.lightSubtext,
+                    ),
+            ),
+          ),
+          if (onTap != null)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: size * 0.6,
+                height: size * 0.6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ThemeConstants.primaryGold,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDarkMode 
+                          ? Colors.black.withOpacity(0.3)
+                          : Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  color: Colors.white,
+                  size: size * 0.35,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

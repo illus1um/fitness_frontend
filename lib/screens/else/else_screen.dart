@@ -3,6 +3,8 @@ import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/screens/reglog/login_screen.dart';
 import 'package:fitness_app/screens/else/myprofilegoal_screen.dart';
 import 'package:fitness_app/screens/workout/workout_history_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:fitness_app/utils/theme_constants.dart';
 import 'change_password.dart';
 
 
@@ -22,10 +24,29 @@ class _ElseScreenState extends State<ElseScreen> {
   }
 
   void _loadUserData() async {
-    var data = await ApiService.getUserProfile();
     setState(() {
-      userData = data;
+      userData = null; // Обнуляем перед загрузкой для принудительного обновления UI
     });
+    
+    var data = await ApiService.getUserProfile();
+    if (data != null) {
+      print("ElseScreen: loaded user data with avatar_url: ${data['avatar_url']}");
+      
+      // Для очистки кэша изображений при необходимости
+      if (data['avatar_url'] != null && data['avatar_url'].toString().isNotEmpty) {
+        final fullUrl = ApiService.fixAvatarUrl(data['avatar_url']);
+        if (fullUrl.isNotEmpty) {
+          await CachedNetworkImage.evictFromCache(fullUrl);
+          data['avatar_url'] = fullUrl;
+        }
+      }
+      
+      setState(() {
+        userData = data;
+      });
+    } else {
+      print("ElseScreen: failed to load user data");
+    }
   }
 
   void _logout() async {
@@ -123,10 +144,28 @@ class _ElseScreenState extends State<ElseScreen> {
                                   child: CircleAvatar(
                                     radius: 50,
                                     backgroundColor: isDarkMode ? Color(0xFF2A2A2A) : Colors.grey[200],
-                                    child: Icon(
-                                      Icons.person, 
-                                      size: 50, 
-                                      color: isDarkMode ? Colors.white70 : Colors.white,
+                                    child: ClipOval(
+                                      child: userData != null && userData!["avatar_url"] != null && userData!["avatar_url"].isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: userData!["avatar_url"],
+                                            placeholder: (context, url) => CircularProgressIndicator(
+                                              valueColor: AlwaysStoppedAnimation<Color>(goldAccent),
+                                              strokeWidth: 2.0,
+                                            ),
+                                            errorWidget: (context, url, error) => Icon(
+                                              Icons.person, 
+                                              size: 50, 
+                                              color: isDarkMode ? Colors.white70 : Colors.white,
+                                            ),
+                                            fit: BoxFit.cover,
+                                            width: 100,
+                                            height: 100,
+                                          )
+                                        : Icon(
+                                            Icons.person, 
+                                            size: 50, 
+                                            color: isDarkMode ? Colors.white70 : Colors.white,
+                                          ),
                                     ),
                                   ),
                                 ),

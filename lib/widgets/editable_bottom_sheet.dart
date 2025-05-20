@@ -246,6 +246,7 @@ class _TextFieldBottomSheetState extends State<TextFieldBottomSheet> {
         obscureText: widget.obscureText,
         maxLines: widget.maxLines,
         style: ThemeConstants.bodyStyle(context),
+        autofocus: true,
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: ThemeConstants.bodyStyle(context).copyWith(
@@ -257,9 +258,23 @@ class _TextFieldBottomSheetState extends State<TextFieldBottomSheet> {
           fillColor: isDarkMode 
               ? ThemeConstants.darkCardBackground 
               : ThemeConstants.lightCardBackground,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: isDarkMode 
+                  ? ThemeConstants.darkDivider 
+                  : ThemeConstants.lightDivider,
+              width: 1.5,
+            ),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(
+              color: isDarkMode 
+                  ? ThemeConstants.darkDivider 
+                  : ThemeConstants.lightDivider,
+              width: 1.5,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

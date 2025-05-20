@@ -1,11 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/services/plan_cache.dart';
 import 'package:fitness_app/utils/theme_constants.dart';
 import 'package:fitness_app/widgets/profile_widgets.dart';
 import 'package:fitness_app/widgets/editable_bottom_sheet.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MyProfileGoalScreen extends StatefulWidget {
   const MyProfileGoalScreen({Key? key}) : super(key: key);
@@ -67,8 +70,15 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
+    
+    // Очистка предыдущих данных для сброса кеша
+    if (userData != null && userData!["avatar_url"] != null) {
+      await CachedNetworkImage.evictFromCache(userData!["avatar_url"]);
+    }
+    
     final data = await ApiService.getUserProfile();
     if (data != null) {
+      print("MyProfileGoalScreen: loaded user data with avatar_url: ${data['avatar_url']}");
       setState(() {
         userData = data;
         _isLoading = false;
@@ -96,10 +106,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         await PlanCache.clearPlan();
         _showSuccessSnackbar('Settings updated. Plan will be recreated.');
       } else {
-        _showSuccessSnackbar('$field successfully updated');
+        _showSuccessSnackbar('${_formatFieldName(field)} successfully updated');
       }
     } else {
-      _showErrorSnackbar('Error updating $field');
+      _showErrorSnackbar('Error updating ${_formatFieldName(field)}');
     }
   }
 
@@ -182,13 +192,13 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
       builder: (BuildContext context) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          decoration: BoxDecoration(
+            decoration: BoxDecoration(
             color: isDarkMode ? ThemeConstants.darkSurface : ThemeConstants.lightSurface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Container(
                 width: 40,
                 height: 4,
@@ -213,11 +223,11 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
               Text(
                 "Are you sure you want to delete your account? All your data will be permanently removed. This action cannot be undone.",
                 style: ThemeConstants.bodyStyle(context),
-                textAlign: TextAlign.center,
-              ),
+                  textAlign: TextAlign.center,
+                ),
               const SizedBox(height: 24),
-              Row(
-                children: [
+                Row(
+                  children: [
                   Expanded(
                     child: OutlinedButton(
                       style: ThemeConstants.secondaryButtonStyle(context),
@@ -242,10 +252,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
                       },
                       child: const Text("DELETE"),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    ),
+                  ],
+                ),
+              ],
           ),
         );
       },
@@ -269,7 +279,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     final min = _weightUnit == 'kg' ? 30.0 : 66.0;
     final max = _weightUnit == 'kg' ? 200.0 : 440.0;
     String selectedValue = displayed.toStringAsFixed(0);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -284,7 +294,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
           },
           content: SizedBox(
             height: 180,
-            child: CupertinoPicker(
+                child: CupertinoPicker(
               scrollController: FixedExtentScrollController(
                 initialItem: (displayed - min).round(),
               ),
@@ -317,7 +327,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
       final totalInches = (cmValue / 2.54).round();
       int selectedFeet = totalInches ~/ 12;
       int selectedInches = totalInches % 12;
-      
+
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -331,10 +341,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
               _updateField('height', newCm);
             },
             content: Row(
-              children: [
-                Expanded(
-                  child: CupertinoPicker(
-                    scrollController: FixedExtentScrollController(initialItem: selectedFeet),
+                    children: [
+                      Expanded(
+                        child: CupertinoPicker(
+                          scrollController: FixedExtentScrollController(initialItem: selectedFeet),
                     itemExtent: 40,
                     magnification: 1.2,
                     squeeze: 1.0,
@@ -347,10 +357,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
                       ),
                     )),
                   ),
-                ),
-                Expanded(
-                  child: CupertinoPicker(
-                    scrollController: FixedExtentScrollController(initialItem: selectedInches),
+                      ),
+                      Expanded(
+                        child: CupertinoPicker(
+                          scrollController: FixedExtentScrollController(initialItem: selectedInches),
                     itemExtent: 40,
                     magnification: 1.2,
                     squeeze: 1.0,
@@ -387,7 +397,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
             },
             content: SizedBox(
               height: 180,
-              child: CupertinoPicker(
+                  child: CupertinoPicker(
                 scrollController: FixedExtentScrollController(
                   initialItem: (cm - min).round(),
                 ),
@@ -495,7 +505,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
 
   void _editTrainingLocationPicker(String field) {
     String selectedValue = userData![field];
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -517,6 +527,129 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
       word.isEmpty ? '' : 
       '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
     ).join(' ');
+  }
+
+  // Метод для выбора и загрузки аватара из галереи
+  Future<void> _pickAvatar() async {
+    final ImagePicker picker = ImagePicker();
+    
+    // Показываем модальное окно выбора источника изображения
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+            color: isDarkMode ? ThemeConstants.darkSurface : ThemeConstants.lightSurface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? ThemeConstants.darkDivider : ThemeConstants.lightDivider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              Text(
+                "Profile Picture",
+                style: ThemeConstants.headlineStyle(context).copyWith(fontSize: 20),
+                textAlign: TextAlign.center,
+              ),
+              
+                const SizedBox(height: 20),
+              
+              // Выбор из галереи
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: ThemeConstants.primaryGold.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library, color: ThemeConstants.primaryGold),
+                ),
+                title: Text("Gallery", style: ThemeConstants.subtitleStyle(context)),
+                onTap: () async {
+                    Navigator.pop(context);
+                  final XFile? image = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 80,
+                  );
+                  if (image != null) {
+                    _uploadAvatar(File(image.path));
+                  }
+                },
+              ),
+              
+              // Камера
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: ThemeConstants.primaryGold.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt, color: ThemeConstants.primaryGold),
+                ),
+                title: Text("Camera", style: ThemeConstants.subtitleStyle(context)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final XFile? photo = await picker.pickImage(
+                    source: ImageSource.camera,
+                    preferredCameraDevice: CameraDevice.front,
+                    imageQuality: 80,
+                  );
+                  if (photo != null) {
+                    _uploadAvatar(File(photo.path));
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Метод для загрузки аватара на сервер
+  Future<void> _uploadAvatar(File imageFile) async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Check if file has valid extension
+      final String fileName = imageFile.path.toLowerCase();
+      if (!fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && 
+          !fileName.endsWith('.png') && !fileName.endsWith('.webp')) {
+        _showErrorSnackbar('Invalid image format. Use JPEG, PNG, or WebP.');
+        setState(() => _isLoading = false);
+        return;
+      }
+      
+      // Загрузка изображения
+      final success = await ApiService.uploadAvatar(imageFile);
+      
+      if (success) {
+        // Если загрузка успешна, обновляем данные пользователя
+        await _loadUserData();
+        _showSuccessSnackbar('Avatar successfully updated');
+      } else {
+        _showErrorSnackbar('Failed to upload avatar. Only JPEG, PNG and WebP images are allowed.');
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print("Error uploading avatar: $e");
+      _showErrorSnackbar('Error: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -641,10 +774,9 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     return Column(
       children: [
         ProfileAvatar(
+          imageUrl: userData?["avatar_url"],
           size: 60,
-          onTap: () {
-            // Future: Add profile picture upload functionality
-          },
+          onTap: _pickAvatar,
         ),
         const SizedBox(height: 16),
         Text(

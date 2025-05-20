@@ -1,12 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'auth_service.dart';
 import '../../models/progress_entry.dart';
 import '../../models/day_info.dart';
 import '../models/water_intake.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/http.dart' show MediaType;
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ApiService {
-  static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
+  static const String baseUrl = "http://192.168.1.76:8000"; // Backend server
 
   static Future<bool> login(String username, String password) async {
     try {
@@ -61,10 +66,24 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = json.decode(response.body);
+        
+        // Проверяем, содержит ли ответ относительный URL аватара
+        if (data.containsKey('avatar_url') && data['avatar_url'] != null) {
+          final rawUrl = data['avatar_url'].toString();
+          print("Raw avatar_url from server: $rawUrl");
+          
+          // Преобразуем относительный путь в полный URL
+          data['avatar_url'] = fixAvatarUrl(rawUrl);
+          print("Fixed avatar_url: ${data['avatar_url']}");
+        }
+        
+        return data;
       } else if (response.statusCode == 401) {
         bool refreshed = await refreshAccessToken();
         return refreshed ? getUserProfile() : null;
+      } else {
+        print("Failed to load profile: Status ${response.statusCode}");
       }
 
       return null;
@@ -610,5 +629,123 @@ class ApiService {
       print("Error deleting all water data: $e");
       return false;
     }
+  }
+  
+  // Аватар: загрузка изображения
+  static Future<bool> uploadAvatar(File imageFile) async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+      
+      // Check if file is a valid image format
+      final String fileName = imageFile.path.toLowerCase();
+      bool isValidFormat = false;
+      String mimeType = '';
+      
+      if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+        isValidFormat = true;
+        mimeType = 'image/jpeg';
+      } else if (fileName.endsWith('.png')) {
+        isValidFormat = true;
+        mimeType = 'image/png';
+      } else if (fileName.endsWith('.webp')) {
+        isValidFormat = true;
+        mimeType = 'image/webp';
+      }
+      
+      if (!isValidFormat) {
+        print("Error: Invalid image format. Only JPEG, PNG, and WebP are supported.");
+        return false;
+      }
+      
+      // Создаем multipart request
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/users/upload-avatar'),
+      );
+      
+      // Добавляем заголовок авторизации
+      request.headers['Authorization'] = 'Bearer $token';
+      
+      // Добавляем файл в запрос с явным указанием MIME типа
+      final fileField = await http.MultipartFile.fromPath(
+        'avatar',
+        imageFile.path,
+        contentType: MediaType.parse(mimeType),
+      );
+      request.files.add(fileField);
+      
+      // Printing request details for debugging
+      print("Uploading file: ${imageFile.path}");
+      print("File size: ${await imageFile.length()} bytes");
+      print("File MIME type: $mimeType");
+      print("Endpoint: ${request.url}");
+      
+      // Отправляем запрос
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      // Print response body for debugging
+      print("Response body: ${response.body}");
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Если сервер вернул URL аватара, обновляем локальный кеш
+        try {
+          final responseData = json.decode(response.body);
+          if (responseData.containsKey('avatar_url')) {
+            final avatarPath = responseData['avatar_url'] as String;
+            print("Received new avatar path: $avatarPath");
+            
+            // Преобразуем относительный путь в полный URL
+            final avatarUrl = fixAvatarUrl(avatarPath);
+            print("Fixed avatar URL: $avatarUrl");
+            
+            // Очистка кеша для этого URL если он уже существует
+            await CachedNetworkImage.evictFromCache(avatarUrl);
+          }
+        } catch (e) {
+          print("Warning: Could not parse avatar response: $e");
+        }
+        return true;
+      } else {
+        print("Error uploading avatar: Status ${response.statusCode}, Body: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Error uploading avatar: $e");
+      return false;
+    }
+  }
+  
+  // Получение URL аватара из данных пользователя
+  static Future<String?> getAvatarUrl() async {
+    Map<String, dynamic>? userData = await getUserProfile();
+    if (userData?['avatar_url'] == null || userData!['avatar_url'].toString().isEmpty) {
+      return null;
+    }
+    
+    String avatarPath = userData['avatar_url'];
+    // Проверяем, является ли путь относительным и добавляем базовый URL
+    if (avatarPath.startsWith('/')) {
+      return '$baseUrl$avatarPath';
+    }
+    return avatarPath;
+  }
+  
+  // Вспомогательный метод для преобразования относительных путей в полные URL
+  static String fixAvatarUrl(String? avatarPath) {
+    if (avatarPath == null || avatarPath.isEmpty) {
+      return '';
+    }
+    
+    if (avatarPath.startsWith('/')) {
+      return '$baseUrl$avatarPath';
+    }
+    
+    if (!avatarPath.startsWith('http')) {
+      return '$baseUrl/$avatarPath';
+    }
+    
+    return avatarPath;
   }
 }

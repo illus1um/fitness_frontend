@@ -66,17 +66,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Color _getStrengthColor(double strength) {
-    if (strength <= 25) return Colors.red;
-    if (strength <= 50) return Colors.orange;
-    if (strength <= 75) return Colors.yellow;
-    return Colors.green;
+    if (strength <= 25) return const Color.fromARGB(255, 206, 84, 75);
+    if (strength <= 50) return const Color.fromARGB(255, 180, 124, 40);
+    if (strength <= 75) return const Color.fromARGB(255, 208, 191, 35);
+    return const Color.fromARGB(255, 66, 152, 69);
   }
 
   String _getStrengthText(double strength) {
-    if (strength <= 25) return "Слабый";
-    if (strength <= 50) return "Средний";
-    if (strength <= 75) return "Хороший";
-    return "Сильный";
+    if (strength <= 25) return "Weak";
+    if (strength <= 50) return "Average";
+    if (strength <= 75) return "Good";
+    return "Strong";
   }
 
   void _changePassword() async {
