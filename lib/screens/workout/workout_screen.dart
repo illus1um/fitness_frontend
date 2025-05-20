@@ -22,6 +22,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   List<DayInfo>? _plan;
   DateTime? _startDate;
   DateTime _focusedDay = DateTime.now();
+  
+  // Кешируем значение для плавности перехода между экранами
+  bool? _hasGeneratedPlanCache;
+  bool _isLoading = true; // Добавим флаг загрузки
 
   /// Набор чистых дат тренировочных дней (без времени)
   final Set<DateTime> _workoutDays = {};
@@ -35,13 +39,43 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _loadCachedPlan();
+    _init();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // При возвращении на экран, мы не показываем индикатор загрузки,
+    // но обновляем данные в фоне
+    if (_hasGeneratedPlanCache == true) {
+      _refreshDataInBackground();
+    }
+  }
+  
+  Future<void> _init() async {
+    setState(() => _isLoading = true);
+    
+    // Сначала проверяем, сгенерирован ли план
+    final hasGenerated = await _checkUserHasGeneratedPlan();
+    _hasGeneratedPlanCache = hasGenerated;
+    
+    // Загружаем данные пользователя
+    await _loadUserData();
+    
+    // Загружаем план только если он был сгенерирован
+    if (hasGenerated) {
+      await _loadCachedPlan();
+    }
+    
+    // Установим флаг загрузки в false
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _loadUserData() async {
     final data = await ApiService.getUserProfile();
-    if (data != null) {
+    if (data != null && mounted) {
       setState(() => userData = data);
     }
   }
@@ -146,6 +180,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     // Mark that user has explicitly generated a workout plan
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_generated_plan', true);
+    
+    // Update cached value too
+    _hasGeneratedPlanCache = true;
 
     // Clear old progress and plan from server and cache
     await ApiService.clearProgress();
@@ -376,80 +413,90 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
         ],
       ),
-      body: userData == null
-          ? const Center(child: CircularProgressIndicator())
-          : FutureBuilder<bool>(
-              future: _checkUserHasGeneratedPlan(),
-              builder: (context, snapshot) {
-                // Default to false if data isn't loaded yet
-                final hasGeneratedPlan = snapshot.data ?? false;
-                
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildInfoCard(),
-                      const SizedBox(height: 16),
-
-                      if (_plan != null && _startDate != null && hasGeneratedPlan) ...[
-                        Text(
-                          'Training Schedule',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Calendar container with gradient background
-                        AnimatedOpacity(
-                          opacity: _isGenerating ? 0.3 : 1.0,
-                          duration: Duration(milliseconds: 500),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Color(0xFFC7A97F).withOpacity(0.05),
-                                  Color(0xFFC7A97F).withOpacity(0.15),
-                                ],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            // Using LayoutBuilder instead of fixed height container for flexibility
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                // Calculate the available height
-                                return _buildTableCalendarWithSize();
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                      ],
-
-                      // Always show either Start Workout or the button to view the plan
-                      _isGenerating
-                          ? _buildGeneratingPlanIndicator()
-                          : (_plan == null || !hasGeneratedPlan
-                              ? _buildStartWorkoutButton()
-                              : _buildViewPlanButton()),
-                    ],
+      body: userData == null || _isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7A97F)),
                   ),
-                );
-              },
+                  SizedBox(height: 16),
+                  Text(
+                    "Loading your workout profile...",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFC7A97F),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildInfoCard(),
+                  const SizedBox(height: 16),
+
+                  if (_plan != null && _startDate != null && _hasGeneratedPlanCache == true) ...[
+                    Text(
+                      'Training Schedule',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Calendar container with gradient background
+                    AnimatedOpacity(
+                      opacity: _isGenerating ? 0.3 : 1.0,
+                      duration: Duration(milliseconds: 500),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFC7A97F).withOpacity(0.05),
+                              Color(0xFFC7A97F).withOpacity(0.15),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        // Using LayoutBuilder instead of fixed height container for flexibility
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calculate the available height
+                            return _buildTableCalendarWithSize();
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+
+                  // Always show either Start Workout or the button to view the plan
+                  _isGenerating
+                      ? _buildGeneratingPlanIndicator()
+                      : (_plan == null || _hasGeneratedPlanCache != true
+                          ? _buildStartWorkoutButton()
+                          : _buildViewPlanButton()),
+                ],
+              ),
             ),
     );
   }
@@ -1041,5 +1088,21 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<bool> _checkUserHasGeneratedPlan() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('has_generated_plan') ?? false;
+  }
+
+  // Метод для фонового обновления данных без индикатора загрузки
+  Future<void> _refreshDataInBackground() async {
+    // Проверим статус плана в фоновом режиме
+    final hasGenerated = await _checkUserHasGeneratedPlan();
+    if (hasGenerated != _hasGeneratedPlanCache) {
+      _hasGeneratedPlanCache = hasGenerated;
+      if (mounted) setState(() {});
+    }
+    
+    // Если план был сгенерирован, обновим его в фоне
+    if (hasGenerated && (_plan == null || _startDate == null)) {
+      await _loadCachedPlan();
+      if (mounted) setState(() {});
+    }
   }
 }
