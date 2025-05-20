@@ -132,59 +132,111 @@ class SportsNutritionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final titleStyle = theme.textTheme.bodyLarge!
-        .copyWith(fontSize: 20, fontWeight: FontWeight.bold);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
+    // Define the title style without bold
+    final titleStyle = TextStyle(
+      fontSize: 20,
+      color: isDarkMode ? Colors.white : Colors.black87,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sports Nutrition'),
+        title: Text(
+          'Sports Nutrition',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
+        elevation: 0,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12.0),
-        itemCount: supplements.length,
-        itemBuilder: (context, index) {
-          final supplement = supplements[index];
-          return Card(
-            elevation: 4,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.symmetric(vertical: 10),
-            child: InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      SupplementDetailScreen(supplement: supplement),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDarkMode 
+                ? [Color(0xFF121212), Color(0xFF1E1E1E)]
+                : [Color(0xFFF9F9F9), Color(0xFFF4F4F4)],
+          ),
+        ),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: supplements.length,
+          itemBuilder: (context, index) {
+            final supplement = supplements[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: isDarkMode ? 0 : 1,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                elevation: 0,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SupplementDetailScreen(supplement: supplement),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            supplement['image']!,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            supplement['title']!,
+                            style: titleStyle, // Non-bold title style
+                          ),
+                        ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: isDarkMode 
+                                ? Color(0xFF3A3225)
+                                : goldColor.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.arrow_forward,
+                            color: goldColor,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        supplement['image']!,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        supplement['title']!,
-                        style: titleStyle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
