@@ -82,34 +82,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   Future<void> _loadCachedPlan() async {
     try {
-      // Check if user has explicitly generated a workout plan
-      final prefs = await SharedPreferences.getInstance();
-      final hasGeneratedPlan = prefs.getBool('has_generated_plan') ?? false;
-      
-      // ALWAYS ensure we don't have a plan for users who haven't generated one
-      if (!hasGeneratedPlan) {
-        print('DEBUG: User has not explicitly generated a plan yet - ensuring no plan exists');
-        
-        // Force clear any existing plans that might be cached
-        await ApiService.clearProgress();
-        await ApiService.clearPlan();
-        await PlanCache.clearPlan();
-        
-        // Ensure our local state is empty
-        setState(() {
-          _plan = null;
-          _startDate = null;
-          _progress = [];
-          _workoutDays.clear();
-          _availableDays.clear();
-        });
-        
-        return;
-      }
-      
       // Сначала пробуем загрузить план с сервера
       final serverPlan = await ApiService.getPlan();
+      
+      // Получаем значение флага из SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Если план существует на сервере, значит пользователь его когда-то сгенерировал
       if (serverPlan != null) {
+        // Устанавливаем флаг, так как план существует
+        await prefs.setBool('has_generated_plan', true);
+        _hasGeneratedPlanCache = true;
+        
         final plan = serverPlan['days'] as List<DayInfo>;
         final startDate = serverPlan['start_date'] as DateTime;
         final progress = await ApiService.getProgress();
@@ -129,6 +113,31 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         });
         
         print('DEBUG: Plan loaded from server with ${plan.length} days');
+        return;
+      }
+
+      // Если на сервере нет плана, проверяем явно установленный флаг
+      final hasGeneratedPlan = prefs.getBool('has_generated_plan') ?? false;
+      _hasGeneratedPlanCache = hasGeneratedPlan;
+      
+      // Если пользователь явно не генерировал план, очищаем всё
+      if (!hasGeneratedPlan) {
+        print('DEBUG: User has not generated a plan yet - ensuring no plan exists');
+        
+        // Force clear any existing plans that might be cached
+        await ApiService.clearProgress();
+        await ApiService.clearPlan();
+        await PlanCache.clearPlan();
+        
+        // Ensure our local state is empty
+        setState(() {
+          _plan = null;
+          _startDate = null;
+          _progress = [];
+          _workoutDays.clear();
+          _availableDays.clear();
+        });
+        
         return;
       }
       
