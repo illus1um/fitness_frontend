@@ -3,22 +3,58 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/services/plan_cache.dart';
+import 'package:fitness_app/utils/theme_constants.dart';
+import 'package:fitness_app/widgets/profile_widgets.dart';
+import 'package:fitness_app/widgets/editable_bottom_sheet.dart';
 
 class MyProfileGoalScreen extends StatefulWidget {
+  const MyProfileGoalScreen({Key? key}) : super(key: key);
+
   @override
   _MyProfileGoalScreenState createState() => _MyProfileGoalScreenState();
 }
 
-class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
+class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? userData;
   String _weightUnit = 'kg';
   String _heightUnit = 'cm';
+  bool _isLoading = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.0, 0.8, curve: Curves.easeOut),
+    ));
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.0, 0.8, curve: Curves.easeOut),
+    ));
+    
     _loadUnits();
     _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUnits() async {
@@ -30,14 +66,22 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   }
 
   Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
     final data = await ApiService.getUserProfile();
     if (data != null) {
-      setState(() => userData = data);
+      setState(() {
+        userData = data;
+        _isLoading = false;
+      });
+      _animationController.forward();
+    } else {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load profile data')),
+      );
     }
   }
 
-  /// Обновляем любое поле и, если это настройка тренировки,
-  /// сбрасываем кеш плана
   void _updateField(String field, dynamic newValue) async {
     setState(() {
       userData![field] = newValue;
@@ -45,28 +89,68 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
 
     bool success = await ApiService.updateUserProfile({field: newValue});
     if (success) {
-      // Если меняется цель или локация или опыт — чистим кеш
+      // If training-related settings change, clear the plan cache
       if (field == 'training_program' ||
           field == 'training_location' ||
           field == 'training_experience') {
         await PlanCache.clearPlan();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'The "$field" setting has been updated. The plan will be recreated at the next launch.',
-            ),
-          ),
-        );
+        _showSuccessSnackbar('Settings updated. Plan will be recreated.');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$field successfully updated')),
-        );
+        _showSuccessSnackbar('$field successfully updated');
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при обновлении $field')),
-      );
+      _showErrorSnackbar('Error updating $field');
     }
+  }
+
+  void _showSuccessSnackbar(String message) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isDarkMode ? ThemeConstants.darkText : ThemeConstants.lightText,
+          ),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isDarkMode 
+            ? ThemeConstants.darkCardBackground 
+            : ThemeConstants.lightCardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(8),
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: ThemeConstants.primaryGold,
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: ThemeConstants.errorRed,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(8),
+        action: SnackBarAction(
+          label: 'RETRY',
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+      ),
+    );
   }
 
   // Unit-conversion helpers
@@ -89,59 +173,79 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   }
 
   void _confirmDeleteAccount() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Are you sure you want to delete your account?",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: isDarkMode ? ThemeConstants.darkSurface : ThemeConstants.lightSurface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? ThemeConstants.darkDivider : ThemeConstants.lightDivider,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  "All your data will be permanently removed. This action cannot be undone.",
-                  style: TextStyle(fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    TextButton(
+              ),
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 60,
+                color: ThemeConstants.errorRed,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Delete Account",
+                style: ThemeConstants.headlineStyle(context),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Are you sure you want to delete your account? All your data will be permanently removed. This action cannot be undone.",
+                style: ThemeConstants.bodyStyle(context),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: ThemeConstants.secondaryButtonStyle(context),
                       onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        "CANCEL",
-                        style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 199, 169, 127)),
-                      ),
+                      child: const Text("CANCEL"),
                     ),
-                    ElevatedButton(
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                        backgroundColor: ThemeConstants.errorRed,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(ThemeConstants.buttonBorderRadius),
                         ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       onPressed: () {
                         _deleteAccount();
                         Navigator.pop(context);
                       },
-                      child: const Text("DELETE", style: TextStyle(color: Colors.white)),
+                      child: const Text("DELETE"),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         );
       },
@@ -149,408 +253,57 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
   }
 
   void _deleteAccount() async {
+    setState(() => _isLoading = true);
     bool success = await ApiService.deleteAccount();
+    setState(() => _isLoading = false);
+    
     if (success) {
-      print("Account deleted successfully");
-      Navigator.pushReplacementNamed(context, "/login"); // Или другой экран входа
+      Navigator.pushReplacementNamed(context, "/login");
     } else {
-      print("Failed to delete account");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ошибка при удалении аккаунта')),
-      );
+      _showErrorSnackbar('Failed to delete account');
     }
   }
 
-  // Improved weight editing
   void _editWeight() {
     final displayed = _displayWeight;
-    final min = _weightUnit == 'kg' ? 30.0 : 30.0 * 2.20462;
-    final max = _weightUnit == 'kg' ? 200.0 : 200.0 * 2.20462;
-    int initialItem = (displayed - min).round();
-    double selected = displayed;
-
+    final min = _weightUnit == 'kg' ? 30.0 : 66.0;
+    final max = _weightUnit == 'kg' ? 200.0 : 440.0;
+    String selectedValue = displayed.toStringAsFixed(0);
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Weight ($_weightUnit)', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 140,
-                child: CupertinoPicker(
-                  scrollController: FixedExtentScrollController(initialItem: initialItem),
-                  itemExtent: 32,
-                  onSelectedItemChanged: (i) => selected = min + i.toDouble(),
-                  children: List.generate((max - min).round() + 1, (i) => Text((min + i).toStringAsFixed(0))),
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return EditableBottomSheet(
+          title: 'Weight ($_weightUnit)',
+          onSave: () {
+            final newValue = double.parse(selectedValue);
+            final newKg = _weightUnit == 'lb' ? newValue / 2.20462 : newValue;
+            _updateField('weight', newKg);
+          },
+          content: SizedBox(
+            height: 180,
+            child: CupertinoPicker(
+              scrollController: FixedExtentScrollController(
+                initialItem: (displayed - min).round(),
+              ),
+              itemExtent: 40,
+              magnification: 1.2,
+              squeeze: 1.0,
+              useMagnifier: true,
+              onSelectedItemChanged: (index) {
+                selectedValue = (min + index).toStringAsFixed(0);
+              },
+              children: List.generate(
+                (max - min).round() + 1,
+                (index) => Center(
+                  child: Text(
+                    "${(min + index).toStringAsFixed(0)} $_weightUnit",
+                    style: ThemeConstants.bodyStyle(context).copyWith(fontSize: 18),
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 199, 169, 127),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  final newKg = _weightUnit == 'lb' ? selected / 2.20462 : selected;
-                  _updateField('weight', newKg);
-                  Navigator.pop(context);
-                },
-                child: const Text('Done', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Improved height editing
-  void _editHeight() {
-    if (_heightUnit == 'inch') {
-      final cmValue = (userData!['height'] ?? 0.0) as double;
-      final totalInches = (cmValue / 2.54).round();
-      int feet = totalInches ~/ 12;
-      int inches = totalInches % 12;
-      int selectedFeet = feet;
-      int selectedInches = inches;
-
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (_) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Height (ft/in)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 140,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: CupertinoPicker(
-                          scrollController: FixedExtentScrollController(initialItem: selectedFeet),
-                          itemExtent: 32,
-                          onSelectedItemChanged: (i) => selectedFeet = i,
-                          children: List.generate(8, (i) => Text('$i ft')),
-                        ),
-                      ),
-                      Expanded(
-                        child: CupertinoPicker(
-                          scrollController: FixedExtentScrollController(initialItem: selectedInches),
-                          itemExtent: 32,
-                          onSelectedItemChanged: (i) => selectedInches = i,
-                          children: List.generate(12, (i) => Text('$i in')),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 199, 169, 127),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    final total = selectedFeet * 12 + selectedInches;
-                    final newCm = total * 2.54;
-                    _updateField('height', newCm);
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Done', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    } else {
-      final cm = (userData!['height'] ?? 0.0) as double;
-      double selected = cm;
-      final min = 100.0;
-      final max = 220.0;
-      int initial = (cm - min).round();
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (_) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Height (cm)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 140,
-                  child: CupertinoPicker(
-                    scrollController: FixedExtentScrollController(initialItem: initial),
-                    itemExtent: 32,
-                    onSelectedItemChanged: (i) => selected = min + i.toDouble(),
-                    children: List.generate((max - min).round() + 1, (i) => Text('${(min + i).round()}')),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 199, 169, 127),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    _updateField('height', selected);
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Done', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Profile & Goal"),
-        centerTitle: true,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
-      body: userData == null
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 90,
-                      backgroundColor: Colors.grey[300],
-                      child: const Icon(Icons.person, size: 120, color: Colors.white),
-                    ),
-                    const SizedBox(height: 20),
-
-                    _buildCard(
-                      title: "My Personal Information",
-                      children: [
-                        _buildInfoTile("Username", userData!["username"]),
-                        _buildEditableTile("First Name", userData!["first_name"], () => _editTextField("first_name")),
-                        _buildEditableTile("Last Name", userData!["last_name"], () => _editTextField("last_name")),
-                        _buildEditableTile("Age", userData!["age"].toString(), () => _editNumberPicker("age", 12, 80)),
-                        _buildEditableTile("Gender", userData!["gender"] ? "Male" : "Female", () => _editGenderPicker("gender")),
-                        _buildEditableTile("Weight", "${_displayWeight.toStringAsFixed(1)} $_weightUnit", _editWeight),
-                        _buildEditableTile("Height", _displayHeight, _editHeight),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    _buildCard(
-                      title: "Goal Settings",
-                      children: [
-                        _buildEditableTile("Fitness Goal", userData!["training_program"], () => _editPicker("training_program", fitnessGoals)),
-                        _buildEditableTile("Training Location", userData!["training_location"], () => _editTrainingLocationPicker("training_location")),
-                        _buildEditableTile("Training Experience", userData!["training_experience"], () => _editPicker("training_experience", experienceLevels)),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-
-                    const Divider(),
-                    TextButton(
-                      onPressed: () {
-                        _confirmDeleteAccount();
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color.fromARGB(255, 142, 142, 142),
-                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-                      ),
-                      child: const Text("Delete your account?"),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-
-  Widget _buildCard({required String title, required List<Widget> children}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1), 
-            blurRadius: 6,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 199, 169, 127)),
-          ),
-          const SizedBox(height: 10),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoTile(String label, String value) {
-    return ListTile(
-      title: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      trailing: Text(value, style: const TextStyle(fontSize: 16)),
-    );
-  }
-
-  Widget _buildEditableTile(String label, String value, VoidCallback onTap) {
-    return ListTile(
-      title: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(value, style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward_ios, size: 16),
-        ],
-      ),
-      onTap: onTap,
-    );
-  }
-
-  void _editGenderPicker(String field) {
-    bool isMale = userData![field]; // Получаем boolean
-
-    _showEditDialog(
-      "Select Gender",
-      StatefulBuilder(
-        builder: (context, setStateDialog) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildRadioTile("Male", isMale ? "Male" : "Female", (value) {
-                setStateDialog(() {
-                  isMale = value == "Male";
-                });
-              }),
-              _buildRadioTile("Female", isMale ? "Male" : "Female", (value) {
-                setStateDialog(() {
-                  isMale = value == "Male";
-                });
-              }),
-            ],
-          );
-        },
-      ),
-      () => _updateField(field, isMale), // Отправляем true/false на сервер
-    );
-  }
-
-  void _editTrainingLocationPicker(String field) {
-    String selectedValue = userData![field];
-
-    _showEditDialog(
-      "Select Training Location",
-      StatefulBuilder(
-        builder: (context, setStateDialog) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildRadioTile("At home", selectedValue, (value) {
-                setStateDialog(() {
-                  selectedValue = value;
-                });
-              }),
-              _buildRadioTile("In the gym", selectedValue, (value) {
-                setStateDialog(() {
-                  selectedValue = value;
-                });
-              }),
-            ],
-          );
-        },
-      ),
-      () => _updateField(field, selectedValue), // Отправляем обновленное значение
-    );
-  }
-
-  Widget _buildRadioTile(String title, String groupValue, ValueChanged<String> onChanged) {
-    return RadioListTile<String>(
-      title: Text(title, style: const TextStyle(fontSize: 16)),
-      value: title,
-      groupValue: groupValue,
-      onChanged: (value) => onChanged(value!),
-      activeColor: const Color.fromARGB(255, 199, 169, 127), // Коричневый цвет
-    );
-  }
-
-  void _showEditDialog(String title, Widget content, VoidCallback onSave) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 140,
-                  child: content,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 199, 169, 127),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    onSave();  // Вызывает _updateField и отправляет данные на сервер
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Done", style: TextStyle(color: Colors.white)),
-                ),
-              ],
             ),
           ),
         );
@@ -558,52 +311,496 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> {
     );
   }
 
-  void _editTextField(String field) {
-    TextEditingController controller = TextEditingController(text: userData![field]);
-    _showEditDialog(
-      field,
-      Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: "Enter value",
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Color.fromARGB(255, 199, 169, 127), width: 2.0),
+  void _editHeight() {
+    if (_heightUnit == 'inch') {
+      final cmValue = (userData!['height'] ?? 0.0) as double;
+      final totalInches = (cmValue / 2.54).round();
+      int selectedFeet = totalInches ~/ 12;
+      int selectedInches = totalInches % 12;
+      
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return EditableBottomSheet(
+            title: 'Height (ft/in)',
+            onSave: () {
+              final total = selectedFeet * 12 + selectedInches;
+              final newCm = total * 2.54;
+              _updateField('height', newCm);
+            },
+            content: Row(
+              children: [
+                Expanded(
+                  child: CupertinoPicker(
+                    scrollController: FixedExtentScrollController(initialItem: selectedFeet),
+                    itemExtent: 40,
+                    magnification: 1.2,
+                    squeeze: 1.0,
+                    useMagnifier: true,
+                    onSelectedItemChanged: (index) => selectedFeet = index,
+                    children: List.generate(8, (i) => Center(
+                      child: Text(
+                        '$i ft',
+                        style: ThemeConstants.bodyStyle(context).copyWith(fontSize: 18),
+                      ),
+                    )),
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoPicker(
+                    scrollController: FixedExtentScrollController(initialItem: selectedInches),
+                    itemExtent: 40,
+                    magnification: 1.2,
+                    squeeze: 1.0,
+                    useMagnifier: true,
+                    onSelectedItemChanged: (index) => selectedInches = index,
+                    children: List.generate(12, (i) => Center(
+                      child: Text(
+                        '$i in',
+                        style: ThemeConstants.bodyStyle(context).copyWith(fontSize: 18),
+                      ),
+                    )),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
-      ),
-      () => _updateField(field, controller.text),
-    );
+          );
+        },
+      );
+    } else {
+      final cm = (userData!['height'] ?? 0.0) as double;
+      final min = 100.0;
+      final max = 220.0;
+      double selectedValue = cm;
+      
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return EditableBottomSheet(
+            title: 'Height (cm)',
+            onSave: () {
+              _updateField('height', selectedValue);
+            },
+            content: SizedBox(
+              height: 180,
+              child: CupertinoPicker(
+                scrollController: FixedExtentScrollController(
+                  initialItem: (cm - min).round(),
+                ),
+                itemExtent: 40,
+                magnification: 1.2,
+                squeeze: 1.0,
+                useMagnifier: true,
+                onSelectedItemChanged: (index) {
+                  selectedValue = min + index.toDouble();
+                },
+                children: List.generate(
+                  (max - min).round() + 1,
+                  (index) => Center(
+                    child: Text(
+                      "${(min + index).round()} cm",
+                      style: ThemeConstants.bodyStyle(context).copyWith(fontSize: 18),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
   }
 
   void _editNumberPicker(String field, int min, int max) {
     int selectedValue = int.parse(userData![field].toString());
-    _showEditDialog(
-      field,
-      CupertinoPicker(
-        scrollController: FixedExtentScrollController(initialItem: selectedValue - min),
-        itemExtent: 32,
-        onSelectedItemChanged: (index) => selectedValue = min + index,
-        children: List.generate(max - min + 1, (index) => Text("${min + index}")),
-      ),
-      () => _updateField(field, selectedValue),
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return NumberPickerBottomSheet(
+          title: _formatFieldName(field),
+          minValue: min,
+          maxValue: max,
+          initialValue: selectedValue,
+          onValueChanged: (value) => selectedValue = value,
+          onSave: () => _updateField(field, selectedValue),
+        );
+      },
+    );
+  }
+
+  void _editTextField(String field) {
+    String selectedValue = userData![field];
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return TextFieldBottomSheet(
+          title: _formatFieldName(field),
+          initialValue: selectedValue,
+          hintText: "Enter ${_formatFieldName(field)}",
+          onValueChanged: (value) => selectedValue = value,
+          onSave: () => _updateField(field, selectedValue),
+        );
+      },
     );
   }
 
   void _editPicker(String field, List<String> options) {
     String selectedValue = userData![field];
-    _showEditDialog(
-      field,
-      CupertinoPicker(
-        scrollController: FixedExtentScrollController(initialItem: options.indexOf(selectedValue)),
-        itemExtent: 32,
-        onSelectedItemChanged: (index) => selectedValue = options[index],
-        children: options.map((e) => Text(e)).toList(),
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return PickerBottomSheet(
+          title: _formatFieldName(field),
+          options: options,
+          initialValue: selectedValue,
+          onValueChanged: (value) => selectedValue = value,
+          onSave: () => _updateField(field, selectedValue),
+        );
+      },
+    );
+  }
+
+  void _editGenderPicker(String field) {
+    bool isMale = userData![field];
+    String selectedValue = isMale ? "Male" : "Female";
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return RadioSelectionBottomSheet(
+          title: "Gender",
+          options: const ["Male", "Female"],
+          initialValue: selectedValue,
+          onValueChanged: (value) => selectedValue = value,
+          onSave: () => _updateField(field, selectedValue == "Male"),
+        );
+      },
+    );
+  }
+
+  void _editTrainingLocationPicker(String field) {
+    String selectedValue = userData![field];
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return RadioSelectionBottomSheet(
+          title: "Training Location",
+          options: const ["At home", "In the gym"],
+          initialValue: selectedValue,
+          onValueChanged: (value) => selectedValue = value,
+          onSave: () => _updateField(field, selectedValue),
+        );
+      },
+    );
+  }
+
+  String _formatFieldName(String field) {
+    return field.split('_').map((word) => 
+      word.isEmpty ? '' : 
+      '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+    ).join(' ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Scaffold(
+      body: _isLoading 
+          ? _buildLoadingView() 
+          : _buildMainContent(isDarkMode),
+    );
+  }
+
+  Widget _buildLoadingView() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: ThemeConstants.primaryGold,
+          ),
+          SizedBox(height: 16),
+          Text("Loading profile..."),
+        ],
       ),
-      () => _updateField(field, selectedValue),
+    );
+  }
+
+  Widget _buildMainContent(bool isDarkMode) {
+    return userData == null
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 60,
+                  color: ThemeConstants.errorRed,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Failed to load profile",
+                  style: ThemeConstants.headlineStyle(context),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  style: ThemeConstants.primaryButtonStyle,
+                  onPressed: _loadUserData,
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
+          )
+        : CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildAppBar(isDarkMode),
+              SliverFadeTransition(
+                opacity: _fadeAnimation,
+                sliver: SliverToBoxAdapter(
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _buildProfileHeader(),
+                          const SizedBox(height: 24),
+                          _buildPersonalInfoCard(),
+                          _buildGoalSettingsCard(),
+                          const SizedBox(height: 16),
+                          ProfileDivider(
+                            height: 32,
+                            indent: 32,
+                            endIndent: 32,
+                          ),
+                          _buildDeleteAccountButton(),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
+
+  Widget _buildAppBar(bool isDarkMode) {
+    return SliverAppBar(
+      pinned: true,
+      stretch: true,
+      expandedHeight: 100,
+      elevation: 0,
+      backgroundColor: isDarkMode 
+          ? ThemeConstants.darkBackground 
+          : ThemeConstants.lightBackground,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        title: Text(
+          "My Profile & Goal",
+          style: TextStyle(
+            color: isDarkMode ? ThemeConstants.darkText : ThemeConstants.lightText,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          color: ThemeConstants.primaryGold,
+          onPressed: _loadUserData,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Column(
+      children: [
+        ProfileAvatar(
+          size: 60,
+          onTap: () {
+            // Future: Add profile picture upload functionality
+          },
+        ),
+        const SizedBox(height: 16),
+        Text(
+          userData?["username"] ?? '',
+          style: ThemeConstants.headlineStyle(context),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "${userData?["first_name"] ?? ''} ${userData?["last_name"] ?? ''}",
+          style: ThemeConstants.subtitleStyle(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPersonalInfoCard() {
+    return ProfileCard(
+      title: "Personal Information",
+      children: [
+        ProfileInfoTile(
+          label: "First Name",
+          value: userData!["first_name"] ?? '',
+          onTap: () => _editTextField("first_name"),
+        ),
+        ProfileDivider(),
+        ProfileInfoTile(
+          label: "Last Name",
+          value: userData!["last_name"] ?? '',
+          onTap: () => _editTextField("last_name"),
+        ),
+        ProfileDivider(),
+        ProfileInfoTile(
+          label: "Age",
+          value: "${userData!["age"]} years",
+          onTap: () => _editNumberPicker("age", 12, 80),
+        ),
+        ProfileDivider(),
+        ProfileInfoTile(
+          label: "Gender",
+          value: userData!["gender"] ? "Male" : "Female",
+          onTap: () => _editGenderPicker("gender"),
+        ),
+        ProfileDivider(),
+        ProfileInfoTile(
+          label: "Weight",
+          value: "${_displayWeight.toStringAsFixed(1)} $_weightUnit",
+          onTap: _editWeight,
+        ),
+        ProfileDivider(),
+        ProfileInfoTile(
+          label: "Height",
+          value: _displayHeight,
+          onTap: _editHeight,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalSettingsCard() {
+    return ProfileCard(
+      title: "Goal Settings",
+      children: [
+        ProfileInfoTile(
+          label: "Fitness Goal",
+          value: userData!["training_program"] ?? '',
+          onTap: () => _editPicker("training_program", fitnessGoals),
+        ),
+        ProfileDivider(),
+        ProfileInfoTile(
+          label: "Training Location",
+          value: userData!["training_location"] ?? '',
+          onTap: () => _editTrainingLocationPicker("training_location"),
+        ),
+        ProfileDivider(),
+        ProfileInfoTile(
+          label: "Experience Level",
+          value: userData!["training_experience"] ?? '',
+          onTap: () => _editPicker("training_experience", experienceLevels),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeleteAccountButton() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final softRedColor = isDarkMode 
+        ? Color(0xFFAA5555) // Более мягкий красный для темной темы
+        : Color(0xFFDD7777); // Более мягкий красный для светлой темы
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Card(
+        elevation: 0,
+        color: isDarkMode 
+            ? Color(0xFF352525) // Очень темный мягкий красный для фона в темной теме
+            : Color(0xFFF8E8E8), // Очень светлый мягкий красный для фона в светлой теме
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ThemeConstants.cardBorderRadius),
+          side: BorderSide(
+            color: softRedColor.withOpacity(0.2),
+            width: 1.0,
+          ),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(ThemeConstants.cardBorderRadius),
+          onTap: _confirmDeleteAccount,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: softRedColor.withOpacity(isDarkMode ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  child: Icon(
+                    Icons.delete_forever_rounded,
+                    color: softRedColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Delete Account",
+                        style: ThemeConstants.subtitleStyle(context).copyWith(
+                          color: softRedColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Permanently delete your account and all your data",
+                        style: ThemeConstants.captionStyle(context).copyWith(
+                          color: isDarkMode 
+                              ? ThemeConstants.darkSubtext 
+                              : ThemeConstants.lightSubtext,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: softRedColor.withOpacity(0.7),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
