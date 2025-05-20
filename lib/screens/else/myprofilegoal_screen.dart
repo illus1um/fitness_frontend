@@ -532,6 +532,9 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
   // Метод для выбора и загрузки аватара из галереи
   Future<void> _pickAvatar() async {
     final ImagePicker picker = ImagePicker();
+    final bool hasAvatar = userData != null && 
+                          userData!["avatar_url"] != null && 
+                          userData!["avatar_url"].toString().isNotEmpty;
     
     // Показываем модальное окно выбора источника изображения
     showModalBottomSheet(
@@ -541,13 +544,13 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         final isDarkMode = Theme.of(context).brightness == Brightness.dark;
         return Container(
           padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
+          decoration: BoxDecoration(
             color: isDarkMode ? ThemeConstants.darkSurface : ThemeConstants.lightSurface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               // Drag handle
               Container(
                 width: 40,
@@ -565,7 +568,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
                 textAlign: TextAlign.center,
               ),
               
-                const SizedBox(height: 20),
+              const SizedBox(height: 20),
               
               // Выбор из галереи
               ListTile(
@@ -579,7 +582,7 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
                 ),
                 title: Text("Gallery", style: ThemeConstants.subtitleStyle(context)),
                 onTap: () async {
-                    Navigator.pop(context);
+                  Navigator.pop(context);
                   final XFile? image = await picker.pickImage(
                     source: ImageSource.gallery,
                     imageQuality: 80,
@@ -613,11 +616,104 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
                   }
                 },
               ),
+
+              // Добавляем разделитель и опцию удаления только если есть аватар
+              if (hasAvatar) ...[
+                const Divider(height: 32),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: ThemeConstants.errorRed.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.delete_forever, color: ThemeConstants.errorRed),
+                  ),
+                  title: Text(
+                    "Delete Profile Picture",
+                    style: ThemeConstants.subtitleStyle(context).copyWith(
+                      color: ThemeConstants.errorRed,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeleteAvatar();
+                  },
+                ),
+              ],
             ],
           ),
         );
       },
     );
+  }
+
+  // Метод для подтверждения удаления аватара
+  void _confirmDeleteAvatar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: isDarkMode ? ThemeConstants.darkSurface : ThemeConstants.lightSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            "Delete Profile Picture",
+            style: ThemeConstants.headlineStyle(context),
+          ),
+          content: Text(
+            "Are you sure you want to delete your profile picture? This action cannot be undone.",
+            style: ThemeConstants.bodyStyle(context),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "CANCEL",
+                style: TextStyle(
+                  color: isDarkMode ? ThemeConstants.darkSubtext : ThemeConstants.lightSubtext,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteAvatar();
+              },
+              child: const Text(
+                "DELETE",
+                style: TextStyle(color: ThemeConstants.errorRed),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Метод для удаления аватара
+  Future<void> _deleteAvatar() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final success = await ApiService.deleteAvatar();
+      
+      if (success) {
+        // Обновляем данные пользователя после удаления
+        await _loadUserData();
+        _showSuccessSnackbar('Profile picture successfully deleted');
+      } else {
+        _showErrorSnackbar('Failed to delete profile picture');
+      }
+    } catch (e) {
+      print("Error deleting avatar: $e");
+      _showErrorSnackbar('Error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   // Метод для загрузки аватара на сервер

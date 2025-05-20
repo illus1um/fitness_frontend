@@ -202,10 +202,14 @@ class _ElseScreenState extends State<ElseScreen> {
                             _buildListTile(
                               Icons.person_outline_rounded,
                               "My Profile & Goal",
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => MyProfileGoalScreen()),
-                              ),
+                              () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => MyProfileGoalScreen()),
+                                );
+                                // Reload user data when returning from MyProfileGoalScreen
+                                _loadUserData();
+                              },
                               isDarkMode: isDarkMode,
                             ),
 

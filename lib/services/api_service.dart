@@ -748,4 +748,29 @@ class ApiService {
     
     return avatarPath;
   }
+
+  static Future<bool> deleteAvatar() async {
+    try {
+      String? token = await AuthService.getAccessToken();
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/delete-avatar'),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        // Clear the avatar cache if it exists
+        final currentAvatarUrl = await getAvatarUrl();
+        if (currentAvatarUrl != null) {
+          await CachedNetworkImage.evictFromCache(currentAvatarUrl);
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print("Error deleting avatar: $e");
+      return false;
+    }
+  }
 }
