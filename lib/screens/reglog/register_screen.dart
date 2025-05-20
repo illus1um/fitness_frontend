@@ -42,8 +42,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 @override
 Widget build(BuildContext context) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  final primaryColor = Color.fromARGB(255, 199, 169, 127);
+  final textColor = isDarkMode ? Colors.white : Colors.black87;
+  final subtleTextColor = isDarkMode ? Colors.grey[300] : const Color.fromARGB(255, 116, 112, 112);
+  final containerBgColor = isDarkMode ? Color(0xFF2A2A2A) : Color(0xFFF2F2F2);
+  final borderColor = isDarkMode ? Colors.grey[700] : Colors.brown.shade100;
+  final fieldBgColor = isDarkMode ? Color(0xFF333333) : Colors.white;
+
   return Scaffold(
-    backgroundColor: Colors.white,
+    backgroundColor: isDarkMode ? Colors.black : Colors.white,
     body: SafeArea(
       child: SingleChildScrollView(
         child: Padding(
@@ -58,7 +66,7 @@ Widget build(BuildContext context) {
                     fontSize: 35,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 8,
-                    color: Colors.black87,
+                    color: textColor,
                   ),
                 ),
               ),
@@ -70,12 +78,12 @@ Widget build(BuildContext context) {
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Color(0xFFF2F2F2), // светло-серый фон
+                  color: containerBgColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.brown.shade100),
+                  border: Border.all(color: borderColor!),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black12,
+                      color: isDarkMode ? Colors.black26 : Colors.black12,
                       blurRadius: 6,
                       offset: Offset(0, 2),
                     ),
@@ -108,6 +116,13 @@ Widget build(BuildContext context) {
 
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  final inactiveColor = isDarkMode ? Color(0xFF3D3D3D) : Colors.brown[100];
+  final activeColor = isDarkMode ? Color(0xFF614F36) : Color.fromARGB(255, 199, 169, 127);
+  final inactiveTextColor = isDarkMode ? Colors.grey[400] : Colors.black;
+  final activeTextColor = isDarkMode ? Colors.white : Colors.black;
+  final borderColor = isDarkMode ? Colors.grey[600] : Colors.black;
+
   return Align(
     alignment: Alignment.topCenter,
     child: Container(
@@ -116,7 +131,7 @@ Widget build(BuildContext context) {
       margin: EdgeInsets.only(top: 40),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: Colors.brown[100],
+        color: inactiveColor,
       ),
       child: Row(
         children: [
@@ -137,18 +152,16 @@ Widget build(BuildContext context) {
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  color: !isLogin
-                      ? Color.fromARGB(255, 199, 169, 127)
-                      : const Color.fromARGB(248, 0, 0, 0),
+                  color: !isLogin ? activeColor : inactiveColor,
                   border: Border.all(
-                    color: !isLogin ? Colors.black : Colors.transparent,
+                    color: !isLogin ? borderColor! : Colors.transparent,
                     width: 2,
                   ),
                 ),
                 child: Text(
                   "Registration",
                   style: TextStyle(
-                    color: const Color.fromARGB(255, 0, 0, 0),
+                    color: !isLogin ? activeTextColor : inactiveTextColor,
                   ),
                 ),
               ),
@@ -171,20 +184,16 @@ Widget build(BuildContext context) {
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  color: isLogin
-                      ? Colors.brown[300]
-                      : Color.fromARGB(255, 219, 200, 173),
+                  color: isLogin ? activeColor : inactiveColor,
                   border: Border.all(
-                    color: isLogin ? Colors.black : Colors.transparent,
+                    color: isLogin ? borderColor! : Colors.transparent,
                     width: 2,
                   ),
                 ),
                 child: Text(
                   "Login",
                   style: TextStyle(
-                    color: isLogin
-                        ? Colors.white
-                        : const Color.fromARGB(255, 0, 0, 0),
+                    color: isLogin ? activeTextColor : inactiveTextColor,
                   ),
                 ),
               ),
@@ -205,26 +214,34 @@ Widget build(BuildContext context) {
     String? Function(String?)? validator,
     String? errorText,
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Color.fromARGB(255, 199, 169, 127);
+    final borderColor = isDarkMode ? Colors.grey[600] : const Color.fromARGB(255, 156, 145, 141);
+    final labelColor = isDarkMode ? Colors.grey[300] : const Color.fromARGB(255, 116, 112, 112);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        cursorColor: Color.fromARGB(255, 199, 169, 127),
+        cursorColor: primaryColor,
+        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
-          errorText: errorText, // ⬅ Показываем ошибку
+          labelStyle: TextStyle(color: labelColor),
+          errorText: errorText,
           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+            borderSide: BorderSide(color: borderColor!),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Color.fromARGB(198, 169, 127, 88), width: 2.0),
+            borderSide: BorderSide(color: primaryColor, width: 2.0),
           ),
-          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
+          floatingLabelStyle: TextStyle(color: primaryColor),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          filled: true,
+          fillColor: isDarkMode ? Color(0xFF333333) : Colors.white,
         ),
         validator: validator,
       ),
@@ -234,31 +251,41 @@ Widget build(BuildContext context) {
 
 
 Widget _buildPasswordFields() {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  final primaryColor = Color.fromARGB(255, 199, 169, 127);
+  final borderColor = isDarkMode ? Colors.grey[600] : const Color.fromARGB(255, 156, 145, 141);
+  final labelColor = isDarkMode ? Colors.grey[300] : const Color.fromARGB(255, 116, 112, 112);
+  final fieldBgColor = isDarkMode ? Color(0xFF333333) : Colors.white;
+  
   return Column(
     children: [
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 15.0),
         child: TextFormField(
           controller: passwordController,
-          cursorColor: Color.fromARGB(255, 199, 169, 127),
+          cursorColor: primaryColor,
           obscureText: !isPasswordVisible,
+          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
           decoration: InputDecoration(
             labelText: "Password",
-            labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+            labelStyle: TextStyle(color: labelColor),
             contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+              borderSide: BorderSide(color: borderColor!),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
+              borderSide: BorderSide(color: primaryColor, width: 2.0),
             ),
-            fillColor: const Color.fromARGB(255, 255, 255, 255),
+            fillColor: fieldBgColor,
             filled: true,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             suffixIcon: IconButton(
-              icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+              icon: Icon(
+                isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+              ),
               onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
             ),
           ),
@@ -271,25 +298,29 @@ Widget _buildPasswordFields() {
         padding: const EdgeInsets.only(bottom: 15.0),
         child: TextFormField(
           controller: confirmPasswordController,
-          cursorColor: Color.fromARGB(255, 199, 169, 127),
+          cursorColor: primaryColor,
           obscureText: !isConfirmPasswordVisible,
+          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
           decoration: InputDecoration(
             labelText: "Confirm Password",
-            labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+            labelStyle: TextStyle(color: labelColor),
             contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+              borderSide: BorderSide(color: borderColor!),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
+              borderSide: BorderSide(color: primaryColor, width: 2.0),
             ),
-            fillColor: const Color.fromARGB(255, 255, 255, 255),
+            fillColor: fieldBgColor,
             filled: true,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             suffixIcon: IconButton(
-              icon: Icon(isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off),
+              icon: Icon(
+                isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+              ),
               onPressed: () => setState(() => isConfirmPasswordVisible = !isConfirmPasswordVisible),
             ),
           ),
@@ -310,6 +341,11 @@ Widget _buildPasswordFields() {
 
 
   Widget _buildGenderSwitch() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Color.fromARGB(255, 199, 169, 127);
+    final borderColor = isDarkMode ? Colors.grey[600] : Colors.brown;
+    final bgColor = isDarkMode ? Color(0xFF333333) : Theme.of(context).canvasColor;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -319,19 +355,18 @@ Widget _buildPasswordFields() {
           Container(
             height: 40,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20), // Делаем закругление больше
-              border: Border.all(color: Colors.brown),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borderColor!),
             ),
             child: Row(
               children: [
-
                 Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => gender = true),
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: gender ? Color.fromARGB(255, 199, 169, 127) : Theme.of(context).canvasColor,
+                        color: gender ? primaryColor : bgColor,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           bottomLeft: Radius.circular(20),
@@ -342,13 +377,14 @@ Widget _buildPasswordFields() {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (gender)
-                              Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
+                              Icon(Icons.check, size: 16, color: isDarkMode ? Colors.black : Colors.white),
                             SizedBox(width: gender ? 6 : 0),
                             Text(
                               "Male",
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
+                                color: gender ? (isDarkMode ? Colors.black : Colors.white) : isDarkMode ? Colors.white : Colors.black,
                               ),
                             ),
                           ],
@@ -364,7 +400,7 @@ Widget _buildPasswordFields() {
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: !gender ? Color.fromARGB(255, 199, 169, 127) : Theme.of(context).canvasColor,
+                        color: !gender ? primaryColor : bgColor,
                         borderRadius: BorderRadius.only(
                           topRight: Radius.circular(20),
                           bottomRight: Radius.circular(20),
@@ -375,13 +411,14 @@ Widget _buildPasswordFields() {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (!gender)
-                              Icon(Icons.check, size: 16, color: Theme.of(context).iconTheme.color),
+                              Icon(Icons.check, size: 16, color: isDarkMode ? Colors.black : Colors.white),
                             SizedBox(width: !gender ? 6 : 0),
                             Text(
                               "Female",
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
+                                color: !gender ? (isDarkMode ? Colors.black : Colors.white) : isDarkMode ? Colors.white : Colors.black,
                               ),
                             ),
                           ],
@@ -460,6 +497,11 @@ String? _validatePassword(String? value) {
   }
 
   Widget _buildRegisterButton() {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  final primaryColor = Color.fromARGB(255, 199, 169, 127);
+  final buttonColor = isDarkMode ? primaryColor : Colors.black;
+  final textColor = isDarkMode ? Colors.black : Colors.white;
+  
   return ElevatedButton(
     onPressed: isLoading
     ? null
@@ -542,13 +584,13 @@ String? _validatePassword(String? value) {
 
 
     style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
+      backgroundColor: buttonColor,
+      foregroundColor: textColor,
       minimumSize: Size(double.infinity, 50),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
     child: isLoading
-        ? CircularProgressIndicator(color: Colors.white)
+        ? CircularProgressIndicator(color: textColor)
         : Text("Continue", style: TextStyle(fontSize: 16)),
   );
 }

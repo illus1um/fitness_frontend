@@ -35,49 +35,69 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
   ];
 
   Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      elevation: 0,
-      centerTitle: false,
-      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-    ),
-    body: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Align(
-            alignment: Alignment.center,
-            child: Text(
-              "Choose training program",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
-            ),
-          ),
-          SizedBox(height: 26), 
-
-          Expanded(
-            child: ListView.separated(
-              itemCount: programs.length,
-              separatorBuilder: (context, index) => SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final program = programs[index];
-                return _buildProgramCard(program["abbr"]!, program["name"]!, program["image"]!);
-              },
-            ),
-          ),
-        ],
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    
+    return Scaffold(
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontSize: 24, 
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        iconTheme: IconThemeData(color: textColor),
       ),
-    ),
-  );
-}
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                "Choose training program",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 32, 
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+            ),
+            SizedBox(height: 26), 
+
+            Expanded(
+              child: ListView.separated(
+                itemCount: programs.length,
+                separatorBuilder: (context, index) => SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final program = programs[index];
+                  return _buildProgramCard(program["abbr"]!, program["name"]!, program["image"]!);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildProgramCard(String abbr, String name, String imagePath) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDarkMode ? Color(0xFF333333) : const Color.fromARGB(255, 231, 231, 231);
+    final circleColor = isDarkMode ? Color(0xFF444444) : Color.fromARGB(255, 255, 255, 255);
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final abbrColor = isDarkMode ? Colors.white : const Color.fromARGB(255, 0, 0, 0);
+    
     return GestureDetector(
       onTap: () => selectProgram(name),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 231, 231, 231),
+          color: cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -88,7 +108,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
               margin: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color.fromARGB(255, 255, 255, 255),
+                color: circleColor,
               ),
               child: Center(
                 child: Text(
@@ -96,7 +116,7 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: const Color.fromARGB(255, 0, 0, 0),
+                    color: abbrColor,
                   ),
                 ),
               ),
@@ -106,7 +126,11 @@ class _TrainingProgramScreenState extends State<TrainingProgramScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Text(
                   name,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black),
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.w500, 
+                    color: textColor,
+                  ),
                 ),
               ),
             ),
