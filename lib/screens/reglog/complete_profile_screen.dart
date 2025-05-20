@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fitness_app/models/registration_data.dart';
-import 'training_program_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/services/plan_cache.dart';
+import 'training_program_screen.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   final RegistrationData registrationData;
@@ -27,8 +29,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     widget.registrationData.height = selectedHeight;
     widget.registrationData.age = selectedAge;
 
-    // We no longer need to set is_new_user flag
-    // as we're using has_generated_plan instead
+    // Ensure any existing workout plan is cleared for new users
+    try {
+      // Set flag to indicate user has NOT generated a workout plan yet
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_generated_plan', false);
+      
+      // Clear any existing plans from server and cache
+      await ApiService.clearProgress();
+      await ApiService.clearPlan();
+      await PlanCache.clearPlan();
+    } catch (e) {
+      print('Error clearing workout data: $e');
+    }
 
     setState(() => isLoading = false);
 

@@ -52,9 +52,24 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       final prefs = await SharedPreferences.getInstance();
       final hasGeneratedPlan = prefs.getBool('has_generated_plan') ?? false;
       
-      // If user hasn't explicitly generated a plan yet, don't load one
+      // ALWAYS ensure we don't have a plan for users who haven't generated one
       if (!hasGeneratedPlan) {
-        print('DEBUG: User has not explicitly generated a plan yet');
+        print('DEBUG: User has not explicitly generated a plan yet - ensuring no plan exists');
+        
+        // Force clear any existing plans that might be cached
+        await ApiService.clearProgress();
+        await ApiService.clearPlan();
+        await PlanCache.clearPlan();
+        
+        // Ensure our local state is empty
+        setState(() {
+          _plan = null;
+          _startDate = null;
+          _progress = [];
+          _workoutDays.clear();
+          _availableDays.clear();
+        });
+        
         return;
       }
       
@@ -363,70 +378,78 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       ),
       body: userData == null
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildInfoCard(),
-                  const SizedBox(height: 16),
+          : FutureBuilder<bool>(
+              future: _checkUserHasGeneratedPlan(),
+              builder: (context, snapshot) {
+                // Default to false if data isn't loaded yet
+                final hasGeneratedPlan = snapshot.data ?? false;
+                
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildInfoCard(),
+                      const SizedBox(height: 16),
 
-                  if (_plan != null && _startDate != null) ...[
-                    Text(
-                      'Training Schedule',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Calendar container with gradient background
-                    AnimatedOpacity(
-                      opacity: _isGenerating ? 0.3 : 1.0,
-                      duration: Duration(milliseconds: 500),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Color(0xFFC7A97F).withOpacity(0.05),
-                              Color(0xFFC7A97F).withOpacity(0.15),
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
+                      if (_plan != null && _startDate != null && hasGeneratedPlan) ...[
+                        Text(
+                          'Training Schedule',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                          textAlign: TextAlign.center,
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        // Using LayoutBuilder instead of fixed height container for flexibility
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            // Calculate the available height
-                            return _buildTableCalendarWithSize();
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+                        const SizedBox(height: 16),
 
-                  // Always show either Start Workout or the button to view the plan
-                  _isGenerating
-                      ? _buildGeneratingPlanIndicator()
-                      : (_plan == null 
-                          ? _buildStartWorkoutButton()
-                          : _buildViewPlanButton()),
-                ],
-              ),
+                        // Calendar container with gradient background
+                        AnimatedOpacity(
+                          opacity: _isGenerating ? 0.3 : 1.0,
+                          duration: Duration(milliseconds: 500),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFFC7A97F).withOpacity(0.05),
+                                  Color(0xFFC7A97F).withOpacity(0.15),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            // Using LayoutBuilder instead of fixed height container for flexibility
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                // Calculate the available height
+                                return _buildTableCalendarWithSize();
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+
+                      // Always show either Start Workout or the button to view the plan
+                      _isGenerating
+                          ? _buildGeneratingPlanIndicator()
+                          : (_plan == null || !hasGeneratedPlan
+                              ? _buildStartWorkoutButton()
+                              : _buildViewPlanButton()),
+                    ],
+                  ),
+                );
+              },
             ),
     );
   }
@@ -1012,5 +1035,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         ],
       ),
     );
+  }
+
+  // Helper to check if user has generated a plan
+  Future<bool> _checkUserHasGeneratedPlan() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('has_generated_plan') ?? false;
   }
 }
