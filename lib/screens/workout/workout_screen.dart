@@ -48,6 +48,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   Future<void> _loadCachedPlan() async {
     try {
+      // Check if user has explicitly generated a workout plan
+      final prefs = await SharedPreferences.getInstance();
+      final hasGeneratedPlan = prefs.getBool('has_generated_plan') ?? false;
+      
+      // If user hasn't explicitly generated a plan yet, don't load one
+      if (!hasGeneratedPlan) {
+        print('DEBUG: User has not explicitly generated a plan yet');
+        return;
+      }
+      
       // Сначала пробуем загрузить план с сервера
       final serverPlan = await ApiService.getPlan();
       if (serverPlan != null) {
@@ -117,6 +127,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
 
     setState(() => _isGenerating = true);
+
+    // Mark that user has explicitly generated a workout plan
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_generated_plan', true);
 
     // Clear old progress and plan from server and cache
     await ApiService.clearProgress();

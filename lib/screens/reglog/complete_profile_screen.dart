@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fitness_app/models/registration_data.dart';
 import 'training_program_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   final RegistrationData registrationData;
@@ -19,12 +20,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   bool isLoading = false;
 
-  void saveProfile() {
+  void saveProfile() async {
     setState(() => isLoading = true);
 
     widget.registrationData.weight = selectedWeight;
     widget.registrationData.height = selectedHeight;
     widget.registrationData.age = selectedAge;
+
+    // We no longer need to set is_new_user flag
+    // as we're using has_generated_plan instead
 
     setState(() => isLoading = false);
 
