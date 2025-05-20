@@ -24,6 +24,12 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   Map<String, int> _completedSets = {};
   bool _loading = true;
 
+  // Функция для капитализации первой буквы текста
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +73,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('Day ${widget.day.dayIndex}: ${widget.day.part}'),
+        title: Text('Day ${widget.day.dayIndex}: ${_capitalize(widget.day.part)}'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -169,7 +175,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        ex.name,
+                        _capitalize(ex.name),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

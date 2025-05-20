@@ -296,6 +296,11 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
 
   double _pct(int num, int den) => den > 0 ? (num / den).clamp(0.0, 1.0) : 0.0;
 
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final ex = widget.day.exercises[exIndex];
@@ -366,7 +371,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             );
           },
         ),
-        title: Text('${exIndex + 1}/${widget.day.exercises.length} ${ex.name}'),
+        title: Text('${exIndex + 1}/${widget.day.exercises.length} ${_capitalize(ex.name)}'),
         centerTitle: true,
         elevation: 0,
         actions: [
@@ -510,7 +515,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                             // Exercise name
                             Center(
                               child: Text(
-                                currentEx.name,
+                                _capitalize(currentEx.name),
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
