@@ -11,7 +11,7 @@ import 'package:http/http.dart' show MediaType;
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ApiService {
-  static const String baseUrl = "http://192.168.1.76:8000"; // Backend server
+  static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
 
   static Future<bool> login(String username, String password) async {
     try {

@@ -3,7 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
-import '../../../main.dart';
+import '../../utils/notification_setup.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   final String username;
@@ -135,7 +135,7 @@ class _NotificationSettingsScreenState
             icon: 'ic_notification',
           ),
         ),
-        androidAllowWhileIdle: true,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );

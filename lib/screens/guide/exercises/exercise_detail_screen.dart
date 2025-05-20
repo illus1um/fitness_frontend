@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../services/gif_service.dart';
 
 class ExerciseDetailScreen extends StatelessWidget {
   final Map<String, dynamic> exercise;
@@ -57,19 +58,22 @@ class ExerciseDetailScreen extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  exercise["gif"] ?? "assets/images/placeholder.png",
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.fitness_center,
-                        size: 80,
-                        color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                child: exercise["gifFileName"] != null
+                    ? GifService.loadNetworkGif(
+                        gifName: exercise["gifFileName"],
+                        fit: BoxFit.contain,
+                        errorWidget: Center(
+                          child: Icon(
+                            Icons.fitness_center,
+                            size: 80,
+                            color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                          ),
+                        ),
+                      )
+                    : Image.asset(
+                        "assets/images/placeholder.png",
+                        fit: BoxFit.contain,
                       ),
-                    );
-                  },
-                ),
               ),
             ),
 

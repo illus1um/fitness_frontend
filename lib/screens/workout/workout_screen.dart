@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/services/plan_generator.dart';
 import 'package:fitness_app/services/plan_cache.dart';
+import 'package:fitness_app/services/notification_service.dart';
 import 'package:fitness_app/screens/workout/workout_plan_screen.dart';
 import 'package:fitness_app/screens/workout/workout_history_screen.dart';
 import '../../models/day_info.dart';
@@ -55,16 +56,39 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _init() async {
     setState(() => _isLoading = true);
     
-    // Сначала проверяем, сгенерирован ли план
-    final hasGenerated = await _checkUserHasGeneratedPlan();
-    _hasGeneratedPlanCache = hasGenerated;
-    
     // Загружаем данные пользователя
     await _loadUserData();
     
-    // Загружаем план только если он был сгенерирован
-    if (hasGenerated) {
+    // Пробуем загрузить план с сервера независимо от флага
+    final serverPlan = await ApiService.getPlan();
+    
+    if (serverPlan != null) {
+      // Если план есть на сервере, устанавливаем флаг
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_generated_plan', true);
+      _hasGeneratedPlanCache = true;
       await _loadCachedPlan();
+    } else {
+      // Если на сервере нет плана, проверяем в кэше
+      final cachedPlan = await PlanCache.loadPlan();
+      final startDate = await PlanCache.loadStartDate();
+      
+      if (cachedPlan != null && startDate != null) {
+        // Если план есть в кэше, устанавливаем флаг
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_generated_plan', true);
+        _hasGeneratedPlanCache = true;
+        await _loadCachedPlan();
+      } else {
+        // Если плана нет ни на сервере, ни в кэше, проверяем флаг
+        final hasGenerated = await _checkUserHasGeneratedPlan();
+        _hasGeneratedPlanCache = hasGenerated;
+        
+        // Загружаем план только если он был сгенерирован
+        if (hasGenerated) {
+          await _loadCachedPlan();
+        }
+      }
     }
     
     // Установим флаг загрузки в false
@@ -118,35 +142,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
       // Если на сервере нет плана, проверяем явно установленный флаг
       final hasGeneratedPlan = prefs.getBool('has_generated_plan') ?? false;
-      _hasGeneratedPlanCache = hasGeneratedPlan;
       
-      // Если пользователь явно не генерировал план, очищаем всё
-      if (!hasGeneratedPlan) {
-        print('DEBUG: User has not generated a plan yet - ensuring no plan exists');
-        
-        // Force clear any existing plans that might be cached
-        await ApiService.clearProgress();
-        await ApiService.clearPlan();
-        await PlanCache.clearPlan();
-        
-        // Ensure our local state is empty
-        setState(() {
-          _plan = null;
-          _startDate = null;
-          _progress = [];
-          _workoutDays.clear();
-          _availableDays.clear();
-        });
-        
-        return;
-      }
-      
-      // Если на сервере нет плана, пробуем загрузить из кэша
+      // Если пользователь явно не генерировал план, пробуем загрузить из кэша
+      // Если на сервере нет плана, пробуем загрузить из кэша в любом случае
       final plan = await PlanCache.loadPlan();
       final sd = await PlanCache.loadStartDate();
       final progress = await PlanCache.loadProgress();
       
       if (plan != null && sd != null) {
+        // Если план найден в кэше, считаем что пользователь генерировал план ранее
+        await prefs.setBool('has_generated_plan', true);
+        _hasGeneratedPlanCache = true;
+        
         _prepareWorkoutDays(plan, sd);
         _updateAvailableDays(plan, sd, progress);
         
@@ -161,6 +168,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         
         print('DEBUG: Plan loaded from cache and saved to server with ${plan.length} days');
       } else {
+        // Если плана нет ни на сервере, ни в кэше, сохраняем значение флага из SharedPreferences
+        _hasGeneratedPlanCache = hasGeneratedPlan;
         print('DEBUG: No plan found in cache or server');
       }
     } catch (e) {
@@ -197,6 +206,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     await ApiService.clearProgress();
     await ApiService.clearPlan();
     await PlanCache.clearPlan();
+    
+    // Отменяем существующие уведомления о тренировках
+    await NotificationService.cancelAllWorkoutNotifications();
 
     final startDate = DateTime.now();
     await PlanCache.saveStartDate(startDate);
@@ -243,6 +255,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   void _prepareWorkoutDays(List<DayInfo> plan, DateTime sd) {
     _workoutDays.clear();
     final startDate = DateTime(sd.year, sd.month, sd.day);
+    
+    // Список дат тренировок, который мы будем использовать для уведомлений
+    final List<DateTime> workoutDates = [];
+    
     for (int i = 0; i < plan.length; i++) {
       // Используем индекс дня для определения даты тренировки (каждый второй день)
       final dayIndex = plan[i].dayIndex;
@@ -251,11 +267,36 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       final dayOffset = (dayIndex - 1) * 2;
       final workoutDay = startDate.add(Duration(days: dayOffset));
       // Сохраняем только дату без времени
-      _workoutDays.add(DateTime(workoutDay.year, workoutDay.month, workoutDay.day));
+      final cleanDate = DateTime(workoutDay.year, workoutDay.month, workoutDay.day);
+      _workoutDays.add(cleanDate);
+      workoutDates.add(cleanDate);
       print('Added workout day: ${workoutDay.toString()} for day index $dayIndex');
     }
+    
+    // Планируем уведомления для тренировочных дней
+    _scheduleWorkoutNotifications(workoutDates, plan);
   }
   
+  // Метод для планирования уведомлений о тренировках
+  Future<void> _scheduleWorkoutNotifications(List<DateTime> workoutDates, List<DayInfo> plan) async {
+    try {
+      // Проверяем, включены ли уведомления о тренировках
+      final prefs = await SharedPreferences.getInstance();
+      final notificationsEnabled = prefs.getBool('workout_notifications_enabled') ?? true;
+      
+      if (!notificationsEnabled) {
+        print('DEBUG: Workout notifications are disabled in settings');
+        return;
+      }
+      
+      // Планируем уведомления
+      await NotificationService.scheduleWorkoutNotifications(workoutDates, plan);
+      print('DEBUG: Workout notifications scheduled for ${workoutDates.length} days');
+    } catch (e) {
+      print('ERROR: Failed to schedule workout notifications: $e');
+    }
+  }
+
   /// Обновляет набор доступных тренировочных дней
   void _updateAvailableDays(List<DayInfo> plan, DateTime startDate, List<ProgressEntry> progress) {
     _availableDays.clear();
@@ -1102,14 +1143,51 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   // Метод для фонового обновления данных без индикатора загрузки
   Future<void> _refreshDataInBackground() async {
-    // Проверим статус плана в фоновом режиме
-    final hasGenerated = await _checkUserHasGeneratedPlan();
+    // Загружаем данные пользователя в фоне
+    await _loadUserData();
+    
+    // Проверяем наличие плана на сервере
+    final serverPlan = await ApiService.getPlan();
+    
+    // Если план существует на сервере, устанавливаем флаг и загружаем данные
+    if (serverPlan != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_generated_plan', true);
+      _hasGeneratedPlanCache = true;
+      
+      if (_plan == null || _startDate == null) {
+        await _loadCachedPlan();
+        if (mounted) setState(() {});
+      }
+      return;
+    }
+    
+    // Проверим наличие плана в кэше
+    final cachedPlan = await PlanCache.loadPlan();
+    final startDate = await PlanCache.loadStartDate();
+    
+    if (cachedPlan != null && startDate != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_generated_plan', true);
+      _hasGeneratedPlanCache = true;
+      
+      if (_plan == null || _startDate == null) {
+        await _loadCachedPlan();
+        if (mounted) setState(() {});
+      }
+      return;
+    }
+    
+    // Если плана нет ни на сервере, ни в кэше, проверим только статус флага
+    final prefs = await SharedPreferences.getInstance();
+    final hasGenerated = prefs.getBool('has_generated_plan') ?? false;
+    
     if (hasGenerated != _hasGeneratedPlanCache) {
       _hasGeneratedPlanCache = hasGenerated;
       if (mounted) setState(() {});
     }
     
-    // Если план был сгенерирован, обновим его в фоне
+    // Если план был сгенерирован согласно флагу, но не загружен, загрузим его
     if (hasGenerated && (_plan == null || _startDate == null)) {
       await _loadCachedPlan();
       if (mounted) setState(() {});

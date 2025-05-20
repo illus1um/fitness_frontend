@@ -1,7 +1,9 @@
 // lib/screens/workout/workout_session_screen.dart
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../models/day_info.dart';
 import '../../models/exercise_info.dart';
@@ -9,6 +11,8 @@ import '../../models/progress_entry.dart';
 import '../../services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'workout_summary_screen.dart';
+import '../../services/plan_cache.dart';
+import '../../services/gif_service.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
   final DayInfo day;
@@ -443,10 +447,10 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                                 height: 280,
                                 width: double.infinity,
                                 color: isDarkMode ? Color(0xFF262626) : Colors.grey.shade100,
-                                child: Image.asset(
-                                  currentEx.assetGifPath,
+                                child: GifService.loadNetworkGif(
+                                  gifName: currentEx.gifFileName,
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => Center(
+                                  errorWidget: Center(
                                     child: Icon(
                                       Icons.fitness_center,
                                       size: 80,
@@ -947,18 +951,16 @@ class ExerciseInstructionsScreen extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  exercise.assetGifPath,
+                child: GifService.loadNetworkGif(
+                  gifName: exercise.gifFileName,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.fitness_center,
-                        size: 80,
-                        color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
-                      ),
-                    );
-                  },
+                  errorWidget: Center(
+                    child: Icon(
+                      Icons.fitness_center,
+                      size: 80,
+                      color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                    ),
+                  ),
                 ),
               ),
             ),

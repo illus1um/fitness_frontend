@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final ValueChanged<ThemeMode> onThemeChanged;
@@ -15,6 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   String _selectedWeightUnit = 'kg';
   String _selectedHeightUnit = 'cm';
   String _selectedWaterUnit = 'L';
+  bool _workoutNotificationsEnabled = true;
   
   // Константы для цветов
   final Color goldAccent = Color(0xFFC7A97F);
@@ -45,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       _selectedWeightUnit = prefs.getString('weight_unit') ?? 'kg';
       _selectedHeightUnit = prefs.getString('height_unit') ?? 'cm';
       _selectedWaterUnit = prefs.getString('water_unit') ?? 'L';
+      _workoutNotificationsEnabled = prefs.getBool('workout_notifications_enabled') ?? true;
     });
   }
 
@@ -483,6 +486,17 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   isDisabled: true,
                 ),
                 
+                // Добавляем новую секцию уведомлений
+                _buildSectionHeader('Notifications', Icons.notifications_outlined, isDarkMode: isDarkMode),
+                _buildNotificationToggle(
+                  icon: Icons.fitness_center,
+                  title: 'Workout Reminders',
+                  description: 'Get notified on workout days',
+                  value: _workoutNotificationsEnabled,
+                  onChanged: _toggleWorkoutNotifications,
+                  isDarkMode: isDarkMode,
+                ),
+                
                 // Настройки единиц измерения
                 _buildSectionHeader('Units', Icons.straighten_outlined, isDarkMode: isDarkMode),
                 _buildSettingTile(
@@ -557,5 +571,144 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         ),
       ),
     );
+  }
+  
+  // Добавляем метод для построения переключателя уведомлений
+  Widget _buildNotificationToggle({
+    required IconData icon,
+    required String title,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required bool isDarkMode,
+  }) {
+    final cardColor = isDarkMode ? Color(0xFF252A36) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode 
+                ? Colors.black.withOpacity(0.2) 
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Иконка в цветном круге
+            Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: goldAccent.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: goldAccent,
+                size: 22,
+              ),
+            ),
+            SizedBox(width: 16),
+            
+            // Заголовок и описание
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Переключатель
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: goldAccent,
+              activeTrackColor: goldAccent.withOpacity(0.3),
+              inactiveThumbColor: isDarkMode ? Colors.grey[300] : Colors.grey[400],
+              inactiveTrackColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // Метод для переключения уведомлений тренировок
+  Future<void> _toggleWorkoutNotifications(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('workout_notifications_enabled', value);
+    
+    setState(() {
+      _workoutNotificationsEnabled = value;
+    });
+    
+    if (value) {
+      // Показать уведомление о включении
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.notifications_active, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Workout notifications enabled'),
+            ],
+          ),
+          backgroundColor: goldAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: EdgeInsets.all(10),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      // Отменяем все уведомления о тренировках
+      await NotificationService.cancelAllWorkoutNotifications();
+      
+      // Показать уведомление о выключении
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.notifications_off, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Workout notifications disabled'),
+            ],
+          ),
+          backgroundColor: Colors.grey,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: EdgeInsets.all(10),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
