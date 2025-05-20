@@ -9,6 +9,8 @@ import 'package:fitness_app/widgets/profile_widgets.dart';
 import 'package:fitness_app/widgets/editable_bottom_sheet.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 class MyProfileGoalScreen extends StatefulWidget {
   const MyProfileGoalScreen({Key? key}) : super(key: key);
@@ -619,7 +621,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
 
               // Добавляем разделитель и опцию удаления только если есть аватар
               if (hasAvatar) ...[
-                const Divider(height: 32),
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(10),
@@ -716,6 +717,49 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     }
   }
 
+  // Метод для корректировки ориентации изображения
+  Future<File?> _fixImageOrientation(File imageFile) async {
+    try {
+      // Читаем изображение
+      final bytes = await imageFile.readAsBytes();
+      final image = img.decodeImage(bytes);
+      
+      if (image == null) return null;
+
+      // Максимальные размеры для аватара
+      const maxWidth = 500;
+      const maxHeight = 500;
+
+      // Изменяем размер изображения, если оно больше максимального
+      var resizedImage = image;
+      if (image.width > maxWidth || image.height > maxHeight) {
+        resizedImage = img.copyResize(
+          image,
+          width: image.width > image.height ? maxWidth : null,
+          height: image.height > image.width ? maxHeight : null,
+          interpolation: img.Interpolation.linear,
+        );
+      }
+
+      // Получаем временную директорию для сохранения обработанного изображения
+      final tempDir = await getTemporaryDirectory();
+      final tempPath = tempDir.path;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final targetPath = '$tempPath/fixed_image_$timestamp.jpg';
+
+      // Сохраняем изображение в JPEG формате с оптимизированным качеством
+      final fixedImage = File(targetPath);
+      await fixedImage.writeAsBytes(
+        img.encodeJpg(resizedImage, quality: 85),
+      );
+
+      return fixedImage;
+    } catch (e) {
+      print("Error fixing image orientation: $e");
+      return null;
+    }
+  }
+
   // Метод для загрузки аватара на сервер
   Future<void> _uploadAvatar(File imageFile) async {
     setState(() => _isLoading = true);
@@ -729,9 +773,53 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         setState(() => _isLoading = false);
         return;
       }
+
+      // Показываем индикатор обработки
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  color: ThemeConstants.primaryGold,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Processing image...",
+                  style: ThemeConstants.bodyStyle(context),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Исправляем ориентацию изображения перед загрузкой
+      final File? fixedImage = await _fixImageOrientation(imageFile);
+      
+      // Закрываем диалог обработки
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      if (fixedImage == null) {
+        _showErrorSnackbar('Failed to process image. Please try again.');
+        setState(() => _isLoading = false);
+        return;
+      }
       
       // Загрузка изображения
-      final success = await ApiService.uploadAvatar(imageFile);
+      final success = await ApiService.uploadAvatar(fixedImage);
+      
+      // Удаляем временный файл
+      try {
+        await fixedImage.delete();
+      } catch (e) {
+        print("Error deleting temporary file: $e");
+      }
       
       if (success) {
         // Если загрузка успешна, обновляем данные пользователя
@@ -742,6 +830,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         setState(() => _isLoading = false);
       }
     } catch (e) {
+      // Закрываем диалог обработки в случае ошибки
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
       print("Error uploading avatar: $e");
       _showErrorSnackbar('Error: $e');
       setState(() => _isLoading = false);
