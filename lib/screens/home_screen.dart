@@ -45,8 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: "Workout"),
           // BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Body"),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: "Guide"),
-          BottomNavigationBarItem(icon: Icon(Icons.local_drink), label: "Drinking"),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: "Guide"),
+          BottomNavigationBarItem(icon: Icon(Icons.water_drop), label: "Drinking"),
           BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: "Else"),
         ],
         currentIndex: _selectedIndex,

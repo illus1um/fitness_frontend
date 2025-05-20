@@ -874,7 +874,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                     children: [
                                       Icon(
                                         Icons.favorite_rounded,
-                                        color: goldAccent,
+                                        color: Colors.red[400],
                                       ),
                                       SizedBox(width: 8),
                                       Flexible(
