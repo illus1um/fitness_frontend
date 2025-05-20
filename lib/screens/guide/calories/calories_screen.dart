@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'product_detail_screen.dart';
 
@@ -16,7 +17,12 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
   bool _isLoading = false;
 
   Future<String?> _fetchImage(String query) async {
-    final apiKey = 'c09vC0LhxDC8sU7uMGTnor1VpDfQRzRPHbzpmu2bn5BOs4kxHHV4aBeQ';
+    final apiKey = dotenv.env['PEXELS_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
+      print('Warning: PEXELS_API_KEY not found in environment variables');
+      return null;
+    }
+
     final url = 'https://api.pexels.com/v1/search?query=$query&per_page=1';
 
     final response = await http.get(Uri.parse(url), headers: {
@@ -38,7 +44,15 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
       _isLoading = true;
     });
 
-    final apiKey = 'RFg02f11eBdfkEpSXMRQ7CuWnuEIxIGZgB5GZldk';
+    final apiKey = dotenv.env['USDA_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
+      print('Warning: USDA_API_KEY not found in environment variables');
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     final url =
         'https://api.nal.usda.gov/fdc/v1/foods/search?api_key=$apiKey&query=$query&pageSize=25';
 
@@ -83,9 +97,14 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
     return Scaffold(
       appBar: AppBar(
         title: Text('Caloric Content of Products'),
+        centerTitle: true,
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -94,9 +113,37 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Search product...',
-                prefixIcon: Icon(Icons.search),
+                hintStyle: TextStyle(
+                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: goldColor,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+              ),
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
               onSubmitted: (value) {
                 _searchTerm = value;
@@ -105,13 +152,20 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
             ),
           ),
           if (_isLoading)
-            Center(child: CircularProgressIndicator())
+            Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(goldColor),
+              ),
+            )
           else if (_foods.isEmpty)
             Expanded(
               child: Center(
                 child: Text(
                   'Use the search above to find a food item.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
                 ),
               ),
             )
@@ -147,13 +201,20 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
                           ),
                           margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           elevation: 3,
+                          color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                          shadowColor: isDarkMode 
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.black.withOpacity(0.1),
                           child: ListTile(
                             contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             leading: snapshot.connectionState == ConnectionState.waiting
                                 ? SizedBox(
                                     width: 50,
                                     height: 50,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(goldColor),
+                                    ),
                                   )
                                 : ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
@@ -163,22 +224,66 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
                                             width: 50,
                                             height: 50,
                                             fit: BoxFit.cover,
+                                            placeholder: (context, url) => Container(
+                                              width: 50,
+                                              height: 50,
+                                              color: isDarkMode ? Color(0xFF333333) : Colors.grey.shade200,
+                                              child: Center(
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(goldColor),
+                                                ),
+                                              ),
+                                            ),
+                                            errorWidget: (context, url, error) => Container(
+                                              width: 50,
+                                              height: 50,
+                                              color: isDarkMode ? Color(0xFF333333) : Colors.grey.shade200,
+                                              child: Icon(
+                                                Icons.image_not_supported,
+                                                color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                                              ),
+                                            ),
                                           )
-                                        : Icon(Icons.image_not_supported),
+                                        : Container(
+                                            width: 50,
+                                            height: 50,
+                                            color: isDarkMode ? Color(0xFF333333) : Colors.grey.shade200,
+                                            child: Icon(
+                                              Icons.image_not_supported,
+                                              color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                                            ),
+                                          ),
                                   ),
                             title: Text(
                               displayName,
-                              style:
-                                  TextStyle(fontSize: 18),
+                              style: TextStyle(
+                                fontSize: 16, 
+                                fontWeight: FontWeight.w500,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                              ),
                             ),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 18),
+                            trailing: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: isDarkMode 
+                                    ? Color(0xFF3A3225)
+                                    : goldColor.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: goldColor,
+                              ),
+                            ),
                           ),
                         ),
                       );
                     },
                   );
                 },
-
               ),
             ),
         ],
