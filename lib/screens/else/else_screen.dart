@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/screens/reglog/login_screen.dart';

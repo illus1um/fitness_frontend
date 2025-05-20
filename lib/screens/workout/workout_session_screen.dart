@@ -1,5 +1,7 @@
 // lib/screens/workout/workout_session_screen.dart
 
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -447,7 +449,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                                 height: 280,
                                 width: double.infinity,
                                 color: isDarkMode ? Color(0xFF262626) : Colors.grey.shade100,
-                                child: GifService.loadNetworkGif(
+                                child: GifService.loadAnimatedGif(
                                   gifName: currentEx.gifFileName,
                                   fit: BoxFit.contain,
                                   errorWidget: Center(
@@ -951,7 +953,7 @@ class ExerciseInstructionsScreen extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: GifService.loadNetworkGif(
+                child: GifService.loadAnimatedGif(
                   gifName: exercise.gifFileName,
                   fit: BoxFit.contain,
                   errorWidget: Center(

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use, unused_field, unused_local_variable
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';

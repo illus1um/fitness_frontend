@@ -13,6 +13,7 @@ class GifService {
   
   /// Получает URL для GIF-файла по его имени
   static String getGifUrl(String gifName) {
+    // Обрабатываем различные типы файлов: gif и png
     // Если имя уже содержит полный URL, просто вернем его
     if (gifName.startsWith('http')) {
       return gifName;
@@ -78,7 +79,7 @@ class GifService {
     }
   }
   
-  /// Загружает и кэширует GIF, возвращает виджет для отображения
+  /// Загружает и кэширует GIF или PNG, возвращает виджет для отображения
   static Widget loadNetworkGif({
     required String gifName,
     double? width,
@@ -93,42 +94,98 @@ class GifService {
     
     final url = getGifUrl(gifName);
     
-    // Если нужно, проверим доступность гифки
+    // Если нужно, проверим доступность изображения
     if (checkAvailability) {
       checkGifAvailability(gifName).then((available) {
         if (!available) {
-          print('WARNING: GIF not available: $gifName');
+          print('WARNING: Image not available: $gifName');
         }
       });
     }
     
+    // Индикатор загрузки с градиентной анимацией (симкуратно)
+    final defaultPlaceholder = Container(
+      width: width,
+      height: height,
+      color: Color(0xFFF0F0F0),
+      child: Center(
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7A97F)),
+            strokeWidth: 2.0,
+          ),
+        ),
+      ),
+    );
+    
+    // Обработка ошибок с отображением дефолтной иконки
+    final defaultErrorWidget = Container(
+      width: width,
+      height: height,
+      color: Color(0xFFF0F0F0),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(isPngFile(gifName) ? Icons.image : Icons.gif_box, 
+                 color: Color(0xFFC7A97F), size: 24),
+            SizedBox(height: 4),
+            Text('Image not found',
+                 style: TextStyle(fontSize: 10, color: Color(0xFF888888))),
+          ],
+        ),
+      ),
+    );
+    
+    // Для GIF файлов используем Image.network напрямую для гарантии анимации
+    if (gifName.toLowerCase().endsWith('.gif')) {
+      return Image.network(
+        url,
+        width: width,
+        height: height,
+        fit: fit,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (frame == null) {
+            return placeholder ?? defaultPlaceholder;
+          }
+          return child;
+        },
+        errorBuilder: (context, error, stackTrace) {
+          print('Error loading GIF from URL: $url, Error: $error');
+          return errorWidget ?? defaultErrorWidget;
+        },
+        // Важно для анимации
+        gaplessPlayback: false,
+        cacheWidth: null,
+        cacheHeight: null,
+      );
+    }
+    
+    // Для не-GIF файлов используем кэширование
     return CachedNetworkImage(
       imageUrl: url,
       width: width,
       height: height,
       fit: fit,
-      placeholder: (context, url) => placeholder ?? 
-          Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7A97F)),
-            ),
-          ),
+      placeholder: (context, url) => placeholder ?? defaultPlaceholder,
       errorWidget: (context, url, error) {
-        print('Error loading GIF from URL: $url, Error: $error');
-        // Пробуем загрузить локальный ассет как запасной вариант
-        try {
-          final localAssetPath = 'assets/gifs/$gifName';
-          return Image.asset(
-            localAssetPath,
-            width: width,
-            height: height,
+        print('Error loading image from URL: $url, Error: $error');
+        
+        // Если запрошено превью изображение (.png), пробуем загрузить его гифку
+        if (isPngFile(gifName)) {
+          final gifVersion = gifName.replaceAll('.png', '.gif');
+          return loadNetworkGif(
+            gifName: gifVersion, 
+            width: width, 
+            height: height, 
             fit: fit,
-            errorBuilder: (context, error, stackTrace) => 
-              errorWidget ?? Icon(Icons.error, color: Colors.red),
+            errorWidget: errorWidget ?? defaultErrorWidget,
           );
-        } catch (e) {
-          return errorWidget ?? Icon(Icons.error, color: Colors.red);
         }
+        
+        return errorWidget ?? defaultErrorWidget;
       },
     );
   }
@@ -246,5 +303,179 @@ class GifService {
       print('Error during directory traversing: $e');
     }
     return totalSize;
+  }
+  
+  /// Определяет, является ли файл PNG изображением
+  static bool isPngFile(String fileName) {
+    return fileName.toLowerCase().endsWith('.png');
+  }
+  
+  /// Получает имя PNG превью для GIF файла
+  static String getPngPreviewName(String gifName) {
+    // Если это уже PNG, вернем как есть
+    if (isPngFile(gifName)) {
+      return gifName;
+    }
+    
+    // Иначе заменяем .gif на .png
+    return gifName.replaceAll(RegExp(r'\.gif$', caseSensitive: false), '.png');
+  }
+  
+  /// Загружает и кэширует PNG превью (статичное изображение) для упражнения
+  static Widget loadNetworkPreview({
+    required String gifName,
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    Widget? placeholder,
+    Widget? errorWidget,
+  }) {
+    // Сначала пробуем найти PNG версию
+    final pngName = getPngPreviewName(gifName);
+    
+    return loadNetworkGif(
+      gifName: pngName,
+      width: width,
+      height: height,
+      fit: fit,
+      placeholder: placeholder,
+      errorWidget: errorWidget,
+    );
+  }
+  
+  /// Предзагружает превью-изображения для списка упражнений
+  static Future<void> preloadExercisePreviews(List<dynamic> exercises) async {
+    if (exercises.isEmpty) return;
+    
+    print('Preloading ${exercises.length} exercise previews...');
+    
+    // Для начала загружаем только первые 5 изображений, чтобы быстрее отобразить UI
+    final initialBatch = exercises.take(5).toList();
+    for (final ex in initialBatch) {
+      final gifFileName = ex.gifFileName;
+      if (gifFileName != null) {
+        try {
+          await preloadGif(getPngPreviewName(gifFileName));
+        } catch (e) {
+          // Игнорируем ошибки загрузки
+        }
+      }
+    }
+    
+    // Затем асинхронно загружаем остальные изображения
+    if (exercises.length > 5) {
+      final remainingExercises = exercises.skip(5).toList();
+      Future.microtask(() async {
+        for (final ex in remainingExercises) {
+          final gifFileName = ex.gifFileName;
+          if (gifFileName != null) {
+            try {
+              await preloadGif(getPngPreviewName(gifFileName));
+            } catch (e) {
+              // Игнорируем ошибки загрузки
+            }
+          }
+        }
+        print('Preloaded all ${exercises.length} exercise previews');
+      });
+    }
+  }
+  
+  /// Виджет для отображения анимированного GIF с сервера
+  static Widget loadAnimatedGif({
+    required String gifName,
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    Widget? placeholder,
+    Widget? errorWidget,
+  }) {
+    final url = getGifUrl(gifName);
+    
+    // Индикатор загрузки
+    final defaultPlaceholder = Container(
+      width: width,
+      height: height,
+      color: Color(0xFFF0F0F0),
+      child: Center(
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC7A97F)),
+            strokeWidth: 2.0,
+          ),
+        ),
+      ),
+    );
+    
+    // Обработка ошибок
+    final defaultErrorWidget = Container(
+      width: width,
+      height: height,
+      color: Color(0xFFF0F0F0),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.gif_box, color: Color(0xFFC7A97F), size: 24),
+            SizedBox(height: 4),
+            Text('Image not found', 
+                 style: TextStyle(fontSize: 10, color: Color(0xFF888888))),
+          ],
+        ),
+      ),
+    );
+    
+    // Для GIF файлов используем Image.network напрямую - это гарантирует анимацию
+    if (gifName.toLowerCase().endsWith('.gif')) {
+      return Image.network(
+        url,
+        width: width,
+        height: height,
+        fit: fit,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (frame == null) {
+            return placeholder ?? defaultPlaceholder;
+          }
+          return child;
+        },
+        errorBuilder: (context, error, stackTrace) {
+          print('Error loading GIF from URL: $url, Error: $error');
+          return errorWidget ?? defaultErrorWidget;
+        },
+        // Важно для работы анимации
+        gaplessPlayback: false, 
+        repeat: ImageRepeat.noRepeat,
+        cacheWidth: null,
+        cacheHeight: null,
+      );
+    }
+    
+    // Для не-GIF файлов используем кэширование
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: width,
+      height: height,
+      fit: fit,
+      placeholder: (context, url) => placeholder ?? defaultPlaceholder,
+      errorWidget: (context, url, error) {
+        print('Error loading image from URL: $url, Error: $error');
+        
+        // Если запрошено превью изображение (.png), пробуем загрузить его гифку
+        if (isPngFile(gifName)) {
+          final gifVersion = gifName.replaceAll('.png', '.gif');
+          return loadNetworkGif(
+            gifName: gifVersion, 
+            width: width, 
+            height: height, 
+            fit: fit,
+            errorWidget: errorWidget ?? defaultErrorWidget,
+          );
+        }
+        
+        return errorWidget ?? defaultErrorWidget;
+      },
+    );
   }
 } 

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -164,21 +166,6 @@ class CongratulationScreen extends StatelessWidget {
                 ),
                 
                 SizedBox(height: 16),
-                
-                // Share accomplishment button
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                  ),
-                  onPressed: () {
-                    // TODO: Implement sharing functionality
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Sharing functionality coming soon!"))
-                    );
-                  },
-                  icon: Icon(Icons.share_rounded),
-                  label: Text("Share Your Accomplishment"),
-                ),
               ],
             ),
           ),

@@ -122,8 +122,8 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                       final useAsset = gifFileName == null;
                       
                       final imagePath = useAsset 
-                          ? 'assets/images/placeholder.png'
-                          : 'assets/gifs/${gifFileName.replaceAll('.gif', '.png')}';
+                          ? 'images/placeholder.png'
+                          : 'gifs/${gifFileName.replaceAll('.gif', '.png')}';
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(
@@ -145,24 +145,17 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                             contentPadding: const EdgeInsets.all(12),
                             leading: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: useAsset
-                                ? Image.asset(
-                                    imagePath,
+                              child: useAsset 
+                                ? Icon(Icons.fitness_center, 
+                                    size: 50, 
+                                    color: Theme.of(context).primaryColor)
+                                : GifService.loadNetworkGif(
+                                    gifName: gifFileName.replaceAll('.gif', '.png'),
                                     width: 50,
                                     height: 50,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        Icon(Icons.image_not_supported,
-                                            size: 50, color: iconColor),
-                                  )
-                                : Image.asset(
-                                    imagePath,
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        Icon(Icons.image_not_supported,
-                                            size: 50, color: iconColor),
+                                    errorWidget: Icon(Icons.image_not_supported,
+                                        size: 50, color: iconColor),
                                   ),
                             ),
                             title: Text(

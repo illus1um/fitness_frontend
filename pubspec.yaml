@@ -39,7 +39,6 @@ flutter:
     - assets/images/
     - assets/supplements/
     - assets/exercises.json
-    - assets/gifs/
     - assets/muscle_groups/
     - assets/workout_exercise.json
     - assets/workout_exercises_full.json

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'exercises/exercises_screen.dart';
 import 'nutrition/sports_nutrition_screen.dart';

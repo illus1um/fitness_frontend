@@ -10,7 +10,7 @@ import 'screens/else/settings.dart';
 import 'theme/app_themes.dart';
 import 'utils/notification_setup.dart';
 
-/// Точка входа в приложение
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");

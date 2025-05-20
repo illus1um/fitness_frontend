@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../../services/gif_service.dart';
 
@@ -59,7 +61,7 @@ class ExerciseDetailScreen extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: exercise["gifFileName"] != null
-                    ? GifService.loadNetworkGif(
+                    ? GifService.loadAnimatedGif(
                         gifName: exercise["gifFileName"],
                         fit: BoxFit.contain,
                         errorWidget: Center(
@@ -70,9 +72,25 @@ class ExerciseDetailScreen extends StatelessWidget {
                           ),
                         ),
                       )
-                    : Image.asset(
-                        "assets/images/placeholder.png",
-                        fit: BoxFit.contain,
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.fitness_center,
+                              size: 80,
+                              color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              "No exercise image available",
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
               ),
             ),

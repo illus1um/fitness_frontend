@@ -1,4 +1,3 @@
-import 'dart:convert';
 class ExerciseInfo {
   final String id;
   final String name;
@@ -86,7 +85,7 @@ class ExerciseInfo {
     final fileName = gifUrl.split('/').last;
     final nameWithExt =
         fileName.toLowerCase().endsWith('.gif') ? fileName : '$fileName.gif';
-    return 'assets/gifs/$nameWithExt';
+    return 'gifs/$nameWithExt';
   }
 
   /// Получает имя файла гифки для загрузки через GifService
@@ -102,6 +101,6 @@ class ExerciseInfo {
     final base = fileName.toLowerCase().endsWith('.gif')
       ? fileName.substring(0, fileName.length - 4)
       : fileName;
-    return 'assets/gifs/$base.png';
-}
+    return 'gifs/$base.png';
+  }
 }

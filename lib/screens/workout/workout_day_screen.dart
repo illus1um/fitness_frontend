@@ -1,9 +1,12 @@
 // lib/screens/workout/workout_day_screen.dart
 
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../models/day_info.dart';
 import '../../models/progress_entry.dart';
 import '../../services/api_service.dart';
+import '../../services/gif_service.dart';
 import 'workout_session_screen.dart';
 
 class WorkoutDayScreen extends StatefulWidget {
@@ -34,6 +37,11 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   void initState() {
     super.initState();
     _loadDayProgress();
+    
+    // Предзагружаем превью для более быстрой загрузки
+    if (widget.day.exercises.isNotEmpty) {
+      GifService.preloadExercisePreviews(widget.day.exercises);
+    }
   }
 
   Future<void> _loadDayProgress() async {
@@ -154,12 +162,12 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                     width: 70,
                     height: 70,
                     color: isDarkMode ? Color(0xFF333333) : Colors.grey.shade200,
-                    child: Image.asset(
-                      ex.assetPreviewPath,
+                    child: GifService.loadNetworkPreview(
+                      gifName: ex.gifFileName,
                       width: 70,
                       height: 70,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
+                      errorWidget: Icon(
                         Icons.fitness_center,
                         size: 30,
                         color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
