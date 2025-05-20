@@ -45,7 +45,8 @@ class _ElseScreenState extends State<ElseScreen> {
         title: Text("Else"),
         centerTitle: true,
         elevation: 0,
-        scrolledUnderElevation: 0,      
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: userData == null
           ? Center(child: CircularProgressIndicator())

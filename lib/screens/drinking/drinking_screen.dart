@@ -501,6 +501,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
             fontWeight: FontWeight.bold,
           ),
         ),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: Icon(Icons.history_rounded, color: goldAccent),
@@ -829,7 +830,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                 ),
                                 onPressed: isTargetReached ? null : _showAmountSelectionSheet,
                                 child: Text(
-                                  "Add Water",
+                                  "Custom Add",
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

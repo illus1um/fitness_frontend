@@ -32,6 +32,7 @@ class GuideScreen extends StatelessWidget {
         title: Text("Guide"),
         centerTitle: true,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(12.0),

@@ -399,6 +399,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       appBar: AppBar(
         title: const Text("Workout Overview"),
         centerTitle: true,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
