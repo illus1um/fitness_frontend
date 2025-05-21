@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/ai_service.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class AIAssistantScreen extends StatefulWidget {
   @override
@@ -8,16 +10,18 @@ class AIAssistantScreen extends StatefulWidget {
 }
 
 class _AIAssistantScreenState extends State<AIAssistantScreen> {
+  static final Color goldColor = Color.fromARGB(255, 199, 169, 127);
   final TextEditingController _textController = TextEditingController();
   final AIService _aiService = AIService();
   final List<ChatMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+  static const String chatHistoryKey = 'ai_chat_history';
 
   @override
   void initState() {
     super.initState();
-    _addInitialMessage();
+    _loadChatHistory();
   }
 
   @override
@@ -27,12 +31,41 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     super.dispose();
   }
 
+  Future<void> _loadChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getString(chatHistoryKey);
+    if (history != null) {
+      final List<dynamic> decoded = jsonDecode(history);
+      setState(() {
+        _messages.clear();
+        _messages.addAll(decoded.map((item) => ChatMessage.fromJson(item)));
+        if (_messages.isEmpty || !_messages.first.text.startsWith("Hello! I'm your fitness assistant")) {
+          _messages.insert(0, ChatMessage(
+            text: "Hello! I'm your fitness assistant. Ask me about workouts, nutrition, exercises or hydration.",
+            isUser: false,
+            timestamp: DateTime.now(),
+          ));
+        }
+      });
+      _saveChatHistory();
+    } else {
+      _addInitialMessage();
+    }
+  }
+
+  Future<void> _saveChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode(_messages.map((m) => m.toJson()).toList());
+    await prefs.setString(chatHistoryKey, encoded);
+  }
+
   void _addInitialMessage() {
     _messages.add(ChatMessage(
       text: "Hello! I'm your fitness assistant. Ask me about workouts, nutrition, exercises or hydration.",
       isUser: false,
       timestamp: DateTime.now(),
     ));
+    _saveChatHistory();
   }
 
   void _scrollToBottom() {
@@ -47,6 +80,14 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     });
   }
 
+  String _formatText(String text) {
+    // Простая обработка форматирования, убираем звездочки
+    text = text.replaceAll('**', '');
+    text = text.replaceAll('*', '');
+    text = text.replaceAll('__', '');
+    return text;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -57,15 +98,20 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text('Fitness Assistant', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Fitness Assistant', 
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+        ),
+        automaticallyImplyLeading: false,
+        centerTitle: true,
         backgroundColor: isDarkMode ? Color(0xFF23242B) : Colors.white,
         elevation: 0.5,
         iconTheme: IconThemeData(color: isDarkMode ? Colors.white : Colors.black),
-        titleTextStyle: TextStyle(
-          color: isDarkMode ? Colors.white : Colors.black,
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-        ),
+        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
       ),
       body: SafeArea(
         child: Column(
@@ -86,7 +132,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: LinearProgressIndicator(
                   backgroundColor: isDarkMode ? Color(0xFF23242B) : Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(goldColor),
                 ),
               ),
             Container(
@@ -119,7 +165,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                       child: TextField(
                         controller: _textController,
                         style: TextStyle(
-                          fontSize: 16, 
+                          fontSize: 15, 
                           color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                         decoration: InputDecoration(
@@ -147,14 +193,14 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                       onTap: _isLoading ? null : _handleSubmit,
                       borderRadius: BorderRadius.circular(30),
                       child: Container(
-                        width: 50,
-                        height: 50,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
-                          color: Colors.blue,
+                          color: goldColor,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.4),
+                              color: goldColor.withOpacity(0.3),
                               blurRadius: 10,
                               offset: Offset(0, 2),
                             ),
@@ -163,7 +209,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                         child: Icon(
                           Icons.send,
                           color: Colors.white,
-                          size: 24,
+                          size: 22,
                         ),
                       ),
                     ),
@@ -177,45 +223,50 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     );
   }
 
+  void _addMessage(ChatMessage message) {
+    setState(() {
+      _messages.add(message);
+    });
+    _saveChatHistory();
+    _scrollToBottom();
+  }
+
   void _handleSubmit() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     _textController.clear();
 
+    _addMessage(ChatMessage(
+      text: text,
+      isUser: true,
+      timestamp: DateTime.now(),
+    ));
     setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
       _isLoading = true;
     });
-    _scrollToBottom();
 
     try {
       final response = await _aiService.getResponse(text);
       if (mounted) {
+        _addMessage(ChatMessage(
+          text: _formatText(response),
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
         setState(() {
-          _messages.add(ChatMessage(
-            text: response,
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
           _isLoading = false;
         });
-        _scrollToBottom();
       }
     } catch (e) {
       if (mounted) {
+        _addMessage(ChatMessage(
+          text: "Sorry, an error occurred: $e",
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
         setState(() {
-          _messages.add(ChatMessage(
-            text: "Sorry, an error occurred: $e",
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
           _isLoading = false;
         });
-        _scrollToBottom();
       }
     }
   }
@@ -232,6 +283,20 @@ class ChatMessage extends StatelessWidget {
     required this.timestamp,
   });
 
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      text: json['text'],
+      isUser: json['isUser'],
+      timestamp: DateTime.parse(json['timestamp']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'text': text,
+    'isUser': isUser,
+    'timestamp': timestamp.toIso8601String(),
+  };
+
   String _formatTime() {
     return DateFormat.Hm().format(timestamp);
   }
@@ -239,9 +304,10 @@ class ChatMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color.fromARGB(255, 199, 169, 127);
     
     // Цвета для пользовательских сообщений
-    final userBgColor = isDarkMode ? Color(0xFF1976D2) : Color(0xFF2196F3);
+    final userBgColor = goldColor;
     final userTextColor = Colors.white;
     
     // Цвета для сообщений ассистента
@@ -254,18 +320,18 @@ class ChatMessage extends StatelessWidget {
     
     final radius = isUser
         ? BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-            bottomLeft: Radius.circular(20),
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(18),
+            bottomLeft: Radius.circular(18),
           )
         : BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-            bottomRight: Radius.circular(20),
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(18),
+            bottomRight: Radius.circular(18),
           );
-          
+
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 8),
+      margin: EdgeInsets.symmetric(vertical: 6),
       child: Column(
         crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
@@ -277,61 +343,127 @@ class ChatMessage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0, top: 4),
                   child: CircleAvatar(
-                    backgroundColor: Color.fromARGB(255, 199, 169, 127),
-                    child: Icon(Icons.smart_toy, color: Colors.white, size: 18),
-                    radius: 16,
+                    backgroundColor: goldColor,
+                    child: Icon(Icons.smart_toy, color: Colors.white, size: 16),
+                    radius: 14,
                   ),
                 ),
               Flexible(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: radius,
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDarkMode 
-                            ? Colors.black12 
-                            : Colors.black.withOpacity(0.05),
-                        blurRadius: 5,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 16,
-                    ),
-                  ),
+                child: ExpandableMessageWidget(
+                  text: text,
+                  isUser: isUser,
+                  textColor: textColor,
+                  bgColor: bgColor,
+                  radius: radius,
+                  isDarkMode: isDarkMode,
                 ),
               ),
               if (isUser)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0, top: 4),
                   child: CircleAvatar(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: Icon(Icons.person, color: Colors.white, size: 18),
-                    radius: 16,
+                    backgroundColor: goldColor,
+                    child: Icon(Icons.person, color: Colors.white, size: 16),
+                    radius: 14,
                   ),
                 ),
             ],
           ),
           Padding(
             padding: EdgeInsets.only(
-              top: 4,
-              left: isUser ? 0 : 40,
-              right: isUser ? 40 : 0,
+              top: 2,
+              left: isUser ? 0 : 35,
+              right: isUser ? 35 : 0,
             ),
             child: Text(
               _formatTime(),
               style: TextStyle(
                 color: timeColor,
-                fontSize: 12,
+                fontSize: 11,
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class ExpandableMessageWidget extends StatefulWidget {
+  final String text;
+  final bool isUser;
+  final Color textColor;
+  final Color bgColor;
+  final BorderRadius radius;
+  final bool isDarkMode;
+
+  ExpandableMessageWidget({
+    required this.text,
+    required this.isUser,
+    required this.textColor,
+    required this.bgColor,
+    required this.radius,
+    required this.isDarkMode,
+  });
+
+  @override
+  _ExpandableMessageWidgetState createState() => _ExpandableMessageWidgetState();
+}
+
+class _ExpandableMessageWidgetState extends State<ExpandableMessageWidget> {
+  bool isExpanded = false;
+  static const int maxCharsToShow = 300;
+  bool get isLongMessage => widget.text.length > maxCharsToShow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: widget.bgColor,
+        borderRadius: widget.radius,
+        boxShadow: [
+          BoxShadow(
+            color: widget.isDarkMode 
+                ? Colors.black12 
+                : Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isExpanded || !isLongMessage 
+                ? widget.text 
+                : widget.text.substring(0, maxCharsToShow) + '...',
+            style: TextStyle(
+              color: widget.textColor,
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+          if (isLongMessage)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  isExpanded = !isExpanded;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6.0),
+                child: Text(
+                  isExpanded ? 'Show less' : 'Show more',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 199, 169, 127),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
