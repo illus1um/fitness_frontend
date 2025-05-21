@@ -3,6 +3,7 @@ import 'package:fitness_app/services/ai_service.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:fitness_app/screens/ai/ai_analytics_screen.dart';
 
 class AIAssistantScreen extends StatefulWidget {
   @override
@@ -81,7 +82,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
   }
 
   String _formatText(String text) {
-    // Простая обработка форматирования, убираем звездочки
+    // Simple formatting processing, remove asterisks
     text = text.replaceAll('**', '');
     text = text.replaceAll('*', '');
     text = text.replaceAll('__', '');
@@ -108,6 +109,19 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
         ),
         automaticallyImplyLeading: false,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.analytics, color: goldColor),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => AIAnalyticsScreen(),
+                )
+              );
+            },
+            tooltip: 'AI Analytics',
+          ),
+        ],
         backgroundColor: isDarkMode ? Color(0xFF23242B) : Colors.white,
         elevation: 0.5,
         iconTheme: IconThemeData(color: isDarkMode ? Colors.white : Colors.black),
