@@ -26,6 +26,7 @@ dependencies:
   image: ^4.1.7
   path_provider: ^2.1.2
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -40,9 +41,7 @@ flutter:
     - assets/supplements/
     - assets/exercises.json
     - assets/muscle_groups/
-    - assets/workout_exercise.json
     - assets/workout_exercises_full.json
-    - assets/ideal.json
     - .env
   fonts:
     - family: Poppins

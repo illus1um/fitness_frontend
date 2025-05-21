@@ -552,6 +552,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                               isDarkMode,
                               goldColor,
                             ),
+                            SizedBox(height: 12),
                           ],
                         ),
                       ),
@@ -596,7 +597,31 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                       color: isResting ? Colors.blue.shade400 : goldColor,
                       isDarkMode: isDarkMode,
                     ),
-                    
+                    // reps block
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 8),
+                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Color(0xFF23201A) : goldColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: goldColor.withOpacity(0.25)),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.repeat, color: goldColor, size: 22),
+                          SizedBox(height: 2),
+                          Text(
+                            '${ex.reps} reps',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: goldColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     // Sets indicator 
                     _buildProgressCircle(
                       key: _setsCircleKey,
@@ -791,6 +816,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     required Color goldColor,
     required VoidCallback? onPressed,
   }) {
+    final ex = widget.day.exercises[exIndex];
     String buttonText = isResting
         ? 'FINISH REST'
         : currentSet < totalSets
@@ -1018,6 +1044,7 @@ class ExerciseInstructionsScreen extends StatelessWidget {
                     isDarkMode,
                     goldColor,
                   ),
+                  SizedBox(height: 12),
                 ],
               ),
             ),
