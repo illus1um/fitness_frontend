@@ -183,7 +183,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                           color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Ask about exercises, nutrition, hydration...',
+                          hintText: 'Ask anything about fitness...',
                           hintStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),

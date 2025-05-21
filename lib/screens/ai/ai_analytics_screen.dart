@@ -246,7 +246,7 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     
     // Преобразуем заголовки в формат ЗАГОЛОВОК: для лучшего разделения
     final sectionTitles = ['PROGRESS ASSESSMENT', 'WORKOUT ANALYSIS', 'HYDRATION STATUS', 
-                          'PERSONALIZED RECOMMENDATIONS', 'WEEKLY GOALS'];
+                          'RECOMMENDATIONS', 'WEEKLY GOALS'];
     
     for (final title in sectionTitles) {
       // Преобразуем разные форматы заголовков в стандартный

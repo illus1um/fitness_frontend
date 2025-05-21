@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../models/day_info.dart';
 import '../../models/exercise_info.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import '../../services/gif_service.dart';
 
 class WorkoutSummaryScreen extends StatelessWidget {
   final DayInfo day;
@@ -298,12 +299,12 @@ class WorkoutSummaryScreen extends StatelessWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  exercise.assetPreviewPath,
+                                child: GifService.loadNetworkPreview(
+                                  gifName: exercise.gifFileName,
                                   width: 60,
                                   height: 60,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
+                                  errorWidget: Container(
                                     color: isDarkMode ? const Color(0xFF262626) : Colors.grey[200],
                                     child: Icon(
                                       Icons.fitness_center,
