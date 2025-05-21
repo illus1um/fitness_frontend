@@ -262,12 +262,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final List<DateTime> workoutDates = [];
     
     for (int i = 0; i < plan.length; i++) {
-      // Используем индекс дня для определения даты тренировки (каждый второй день)
+      // Более гибкое распределение тренировочных дней
+      // Теперь расстояние между тренировками зависит от количества дней
       final dayIndex = plan[i].dayIndex;
+      
+      // Определяем интервал между тренировками
+      int daysBetweenWorkouts = plan.length <= 15 ? 2 : 1;
+      
       // Вычисляем смещение в днях от начальной даты (индексы в плане начинаются с 1)
-      // Поэтому для дня 1 смещение будет 0, для дня 2 - 2 и т.д.
-      final dayOffset = (dayIndex - 1) * 2;
+      final dayOffset = (dayIndex - 1) * daysBetweenWorkouts;
       final workoutDay = startDate.add(Duration(days: dayOffset));
+      
       // Сохраняем только дату без времени
       final cleanDate = DateTime(workoutDay.year, workoutDay.month, workoutDay.day);
       _workoutDays.add(cleanDate);
@@ -314,6 +319,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final cleanStartDate = DateTime(startDate.year, startDate.month, startDate.day);
     print('DEBUG: Clean start date: $cleanStartDate');
     
+    // Определяем интервал между тренировками
+    final int daysBetweenWorkouts = plan.length <= 15 ? 2 : 1;
+    
     // Для удобства нормализуем план к индексам, которые мы используем (0, 1, 2, ...)
     List<DayInfo> normalizedPlan = [];
     for (int i = 0; i < plan.length; i++) {
@@ -333,41 +341,39 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     
     // Проверяем каждый день тренировочного плана
     for (int i = 0; i < normalizedPlan.length; i++) {
-      // Дата текущего дня
-      final currentDayDate = cleanStartDate.add(Duration(days: i * 2));
-      print('DEBUG: Checking day $i (dayIndex=${normalizedPlan[i].dayIndex}), date: $currentDayDate');
+      final dayInfo = normalizedPlan[i];
+      final dayIndex = dayInfo.dayIndex;
       
-      // Дата не наступила - день недоступен
-      if (currentDayDate.isAfter(today)) {
-        print('DEBUG: Day $i is in the future, not available');
+      // Вычисляем дату этого тренировочного дня
+      final dayOffset = (dayIndex - 1) * daysBetweenWorkouts;
+      final workoutDate = cleanStartDate.add(Duration(days: dayOffset));
+      
+      // Разница между сегодняшней датой и датой тренировки
+      final diffFromToday = today.difference(workoutDate).inDays;
+      
+      print('DEBUG: Day $dayIndex date: $workoutDate, diff from today: $diffFromToday');
+      
+      // Если эта тренировка сегодня или в прошлом, она доступна
+      if (diffFromToday >= 0) {
+        _availableDays.add(dayIndex);
         continue;
       }
       
-      // Первый день (i == 0) всегда доступен, если его дата <= сегодня (проверка выше)
+      // Если это первая тренировка, она всегда доступна
       if (i == 0) {
-        _availableDays.add(normalizedPlan[i].dayIndex);
-        print('DEBUG: First day (dayIndex=${normalizedPlan[i].dayIndex}) is available');
+        _availableDays.add(dayIndex);
         continue;
       }
       
-      // Для последующих дней проверяем, выполнен ли предыдущий день
-      final prevDay = normalizedPlan[i-1];
-      
-      // Предыдущий день не завершен - день недоступен
-      final prevDayCompleted = _isDayCompleted(prevDay.dayIndex, progress, plan);
-      print('DEBUG: Previous day (dayIndex=${prevDay.dayIndex}) completed: $prevDayCompleted');
-      
-      if (!prevDayCompleted) {
-        print('DEBUG: Day $i (dayIndex=${normalizedPlan[i].dayIndex}) not available - previous day not completed');
+      // Если предыдущий день завершен, эта тренировка доступна
+      final prevDayIndex = normalizedPlan[i - 1].dayIndex;
+      if (_isDayCompleted(prevDayIndex, progress, plan)) {
+        _availableDays.add(dayIndex);
         continue;
       }
-      
-      // День доступен
-      _availableDays.add(normalizedPlan[i].dayIndex);
-      print('DEBUG: Day $i (dayIndex=${normalizedPlan[i].dayIndex}) is available');
     }
     
-    print('DEBUG: Available days: $_availableDays');
+    print('DEBUG: Available days after update: $_availableDays');
   }
   
   /// Проверяет выполнение всех упражнений для конкретного дня
@@ -704,8 +710,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final goldColor = Color(0xFFC7A97F);
     
+    // Определяем интервал между тренировками на основе размера плана
+    final int daysBetweenWorkouts = _plan!.length <= 15 ? 2 : 1;
+    
     final DateTime firstDay = _startDate!;
-    final DateTime lastDay = _startDate!.add(Duration(days: (_plan!.length - 1) * 2));
+    final DateTime lastDay = _startDate!.add(Duration(days: (_plan!.length - 1) * daysBetweenWorkouts + 30));
     
     final DateTime firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
     
@@ -964,13 +973,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
         ).inDays;
         
-        // Не тренировочный день
-        if (diff < 0 || diff % 2 != 0) {
+        // Определяем интервал между тренировками
+        int daysBetweenWorkouts = _plan!.length <= 15 ? 2 : 1;
+        
+        // Не тренировочный день если имеет отрицательную разницу или не соответствует интервалу
+        if (diff < 0 || (daysBetweenWorkouts == 2 && diff % 2 != 0)) {
           return;
         }
         
         // Вычисляем номер тренировочного дня (0-based)
-        final dayNumber = diff ~/ 2;
+        final dayNumber = daysBetweenWorkouts == 2 ? diff ~/ 2 : diff;
         
         // Индекс дня в плане (1-based, так как dayIndex в плане начинается с 1)
         final targetDayIndex = dayNumber + 1;
