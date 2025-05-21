@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/services/exercise_data_service.dart';
 
 class AIAnalyticsScreen extends StatefulWidget {
   @override
@@ -53,6 +54,9 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
       final prefs = await SharedPreferences.getInstance();
       bool hasData = false;
       
+      // Инициализируем сервис с данными об упражнениях
+      await ExerciseDataService.initialize();
+      
       // 1. Получаем профиль пользователя
       final apiUserProfile = await ApiService.getUserProfile();
       if (apiUserProfile != null) {
@@ -72,7 +76,23 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
       try {
         final progressEntries = await ApiService.getProgress();
         if (progressEntries.isNotEmpty) {
-          _userData['workouts'] = progressEntries.map((entry) => entry.toJson()).toList();
+          // Преобразуем записи, добавляя полную информацию об упражнениях
+          final enrichedWorkouts = progressEntries.map((entry) {
+            final exerciseData = ExerciseDataService.getExerciseById(entry.exerciseId);
+            return {
+              ...entry.toJson(),
+              'exercise_details': exerciseData != null ? {
+                'name': exerciseData['name'],
+                'bodyPart': exerciseData['bodyPart'],
+                'equipment': exerciseData['equipment'],
+                'target': exerciseData['target'],
+                'secondaryTargets': exerciseData['secondaryTargets'],
+                'programs': exerciseData['programs'],
+              } : null,
+            };
+          }).toList();
+          
+          _userData['workouts'] = enrichedWorkouts;
           await prefs.setString('workout_history', jsonEncode(_userData['workouts']));
           hasData = true;
         } else {
@@ -246,7 +266,7 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     
     // Преобразуем заголовки в формат ЗАГОЛОВОК: для лучшего разделения
     final sectionTitles = ['PROGRESS ASSESSMENT', 'WORKOUT ANALYSIS', 'HYDRATION STATUS', 
-                          'RECOMMENDATIONS', 'WEEKLY GOALS'];
+                          'PERSONALIZED RECOMMENDATIONS', 'WEEKLY GOALS'];
     
     for (final title in sectionTitles) {
       // Преобразуем разные форматы заголовков в стандартный

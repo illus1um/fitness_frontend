@@ -46,4 +46,23 @@ class ExerciseDataService {
     
     return _exerciseData[exerciseId];
   }
+
+  /// Возвращает данные об упражнении по ID в формате Map
+  static Map<String, dynamic>? getExerciseById(String exerciseId) {
+    if (!_isInitialized) return null;
+    
+    final exercise = _exerciseData[exerciseId];
+    if (exercise == null) return null;
+    
+    return {
+      'name': exercise.name,
+      'bodyPart': exercise.bodyPart,
+      'equipment': exercise.equipment,
+      'target': exercise.target,
+      'secondaryTargets': exercise.secondaryTargets,
+      'programs': exercise.programs,
+      'locations': exercise.locations,
+      'experienceLevels': exercise.experienceLevels,
+    };
+  }
 } 
