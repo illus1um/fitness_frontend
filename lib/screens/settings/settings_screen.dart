@@ -65,8 +65,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildCard(
             children: [
               _buildListTile(
-                title: 'Исправить данные упражнений',
-                subtitle: 'Автоматически исправить метаданные упражнений для лучшей фильтрации',
+                title: 'Fix Exercise Data',
+                subtitle: 'Automatically fix exercise metadata for better filtering',
                 icon: Icons.fitness_center,
                 onTap: () {
                   Navigator.push(

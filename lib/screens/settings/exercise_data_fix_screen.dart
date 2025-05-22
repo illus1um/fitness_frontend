@@ -26,7 +26,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('Исправление данных упражнений'),
+        title: Text('Fix Exercise Data'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -35,7 +35,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Информационная карточка
+            // Information card
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -53,7 +53,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Что делает этот инструмент?',
+                    'What does this tool do?',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -62,20 +62,20 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Этот инструмент автоматически исправляет метаданные упражнений:',
+                    'This tool automatically fixes exercise metadata:',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   SizedBox(height: 10),
-                  _buildFeatureItem('Удаляет отметку "At home" для упражнений, требующих зала'),
-                  _buildFeatureItem('Добавляет отметку "At home" к упражнениям, выполнимым дома'),
-                  _buildFeatureItem('Исправляет уровни сложности для продвинутых упражнений'),
-                  _buildFeatureItem('Добавляет отметку "Beginner" к базовым упражнениям'),
+                  _buildFeatureItem('Removes "At home" tag for gym-required exercises'),
+                  _buildFeatureItem('Adds "At home" tag to home-friendly exercises'),
+                  _buildFeatureItem('Fixes difficulty levels for advanced exercises'),
+                  _buildFeatureItem('Adds "Beginner" tag to basic exercises'),
                   SizedBox(height: 15),
                   Text(
-                    'После исправления упражнения будут правильно отфильтрованы при создании плана тренировок.',
+                    'After fixing, exercises will be properly filtered when creating workout plans.',
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
                     ),
@@ -86,7 +86,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
             
             SizedBox(height: 30),
             
-            // Прогресс-бар
+            // Progress bar
             if (_isFixing || _isApplying)
               Column(
                 children: [
@@ -110,7 +110,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                 ],
               ),
             
-            // Сообщение о завершении
+            // Completion message
             if (_isFixComplete && !_isApplying && !_isApplyComplete)
               Container(
                 padding: EdgeInsets.symmetric(vertical: 15),
@@ -124,7 +124,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                   ),
                 ),
                 child: Text(
-                  'Данные успешно исправлены! Нажмите "Применить исправления", чтобы обновить базу данных.',
+                  'Data successfully fixed! Click "Apply Fixes" to update the database.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.green,
@@ -146,7 +146,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                   ),
                 ),
                 child: Text(
-                  'Исправления успешно применены! Пожалуйста, перезапустите приложение, чтобы увидеть изменения.',
+                  'Fixes successfully applied! Please restart the app to see the changes.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.green,
@@ -155,7 +155,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                 ),
               ),
             
-            // Кнопки
+            // Buttons
             ElevatedButton(
               onPressed: (_isFixing || _isApplying || _isFixComplete) ? null : _startFixing,
               style: ElevatedButton.styleFrom(
@@ -168,7 +168,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                 disabledBackgroundColor: Colors.grey.shade400,
               ),
               child: Text(
-                'Исправить данные упражнений',
+                'Fix Exercise Data',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -190,7 +190,7 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
                 disabledBackgroundColor: Colors.grey.shade400,
               ),
               child: Text(
-                'Применить исправления',
+                'Apply Fixes',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -221,21 +221,21 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
   Future<void> _startFixing() async {
     setState(() {
       _isFixing = true;
-      _statusMessage = 'Анализ базы данных упражнений...';
+      _statusMessage = 'Analyzing exercise database...';
       _progress = 0.1;
     });
     
-    // Имитируем прогресс
+    // Simulate progress
     for (double i = 0.2; i <= 0.8; i += 0.1) {
       await Future.delayed(Duration(milliseconds: 300));
       if (!mounted) return;
       setState(() {
         _progress = i;
-        _statusMessage = 'Исправление метаданных упражнений...';
+        _statusMessage = 'Fixing exercise metadata...';
       });
     }
     
-    // Запускаем исправление
+    // Start fixing
     final result = await ExerciseDataFixer.fixExerciseData();
     
     if (!mounted) return;
@@ -245,11 +245,11 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
       _isFixComplete = result;
       _progress = 1.0;
       _statusMessage = result 
-          ? 'Данные успешно исправлены!' 
-          : 'Ошибка при исправлении данных';
+          ? 'Data successfully fixed!' 
+          : 'Error fixing data';
     });
     
-    // Небольшая задержка для анимации
+    // Small delay for animation
     await Future.delayed(Duration(seconds: 1));
     
     if (!mounted) return;
@@ -262,11 +262,11 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
   Future<void> _applyFixes() async {
     setState(() {
       _isApplying = true;
-      _statusMessage = 'Применение исправлений...';
+      _statusMessage = 'Applying fixes...';
       _progress = 0.3;
     });
     
-    // Имитируем прогресс
+    // Simulate progress
     await Future.delayed(Duration(milliseconds: 500));
     
     if (!mounted) return;
@@ -274,18 +274,18 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
       _progress = 0.6;
     });
     
-    // Применяем исправления
+    // Apply fixes
     final result = await ExerciseDataFixer.applyFixedData();
     
     if (result) {
-      // После успешного применения исправлений очищаем кеш планов тренировок,
-      // чтобы при следующем создании плана использовались новые данные
+      // After successful application of fixes, clear workout plan cache,
+      // so that new data is used when next plan is created
       await PlanCache.clearPlan();
       
-      // Очищаем кеш на сервере также
+      // Clear cache on server as well
       await ApiService.clearPlan();
       
-      // Сбрасываем флаг, что у пользователя нет сгенерированного плана
+      // Reset flag that user doesn't have a generated plan
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_generated_plan', false);
     }
@@ -297,11 +297,11 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
       _isApplyComplete = result;
       _progress = 1.0;
       _statusMessage = result 
-          ? 'Исправления успешно применены!' 
-          : 'Ошибка при применении исправлений';
+          ? 'Fixes successfully applied!' 
+          : 'Error applying fixes';
     });
     
-    // Небольшая задержка для анимации
+    // Small delay for animation
     await Future.delayed(Duration(seconds: 1));
     
     if (!mounted) return;

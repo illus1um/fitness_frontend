@@ -103,11 +103,11 @@ class NotificationService {
       );
       
       // Создаем содержимое уведомления
-      String title = 'День тренировки!';
-      String body = 'Сегодня день вашей тренировки.';
+      String title = 'Workout Day!';
+      String body = 'Today is your workout day.';
       
       if (dayInfo != null) {
-        body = 'Сегодня день тренировки: ${dayInfo.part}';
+        body = 'Today\'s workout: ${dayInfo.part}';
       }
       
       // Планируем уведомление
