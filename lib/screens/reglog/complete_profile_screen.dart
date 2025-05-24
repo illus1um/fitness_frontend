@@ -60,102 +60,198 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final primaryColor = Color.fromARGB(255, 199, 169, 127);
     final buttonColor = isDarkMode ? primaryColor : Colors.black;
     final buttonTextColor = isDarkMode ? Colors.black : Colors.white;
+    final backgroundColor = isDarkMode ? Colors.black : Colors.white;
     
     return Scaffold(
-      backgroundColor: isDarkMode ? Colors.black : Colors.white,
-      appBar: AppBar(
-        backgroundColor: isDarkMode ? Colors.black : Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: textColor),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(
-              "About Your Body",
-              style: TextStyle(
-                fontSize: 32, 
-                fontWeight: FontWeight.w500,
-                color: textColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDarkMode 
+              ? [Colors.black, Color(0xFF1A1A1A)]
+              : [Colors.white, Color(0xFFF5F5F5)],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back_ios, color: textColor),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  SizedBox(height: 24),
+                  Text(
+                    "Complete Your Profile",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  Text(
+                    "Help us create your perfect fitness plan",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: textColor.withOpacity(0.7),
+                      height: 1.5,
+                    ),
+                  ),
+                  SizedBox(height: 32),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Color(0xFF1A1A1A) : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDarkMode 
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.grey.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        _buildPickerWithIcon(
+                          "Weight (kg)",
+                          Icons.monitor_weight_outlined,
+                          30, 300, selectedWeight,
+                          (val) => setState(() => selectedWeight = val),
+                          primaryColor,
+                        ),
+                        SizedBox(height: 20),
+                        _buildPickerWithIcon(
+                          "Height (cm)",
+                          Icons.height_outlined,
+                          100, 250, selectedHeight,
+                          (val) => setState(() => selectedHeight = val),
+                          primaryColor,
+                        ),
+                        SizedBox(height: 20),
+                        _buildPickerWithIcon(
+                          "Age",
+                          Icons.cake_outlined,
+                          12, 100, selectedAge,
+                          (val) => setState(() => selectedAge = val),
+                          primaryColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: buttonColor,
+                        foregroundColor: buttonTextColor,
+                        minimumSize: Size(double.infinity, 56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 4,
+                      ),
+                      child: isLoading
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: buttonTextColor,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            "Continue",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 40),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildPicker("Weight (kg)", 30, 300, selectedWeight, (val) {
-                    setState(() => selectedWeight = val);
-                  }),
-                ),
-                Expanded(
-                  child: _buildPicker("Height (cm)", 100, 250, selectedHeight, (val) {
-                    setState(() => selectedHeight = val);
-                  }),
-                ),
-                Expanded(
-                  child: _buildPicker("Age", 12, 100, selectedAge, (val) {
-                    setState(() => selectedAge = val);
-                  }),
-                ),
-              ],
-            ),
-            Spacer(),
-            ElevatedButton(
-              onPressed: isLoading ? null : saveProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: buttonColor,
-                foregroundColor: buttonTextColor,
-                minimumSize: Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: isLoading
-                  ? CircularProgressIndicator(color: buttonTextColor)
-                  : Text("Save"),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPicker(String label, int min, int max, int selected, ValueChanged<int> onChanged) {
+  Widget _buildPickerWithIcon(
+    String label,
+    IconData icon,
+    int min,
+    int max,
+    int selected,
+    ValueChanged<int> onChanged,
+    Color accentColor,
+  ) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     
-    final items = List<Widget>.generate(max - min + 1, (index) {
-      final value = min + index;
-      return Center(
-        child: Text(
-          value.toString(),
-          style: TextStyle(
-            fontSize: 20,
-            color: textColor,
-          ),
-        ),
-      );
-    });
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label, 
-          style: TextStyle(
-            fontSize: 16, 
-            fontWeight: FontWeight.w500,
-            color: textColor,
-          ),
+        Row(
+          children: [
+            Icon(
+              icon,
+              color: accentColor,
+              size: 24,
+            ),
+            SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
         ),
-        SizedBox(
+        SizedBox(height: 8),
+        Container(
           height: 120,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+              width: 1,
+            ),
+          ),
           child: CupertinoPicker(
-            scrollController: FixedExtentScrollController(initialItem: selected - min),
-            itemExtent: 32,
-            diameterRatio: 1.1,
+            scrollController: FixedExtentScrollController(
+              initialItem: selected - min
+            ),
+            itemExtent: 40,
+            diameterRatio: 1.2,
             backgroundColor: Colors.transparent,
             onSelectedItemChanged: (index) => onChanged(min + index),
-            children: items,
+            children: List<Widget>.generate(
+              max - min + 1,
+              (index) {
+                final value = min + index;
+                return Center(
+                  child: Text(
+                    value.toString(),
+                    style: TextStyle(
+                      fontSize: 24,
+                      color: textColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],
