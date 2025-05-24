@@ -155,7 +155,7 @@ Widget build(BuildContext context) {
       onTap: () => completeRegistration(name),
       child: Container(
         decoration: BoxDecoration(
-          color: Color.fromARGB(255, 219, 200, 173),
+          color: Color.fromARGB(255, 231, 231, 231),
           borderRadius: BorderRadius.circular(12),
         ),
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -166,12 +166,12 @@ Widget build(BuildContext context) {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color.fromARGB(255, 199, 169, 127),
+                color: Color.fromARGB(255, 255, 255, 255),
               ),
               child: Center(
                 child: Text(
                   level,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
                 ),
               ),
             ),

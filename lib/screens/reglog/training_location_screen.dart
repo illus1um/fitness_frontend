@@ -72,7 +72,7 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
     child: Container(
       height: 60, // 🔹 Фиксируем высоту карточки
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 219, 200, 173),
+        color: Color.fromARGB(255, 231, 231, 231),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

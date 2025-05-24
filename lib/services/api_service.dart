@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = "http://127.0.0.1:8000"; // FastAPI сервер
+  static const String baseUrl = "http://10.0.2.2:8000"; // FastAPI сервер
 
   static Future<bool> login(String username, String password) async {
     try {
