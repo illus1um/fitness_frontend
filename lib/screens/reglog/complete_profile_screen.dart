@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fitness_app/models/registration_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fitness_app/services/api_service.dart';
+import 'package:fitness_app/services/plan_cache.dart';
 import 'training_program_screen.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
@@ -19,12 +22,26 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   bool isLoading = false;
 
-  void saveProfile() {
+  void saveProfile() async {
     setState(() => isLoading = true);
 
     widget.registrationData.weight = selectedWeight;
     widget.registrationData.height = selectedHeight;
     widget.registrationData.age = selectedAge;
+
+    // Ensure any existing workout plan is cleared for new users
+    try {
+      // Set flag to indicate user has NOT generated a workout plan yet
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_generated_plan', false);
+      
+      // Clear any existing plans from server and cache
+      await ApiService.clearProgress();
+      await ApiService.clearPlan();
+      await PlanCache.clearPlan();
+    } catch (e) {
+      print('Error clearing workout data: $e');
+    }
 
     setState(() => isLoading = false);
 
@@ -38,10 +55,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final primaryColor = Color.fromARGB(255, 199, 169, 127);
+    final buttonColor = isDarkMode ? primaryColor : Colors.black;
+    final buttonTextColor = isDarkMode ? Colors.black : Colors.white;
+    
     return Scaffold(
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
         elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -49,7 +74,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           children: [
             Text(
               "About Your Body",
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 32, 
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
             SizedBox(height: 40),
             Row(
@@ -75,13 +104,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             ElevatedButton(
               onPressed: isLoading ? null : saveProfile,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
+                backgroundColor: buttonColor,
+                foregroundColor: buttonTextColor,
                 minimumSize: Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
+                  ? CircularProgressIndicator(color: buttonTextColor)
                   : Text("Save"),
             ),
           ],
@@ -90,13 +119,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-    Widget _buildPicker(String label, int min, int max, int selected, ValueChanged<int> onChanged) {
+  Widget _buildPicker(String label, int min, int max, int selected, ValueChanged<int> onChanged) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    
     final items = List<Widget>.generate(max - min + 1, (index) {
       final value = min + index;
       return Center(
         child: Text(
           value.toString(),
-          style: TextStyle(fontSize: 20),
+          style: TextStyle(
+            fontSize: 20,
+            color: textColor,
+          ),
         ),
       );
     });
@@ -104,13 +139,21 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(
+          label, 
+          style: TextStyle(
+            fontSize: 16, 
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
+        ),
         SizedBox(
           height: 120,
           child: CupertinoPicker(
             scrollController: FixedExtentScrollController(initialItem: selected - min),
             itemExtent: 32,
             diameterRatio: 1.1,
+            backgroundColor: Colors.transparent,
             onSelectedItemChanged: (index) => onChanged(min + index),
             children: items,
           ),
@@ -118,5 +161,4 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       ],
     );
   }
-
 }

@@ -73,6 +73,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Color.fromARGB(255, 199, 169, 127);
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final subtleTextColor = isDarkMode ? Colors.grey[300] : const Color.fromARGB(255, 116, 112, 112);
+    final containerBgColor = isDarkMode ? Color(0xFF2A2A2A) : Color(0xFFF4F4F4);
+    final borderColor = isDarkMode ? Colors.grey[700] : Colors.grey[300];
+
     return Scaffold(
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -91,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontSize: 35,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 8,
-                      color: Colors.black87,
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -103,12 +110,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Color(0xFFF4F4F4), // светло-серый
+                    color: containerBgColor, 
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: borderColor!),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black12,
+                        color: isDarkMode ? Colors.black26 : Colors.black12,
                         blurRadius: 5,
                         offset: Offset(0, 2),
                       ),
@@ -129,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text(
                             "Forgot password?",
                             style: TextStyle(
-                              color: const Color.fromARGB(255, 162, 162, 162),
+                              color: subtleTextColor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -151,6 +158,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
   Widget _buildToggleButtons(BuildContext context, bool isLogin) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  final inactiveColor = isDarkMode ? Color(0xFF3D3D3D) : Colors.brown[100];
+  final activeColor = isDarkMode ? Color(0xFF614F36) : Color.fromARGB(255, 199, 169, 127);
+  final inactiveTextColor = isDarkMode ? Colors.grey[400] : Colors.brown[700];
+  final activeTextColor = isDarkMode ? Colors.white : Colors.black;
+  final borderColor = isDarkMode ? Colors.grey[600] : Colors.black;
+  
   return Align(
     alignment: Alignment.topCenter,
     child: Container(
@@ -159,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
       margin: EdgeInsets.only(top: 40),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: Colors.brown[100],
+        color: inactiveColor,
       ),
       child: Row(
         children: [
@@ -180,20 +194,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  color: !isLogin
-                      ? Color.fromARGB(255, 199, 127, 127)
-                      : Color.fromARGB(255, 219, 200, 173),
+                  color: !isLogin ? activeColor : inactiveColor,
                   border: Border.all(
-                    color: !isLogin ? Colors.black : Colors.transparent,
+                    color: !isLogin ? borderColor! : Colors.transparent,
                     width: 2,
                   ),
                 ),
                 child: Text(
                   "Registration",
                   style: TextStyle(
-                    color: !isLogin
-                        ? Colors.white
-                        : const Color.fromARGB(255, 0, 0, 0),
+                    color: !isLogin ? activeTextColor : inactiveTextColor,
                   ),
                 ),
               ),
@@ -216,20 +226,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  color: isLogin
-                      ? Color.fromARGB(255, 199, 169, 127)
-                      : const Color.fromARGB(0, 227, 212, 212),
+                  color: isLogin ? activeColor : inactiveColor,
                   border: Border.all(
-                    color: isLogin ? Colors.black : Colors.transparent,
+                    color: isLogin ? borderColor! : Colors.transparent,
                     width: 2,
                   ),
                 ),
                 child: Text(
                   "Login",
                   style: TextStyle(
-                    color: isLogin
-                        ? const Color.fromARGB(255, 0, 0, 0)
-                        : Colors.brown[700],
+                    color: isLogin ? activeTextColor : inactiveTextColor,
                   ),
                 ),
               ),
@@ -244,24 +250,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
   Widget _buildInputField(String label, TextEditingController controller, {String? Function(String?)? validator}) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Color.fromARGB(255, 199, 169, 127);
+    final borderColor = isDarkMode ? Colors.grey[600] : const Color.fromARGB(255, 156, 145, 141);
+    final labelColor = isDarkMode ? Colors.grey[300] : const Color.fromARGB(255, 116, 112, 112);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 15.0),
       child: TextFormField(
         controller: controller,
-        cursorColor: Color.fromARGB(255, 199, 169, 127),
+        cursorColor: primaryColor,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+          labelStyle: TextStyle(color: labelColor),
           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+            borderSide: BorderSide(color: borderColor!),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
+            borderSide: BorderSide(color: primaryColor, width: 2.0),
           ),
-          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
+          floatingLabelStyle: TextStyle(color: primaryColor),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
         validator: validator,
@@ -271,28 +282,34 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildPasswordField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Color.fromARGB(255, 199, 169, 127);
+    final borderColor = isDarkMode ? Colors.grey[600] : const Color.fromARGB(255, 156, 145, 141);
+    final labelColor = isDarkMode ? Colors.grey[300] : const Color.fromARGB(255, 116, 112, 112);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextFormField(
         controller: passwordController,
-        cursorColor: Color.fromARGB(255, 199, 169, 127),
+        cursorColor: primaryColor,
         obscureText: !isPasswordVisible,
         decoration: InputDecoration(
           labelText: "Password",
-          labelStyle: TextStyle(color: const Color.fromARGB(255, 116, 112, 112)),
+          labelStyle: TextStyle(color: labelColor),
           contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(255, 156, 145, 141)),
+            borderSide: BorderSide(color: borderColor!),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: const Color.fromARGB(198, 169, 127, 88), width: 2.0),
+            borderSide: BorderSide(color: primaryColor, width: 2.0),
           ),
-          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 199, 169, 127)),
+          floatingLabelStyle: TextStyle(color: primaryColor),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           suffixIcon: IconButton(
-            icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+            icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off, 
+                 color: isDarkMode ? Colors.grey[300] : Colors.grey[600]),
             onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
           ),
         ),
@@ -302,19 +319,24 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLoginButton() {
+    Widget _buildLoginButton() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Color.fromARGB(255, 199, 169, 127);
+    final buttonColor = isDarkMode ? primaryColor : Colors.black;
+    final textColor = isDarkMode ? Colors.black : Colors.white;
+    
     return ElevatedButton(
       onPressed: isLoading ? null : login,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: buttonColor,
+        foregroundColor: textColor,
         minimumSize: Size(double.infinity, 45),
-        shape: RoundedRectangleBorder( // Устанавливаем закругление углов
-          borderRadius: BorderRadius.circular(12), // Радиус закругления
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
       child: isLoading 
-        ? CircularProgressIndicator(color: const Color.fromARGB(255, 255, 255, 255)) 
+        ? CircularProgressIndicator(color: textColor) 
         : Text("Login"),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'exercise_detail_screen.dart';
+import '../../../services/gif_service.dart';
 
 class ExerciseListScreen extends StatefulWidget {
   final String muscleGroup;
@@ -117,10 +118,12 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                     itemCount: filteredExercises.length,
                     itemBuilder: (context, index) {
                       final exercise = filteredExercises[index];
-                      final rawGif = exercise['gif'] as String?;
-                      final imagePath = rawGif != null
-                          ? rawGif.replaceAll('.gif', '.png')
-                          : 'assets/placeholder.png';
+                      final gifFileName = exercise['gifFileName'] as String?;
+                      final useAsset = gifFileName == null;
+                      
+                      final imagePath = useAsset 
+                          ? 'images/placeholder.png'
+                          : 'gifs/${gifFileName.replaceAll('.gif', '.png')}';
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(
@@ -142,15 +145,18 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
                             contentPadding: const EdgeInsets.all(12),
                             leading: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                imagePath,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Icon(Icons.image_not_supported,
+                              child: useAsset 
+                                ? Icon(Icons.fitness_center, 
+                                    size: 50, 
+                                    color: Theme.of(context).primaryColor)
+                                : GifService.loadNetworkGif(
+                                    gifName: gifFileName.replaceAll('.gif', '.png'),
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorWidget: Icon(Icons.image_not_supported,
                                         size: 50, color: iconColor),
-                              ),
+                                  ),
                             ),
                             title: Text(
                               _capitalize(exercise['name'] ?? ''),

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 
 class SportsNutritionScreen extends StatelessWidget {
@@ -132,59 +134,111 @@ class SportsNutritionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final titleStyle = theme.textTheme.bodyLarge!
-        .copyWith(fontSize: 20, fontWeight: FontWeight.bold);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = Color(0xFFC7A97F);
+    
+    // Define the title style without bold
+    final titleStyle = TextStyle(
+      fontSize: 20,
+      color: isDarkMode ? Colors.white : Colors.black87,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sports Nutrition'),
+        title: Text(
+          'Sports Nutrition',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
+        elevation: 0,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12.0),
-        itemCount: supplements.length,
-        itemBuilder: (context, index) {
-          final supplement = supplements[index];
-          return Card(
-            elevation: 4,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.symmetric(vertical: 10),
-            child: InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      SupplementDetailScreen(supplement: supplement),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDarkMode 
+                ? [Color(0xFF121212), Color(0xFF1E1E1E)]
+                : [Color(0xFFF9F9F9), Color(0xFFF4F4F4)],
+          ),
+        ),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: supplements.length,
+          itemBuilder: (context, index) {
+            final supplement = supplements[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: isDarkMode ? 0 : 1,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: isDarkMode ? Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                elevation: 0,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SupplementDetailScreen(supplement: supplement),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            supplement['image']!,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            supplement['title']!,
+                            style: titleStyle, // Non-bold title style
+                          ),
+                        ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: isDarkMode 
+                                ? Color(0xFF3A3225)
+                                : goldColor.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.arrow_forward,
+                            color: goldColor,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        supplement['image']!,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        supplement['title']!,
-                        style: titleStyle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -196,45 +250,139 @@ class SupplementDetailScreen extends StatelessWidget {
   const SupplementDetailScreen({Key? key, required this.supplement})
       : super(key: key);
 
-  List<TextSpan> _buildFormattedText(
-      BuildContext context, String details) {
+  List<Widget> _buildFormattedSections(BuildContext context, String details) {
     final theme = Theme.of(context);
-    final bodyStyle = theme.textTheme.bodyMedium!;
-    final headingStyle =
-        bodyStyle.copyWith(fontWeight: FontWeight.bold);
-
-    final lines = details.split('\n');
-    return lines.map<TextSpan>((line) {
-      if (line.trim().isEmpty) {
-        return const TextSpan(text: '\n');
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
+    // Define colors based on theme
+    final accentColor = isDarkMode ? const Color(0xFFB2996E) : const Color(0xFFC7A97F);
+    final bodyTextColor = isDarkMode ? Colors.grey[300] : Colors.grey[800];
+    
+    // Parse the details into sections
+    final sections = details.split('\n\n');
+    final result = <Widget>[];
+    
+    for (final section in sections) {
+      final parts = section.split(':\n');
+      if (parts.length == 2) {
+        final heading = parts[0].trim();
+        final content = parts[1].trim();
+        
+        // Add the section heading
+        result.add(
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Icon(
+                  _getIconForHeading(heading),
+                  color: accentColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  heading,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        
+        // Add the section content
+        result.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 32, bottom: 16),
+            child: Text(
+              content,
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.5,
+                color: bodyTextColor,
+              ),
+            ),
+          ),
+        );
+        
+        // Add a divider except after the last section
+        if (section != sections.last) {
+          result.add(
+            Divider(
+              color: isDarkMode ? Colors.grey[800] : Colors.grey[300],
+              thickness: 1,
+              height: 32,
+            ),
+          );
+        }
       }
-      final headingPattern = RegExp(
-          r'^(What it is:|Purpose:|How to take:|Who should avoid it:|Additional facts:|ℹAdditional facts:)');
-      if (headingPattern.hasMatch(line)) {
-        return TextSpan(text: '$line\n', style: headingStyle);
-      } else {
-        return TextSpan(text: '$line\n', style: bodyStyle);
+    }
+    
+    return result;
+  }
+  
+  IconData _getIconForHeading(String heading) {
+    switch (heading) {
+      case 'What it is':
+        return Icons.info_outline;
+      case 'Purpose':
+        return Icons.lightbulb_outline;
+      case 'How to take':
+        return Icons.schedule;
+      case 'Who should avoid it':
+        return Icons.warning_amber_outlined;
+      case 'Additional facts':
+      case 'ℹAdditional facts':
+        return Icons.tips_and_updates_outlined;
+      default:
+        return Icons.article_outlined;
       }
-    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
+    final accentColor = isDarkMode ? const Color(0xFFB2996E) : const Color(0xFFC7A97F);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(supplement['title']!),
+        title: Text(
+          supplement['title']!,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: theme.appBarTheme.foregroundColor,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+            // Image with enhanced styling
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode 
+                      ? Colors.black.withOpacity(0.3) 
+                      : Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
               child: Image.asset(
                 supplement['image']!,
                 width: screenWidth - 32,
@@ -242,15 +390,34 @@ class SupplementDetailScreen extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 20),
-            RichText(
-              textAlign: TextAlign.justify,
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: _buildFormattedText(
-                    context, supplement['details']!),
+            ),
+            
+            // Title with accent underline
+            Container(
+              margin: const EdgeInsets.only(top: 24, bottom: 16),
+              padding: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: accentColor,
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Text(
+                supplement['title']!,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
               ),
             ),
+            
+            // Content sections
+            ..._buildFormattedSections(context, supplement['details']!),
+            
+            const SizedBox(height: 24),
           ],
         ),
       ),

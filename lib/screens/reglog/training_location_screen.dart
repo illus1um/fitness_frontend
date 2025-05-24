@@ -27,13 +27,24 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
       ),
     );
   }
+  
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    
     return Scaffold(
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        titleTextStyle: TextStyle(
+          fontSize: 24, 
+          fontWeight: FontWeight.bold,
+          color: textColor,
+        ),
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -44,7 +55,11 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
               child: Text(
                 "Where to train?",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 32, 
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
               ),
             ),
             SizedBox(height: 40),
@@ -67,43 +82,50 @@ class _TrainingLocationScreenState extends State<TrainingLocationScreen> {
 
 
   Widget _buildLocationCard(String name, String imagePath) {
-  return GestureDetector(
-    onTap: () => setTrainingLocation(name),
-    child: Container(
-      height: 60, // 🔹 Фиксируем высоту карточки
-      decoration: BoxDecoration(
-        color: Color.fromARGB(255, 231, 231, 231),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                name,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black),
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDarkMode ? Color(0xFF333333) : Color.fromARGB(255, 219, 200, 173);
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    
+    return GestureDetector(
+      onTap: () => setTrainingLocation(name),
+      child: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.w500, 
+                    color: textColor,
+                  ),
+                ),
               ),
             ),
-          ),
 
-          ClipRRect(
-            borderRadius: BorderRadius.only(
-              topRight: Radius.circular(12),
-              bottomRight: Radius.circular(12),
+            ClipRRect(
+              borderRadius: BorderRadius.only(
+                topRight: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+              child: Image.asset(
+                imagePath,
+                width: 100,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
             ),
-            child: Image.asset(
-              imagePath,
-              width: 100,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

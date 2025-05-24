@@ -3,7 +3,8 @@ import 'package:fitness_app/screens/workout/workout_screen.dart';
 import 'package:fitness_app/screens/guide/guide_screen.dart';
 import 'package:fitness_app/screens/drinking/drinking_screen.dart';
 import 'package:fitness_app/screens/else/else_screen.dart';
-import 'package:fitness_app/services/auth_service.dart'; 
+import 'package:fitness_app/screens/ai/ai_assistant_screen.dart'; // Добавили импорт
+import 'package:fitness_app/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -33,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> _screens = [
       WorkoutScreen(),
-      // BodyScreen(),
+      AIAssistantScreen(),
       GuideScreen(),
       DrinkingScreen(username: username),
       ElseScreen(),
@@ -44,9 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: "Workout"),
-          // BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Body"),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: "Guide"),
-          BottomNavigationBarItem(icon: Icon(Icons.local_drink), label: "Drinking"),
+          BottomNavigationBarItem(icon: Icon(Icons.smart_toy), label: "AI"),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book_rounded), label: "Guide"),
+          BottomNavigationBarItem(icon: Icon(Icons.water_drop), label: "Drinking"),
           BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: "Else"),
         ],
         currentIndex: _selectedIndex,

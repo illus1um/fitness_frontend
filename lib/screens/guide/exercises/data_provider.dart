@@ -13,7 +13,13 @@ class DataProvider {
       String name = exercise["name"];
       String target = exercise["target"] ?? "Unknown";
       String equipment = (exercise["equipment"] ?? "Bodyweight").toLowerCase().replaceAll(" ", "");
-      String gif = "assets/gifs/${exercise["gifUrl"].split('/').last}.gif";
+      
+      // Вместо пути к гифке в ассетах будем хранить только имя файла
+      String gifFileName = exercise["gifUrl"].split('/').last;
+      if (!gifFileName.toLowerCase().endsWith('.gif')) {
+        gifFileName = "$gifFileName.gif";
+      }
+      
       List<String> instructions = (exercise["instructions"] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
@@ -26,7 +32,7 @@ class DataProvider {
         "name": name,
         "target": target,
         "equipment": equipment,
-        "gif": gif,
+        "gifFileName": gifFileName, // Используем имя файла вместо пути
         "instructions": instructions,
       });
     }
