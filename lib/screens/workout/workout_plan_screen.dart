@@ -218,15 +218,7 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                                 ),
                               ),
                               SizedBox(height: 4),
-                              Text(
-                                day.part,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: isAvailable 
-                                    ? (isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700)
-                                    : (isDarkMode ? Colors.grey.shade600 : Colors.grey.shade500),
-                                ),
-                              ),
+
                             ],
                           ),
                         ),

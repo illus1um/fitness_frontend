@@ -81,7 +81,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('Day ${widget.day.dayIndex}: ${_capitalize(widget.day.part)}'),
+        title: Text('Day ${widget.day.dayIndex}'),
         centerTitle: true,
         elevation: 0,
       ),
