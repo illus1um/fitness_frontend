@@ -77,11 +77,8 @@ class ExerciseInfo {
       ExerciseInfo.fromJson(j);
 
   /// Получает путь к гифке для загрузки с сервера
-  /// В переходный период будет поддерживать и старый вариант для совместимости
   String get assetGifPath {
-    // В будущих версиях эта функция будет просто возвращать имя файла
-    // для работы через GifService, но пока поддерживаем старый вариант
-    // для обратной совместимости
+
     final fileName = gifUrl.split('/').last;
     final nameWithExt =
         fileName.toLowerCase().endsWith('.gif') ? fileName : '$fileName.gif';

@@ -26,17 +26,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   DateTime? _startDate;
   DateTime _focusedDay = DateTime.now();
   
-  // Кешируем значение для плавности перехода между экранами
   bool? _hasGeneratedPlanCache;
-  bool _isLoading = true; // Добавим флаг загрузки
+  bool _isLoading = true; 
 
-  /// Набор чистых дат тренировочных дней (без времени)
   final Set<DateTime> _workoutDays = {};
   
-  /// Набор индексов доступных тренировочных дней
   final Set<int> _availableDays = {};
   
-  /// Прогресс пользователя
   List<ProgressEntry> _progress = [];
 
   @override
@@ -48,8 +44,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // При возвращении на экран, мы не показываем индикатор загрузки,
-    // но обновляем данные в фоне
     if (_hasGeneratedPlanCache == true) {
       _refreshDataInBackground();
     }
@@ -58,42 +52,34 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _init() async {
     setState(() => _isLoading = true);
     
-    // Загружаем данные пользователя
     await _loadUserData();
     
-    // Пробуем загрузить план с сервера независимо от флага
     final serverPlan = await ApiService.getPlan();
     
     if (serverPlan != null) {
-      // Если план есть на сервере, устанавливаем флаг
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_generated_plan', true);
       _hasGeneratedPlanCache = true;
       await _loadCachedPlan();
     } else {
-      // Если на сервере нет плана, проверяем в кэше
       final cachedPlan = await PlanCache.loadPlan();
       final startDate = await PlanCache.loadStartDate();
       
       if (cachedPlan != null && startDate != null) {
-        // Если план есть в кэше, устанавливаем флаг
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('has_generated_plan', true);
         _hasGeneratedPlanCache = true;
         await _loadCachedPlan();
       } else {
-        // Если плана нет ни на сервере, ни в кэше, проверяем флаг
         final hasGenerated = await _checkUserHasGeneratedPlan();
         _hasGeneratedPlanCache = hasGenerated;
         
-        // Загружаем план только если он был сгенерирован
         if (hasGenerated) {
           await _loadCachedPlan();
         }
       }
     }
     
-    // Установим флаг загрузки в false
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -108,15 +94,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   Future<void> _loadCachedPlan() async {
     try {
-      // Сначала пробуем загрузить план с сервера
       final serverPlan = await ApiService.getPlan();
       
-      // Получаем значение флага из SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       
-      // Если план существует на сервере, значит пользователь его когда-то сгенерировал
       if (serverPlan != null) {
-        // Устанавливаем флаг, так как план существует
         await prefs.setBool('has_generated_plan', true);
         _hasGeneratedPlanCache = true;
         
@@ -124,7 +106,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         final startDate = serverPlan['start_date'] as DateTime;
         final progress = await ApiService.getProgress();
         
-        // Сохраняем в кэш для офлайн доступа
         await PlanCache.savePlan(plan);
         await PlanCache.saveStartDate(startDate);
         await PlanCache.saveProgress(progress);
@@ -142,17 +123,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         return;
       }
 
-      // Если на сервере нет плана, проверяем явно установленный флаг
       final hasGeneratedPlan = prefs.getBool('has_generated_plan') ?? false;
       
-      // Если пользователь явно не генерировал план, пробуем загрузить из кэша
-      // Если на сервере нет плана, пробуем загрузить из кэша в любом случае
       final plan = await PlanCache.loadPlan();
       final sd = await PlanCache.loadStartDate();
       final progress = await PlanCache.loadProgress();
       
       if (plan != null && sd != null) {
-        // Если план найден в кэше, считаем что пользователь генерировал план ранее
         await prefs.setBool('has_generated_plan', true);
         _hasGeneratedPlanCache = true;
         
@@ -165,18 +142,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           _progress = progress;
         });
         
-        // Если план есть в кэше, но нет на сервере, сохраняем его на сервер
         await ApiService.savePlan(plan, sd);
         
         print('DEBUG: Plan loaded from cache and saved to server with ${plan.length} days');
       } else {
-        // Если плана нет ни на сервере, ни в кэше, сохраняем значение флага из SharedPreferences
         _hasGeneratedPlanCache = hasGeneratedPlan;
         print('DEBUG: No plan found in cache or server');
       }
     } catch (e) {
       print('ERROR loading plan: $e');
-      // Восстанавливаемся после ошибки, очищая данные
       setState(() {
         _plan = null;
         _startDate = null;
@@ -190,32 +164,26 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _startWorkout() async {
     if (userData == null) return;
     if (_plan != null) {
-      // Instead of navigating to another page, just scroll to the calendar section
-      setState(() {}); // Trigger a rebuild to ensure calendar is shown
+      setState(() {}); 
       return;
     }
 
     setState(() => _isGenerating = true);
 
-    // Mark that user has explicitly generated a workout plan
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_generated_plan', true);
     
-    // Update cached value too
     _hasGeneratedPlanCache = true;
 
-    // Clear old progress and plan from server and cache
     await ApiService.clearProgress();
     await ApiService.clearPlan();
     await PlanCache.clearPlan();
     
-    // Отменяем существующие уведомления о тренировках
     await NotificationService.cancelAllWorkoutNotifications();
 
     final startDate = DateTime.now();
     await PlanCache.saveStartDate(startDate);
 
-    // Add a small delay to show generation animation
     await Future.delayed(Duration(milliseconds: 800));
 
     final plan = await PlanGenerator.generatePlan(
@@ -225,17 +193,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       dayCount:   15,
     );
 
-    // Add another small delay for animation
     await Future.delayed(Duration(milliseconds: 500));
 
-    // Save plan to both cache and server
     await PlanCache.savePlan(plan);
     await ApiService.savePlan(plan, startDate);
     
     _prepareWorkoutDays(plan, startDate);
     
-    // Принудительно добавляем первый день в доступные, так как мы только что создали план
-    // Получаем индекс первого дня (обычно это 1, так как в плане индексы начинаются с 1)
     if (plan.isNotEmpty) {
       int firstDayIndex = plan[0].dayIndex;
       _availableDays.add(firstDayIndex);
@@ -245,12 +209,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       _plan = plan;
       _startDate = startDate;
       _progress = [];
-      _isGenerating = false; // Turn off generating state
+      _isGenerating = false; 
     });
 
-    // Scrolling animation to see the calendar (optional)
     if (context.mounted) {
-      // To be implemented if needed - scroll to calendar
     }
   }
 
@@ -258,36 +220,27 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     _workoutDays.clear();
     final startDate = DateTime(sd.year, sd.month, sd.day);
     
-    // Список дат тренировок, который мы будем использовать для уведомлений
     final List<DateTime> workoutDates = [];
     
     for (int i = 0; i < plan.length; i++) {
-      // Более гибкое распределение тренировочных дней
-      // Теперь расстояние между тренировками зависит от количества дней
       final dayIndex = plan[i].dayIndex;
       
-      // Определяем интервал между тренировками
       int daysBetweenWorkouts = plan.length <= 15 ? 2 : 1;
       
-      // Вычисляем смещение в днях от начальной даты (индексы в плане начинаются с 1)
       final dayOffset = (dayIndex - 1) * daysBetweenWorkouts;
       final workoutDay = startDate.add(Duration(days: dayOffset));
       
-      // Сохраняем только дату без времени
       final cleanDate = DateTime(workoutDay.year, workoutDay.month, workoutDay.day);
       _workoutDays.add(cleanDate);
       workoutDates.add(cleanDate);
       print('Added workout day: ${workoutDay.toString()} for day index $dayIndex');
     }
     
-    // Планируем уведомления для тренировочных дней
     _scheduleWorkoutNotifications(workoutDates, plan);
   }
   
-  // Метод для планирования уведомлений о тренировках
   Future<void> _scheduleWorkoutNotifications(List<DateTime> workoutDates, List<DayInfo> plan) async {
     try {
-      // Проверяем, включены ли уведомления о тренировках
       final prefs = await SharedPreferences.getInstance();
       final notificationsEnabled = prefs.getBool('workout_notifications_enabled') ?? true;
       
@@ -296,7 +249,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         return;
       }
       
-      // Планируем уведомления
       await NotificationService.scheduleWorkoutNotifications(workoutDates, plan);
       print('DEBUG: Workout notifications scheduled for ${workoutDates.length} days');
     } catch (e) {
@@ -304,7 +256,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
   }
 
-  /// Обновляет набор доступных тренировочных дней
   void _updateAvailableDays(List<DayInfo> plan, DateTime startDate, List<ProgressEntry> progress) {
     _availableDays.clear();
     final today = DateTime(
@@ -315,17 +266,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     
     print('DEBUG: Today: $today');
     
-    // Очищаем даты (без времени)
     final cleanStartDate = DateTime(startDate.year, startDate.month, startDate.day);
     print('DEBUG: Clean start date: $cleanStartDate');
     
-    // Определяем интервал между тренировками
     final int daysBetweenWorkouts = plan.length <= 15 ? 2 : 1;
     
-    // Для удобства нормализуем план к индексам, которые мы используем (0, 1, 2, ...)
     List<DayInfo> normalizedPlan = [];
     for (int i = 0; i < plan.length; i++) {
-      // Находим день с индексом i+1 (так как в плане индексы от 1)
       final day = plan.firstWhere((d) => d.dayIndex == i+1, orElse: () => DayInfo(
         dayIndex: -1,
         part: '',
@@ -339,33 +286,27 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     
     print('DEBUG: Normalized plan days: ${normalizedPlan.map((d) => d.dayIndex).toList()}');
     
-    // Проверяем каждый день тренировочного плана
     for (int i = 0; i < normalizedPlan.length; i++) {
       final dayInfo = normalizedPlan[i];
       final dayIndex = dayInfo.dayIndex;
       
-      // Вычисляем дату этого тренировочного дня
       final dayOffset = (dayIndex - 1) * daysBetweenWorkouts;
       final workoutDate = cleanStartDate.add(Duration(days: dayOffset));
       
-      // Разница между сегодняшней датой и датой тренировки
       final diffFromToday = today.difference(workoutDate).inDays;
       
       print('DEBUG: Day $dayIndex date: $workoutDate, diff from today: $diffFromToday');
       
-      // Если эта тренировка сегодня или в прошлом, она доступна
       if (diffFromToday >= 0) {
         _availableDays.add(dayIndex);
         continue;
       }
       
-      // Если это первая тренировка, она всегда доступна
       if (i == 0) {
         _availableDays.add(dayIndex);
         continue;
       }
       
-      // Если предыдущий день завершен, эта тренировка доступна
       final prevDayIndex = normalizedPlan[i - 1].dayIndex;
       if (_isDayCompleted(prevDayIndex, progress, plan)) {
         _availableDays.add(dayIndex);
@@ -376,9 +317,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     print('DEBUG: Available days after update: $_availableDays');
   }
   
-  /// Проверяет выполнение всех упражнений для конкретного дня
   bool _isDayCompleted(int dayIndex, List<ProgressEntry> progress, List<DayInfo> plan) {
-    // Находим информацию о дне
     final day = plan.firstWhere((d) => d.dayIndex == dayIndex, orElse: () => DayInfo(
       dayIndex: -1,
       part: '',
@@ -390,7 +329,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       return false;
     }
     
-    // Для каждого упражнения проверяем, выполнено ли оно полностью
     int totalExercises = day.exercises.length;
     int completedExercises = 0;
     
@@ -411,12 +349,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
     
     print('DEBUG: Day $dayIndex - Completed $completedExercises/$totalExercises exercises');
-    // Все упражнения выполнены
     return completedExercises == totalExercises;
   }
 
   void _goToPlan() {
-    // Передаем все дни, а не только доступные
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -429,15 +365,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
   
-  /// Обработчик завершения тренировки
   Future<void> _onWorkoutComplete() async {
-    // Загружаем актуальный прогресс
     final updatedProgress = await ApiService.getProgress();
     
-    // Сохраняем прогресс в кэш
     await PlanCache.saveProgress(updatedProgress);
     
-    // Обновляем список доступных дней
     if (_plan != null && _startDate != null) {
       _updateAvailableDays(_plan!, _startDate!, updatedProgress);
       setState(() {
@@ -446,7 +378,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     }
   }
 
-  /// Проверяет, можно ли уже открыть тренировочный день с указанным индексом
   bool _isDayOpen(int dayIndex) {
     return _availableDays.contains(dayIndex);
   }
@@ -511,7 +442,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Calendar container with gradient background
                     AnimatedOpacity(
                       opacity: _isGenerating ? 0.3 : 1.0,
                       duration: Duration(milliseconds: 500),
@@ -536,10 +466,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        // Using LayoutBuilder instead of fixed height container for flexibility
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            // Calculate the available height
                             return _buildTableCalendarWithSize();
                           },
                         ),
@@ -548,7 +476,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     const SizedBox(height: 32),
                   ],
 
-                  // Always show either Start Workout or the button to view the plan
                   _isGenerating
                       ? _buildGeneratingPlanIndicator()
                       : (_plan == null || _hasGeneratedPlanCache != true

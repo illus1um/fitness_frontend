@@ -3,7 +3,7 @@ import 'package:fitness_app/screens/workout/workout_screen.dart';
 import 'package:fitness_app/screens/guide/guide_screen.dart';
 import 'package:fitness_app/screens/drinking/drinking_screen.dart';
 import 'package:fitness_app/screens/else/else_screen.dart';
-import 'package:fitness_app/screens/ai/ai_assistant_screen.dart'; // Добавили импорт
+import 'package:fitness_app/screens/ai/ai_assistant_screen.dart';
 import 'package:fitness_app/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {

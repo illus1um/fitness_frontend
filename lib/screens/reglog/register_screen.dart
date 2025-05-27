@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'complete_profile_screen.dart'; // Страница для заполнения возраста, роста и веса
+import 'complete_profile_screen.dart'; 
 import 'login_screen.dart';
 import 'package:fitness_app/models/registration_data.dart';
 import 'package:fitness_app/services/api_service.dart';
@@ -74,7 +74,6 @@ Widget build(BuildContext context) {
               _buildToggleButtons(context, false),
               SizedBox(height: 20),
 
-              // 🔳 Рамка с формой
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -536,7 +535,7 @@ String? _validatePassword(String? value) {
               final emailAvailable = await ApiService.isEmailAvailable(email);
               if (!emailAvailable) emailTaken = true;
             } catch (_) {
-              emailTaken = true; // Считаем email занят при ошибке
+              emailTaken = true; 
             }
 
             // Проверка username
@@ -544,7 +543,7 @@ String? _validatePassword(String? value) {
               final usernameAvailable = await ApiService.isUsernameAvailable(username);
               if (!usernameAvailable) usernameTaken = true;
             } catch (_) {
-              usernameTaken = true; // Считаем username занят при ошибке
+              usernameTaken = true; 
             }
 
             if (emailTaken || usernameTaken) {
