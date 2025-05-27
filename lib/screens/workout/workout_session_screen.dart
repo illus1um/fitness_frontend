@@ -225,15 +225,17 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     }
   }
 
-  void _showFinishDialog() {
+  void _showFinishDialog() async {
     // Получаем данные о завершенной тренировке
-    final completedWorkout = widget.day.exercises.map((ex) {
-      final progress = _getExerciseProgress(ex.id);
-      return {
-        'exercise': ex,
-        'sets_completed': progress,
-      };
-    }).toList();
+    final completedWorkout = await Future.wait(
+      widget.day.exercises.map((ex) async {
+        final progress = await _getExerciseProgress(ex.id);
+        return {
+          'exercise': ex,
+          'sets_completed': progress,
+        };
+      })
+    );
     
     // Дата завершения
     final completionDate = DateTime.now();
@@ -261,26 +263,27 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   }
   
   // Получаем прогресс по конкретному упражнению
-  int _getExerciseProgress(String exerciseId) {
-    // Находим упражнение по ID
-    final exercise = widget.day.exercises.firstWhere(
-      (e) => e.id == exerciseId, 
-      orElse: () => widget.day.exercises[0]
-    );
+  Future<int> _getExerciseProgress(String exerciseId) async {
+    // Получаем прогресс для текущего дня
+    final progress = await ApiService.getDayProgress(widget.day.dayIndex);
     
     // Если это текущее упражнение, возвращаем текущий прогресс
     if (widget.day.exercises[exIndex].id == exerciseId) {
       return currentSet;
     }
     
-    // Для завершенных упражнений возвращаем полное количество сетов
-    // Для еще не начатых - возвращаем 0
-    final index = widget.day.exercises.indexOf(exercise);
-    if (index < exIndex) {
-      return exercise.sets; // Предыдущие упражнения считаются выполненными
-    } else {
-      return 0; // Будущие упражнения еще не начаты
-    }
+    // Ищем прогресс для данного упражнения
+    final exerciseProgress = progress.firstWhere(
+      (p) => p.exerciseId == exerciseId,
+      orElse: () => ProgressEntry(
+        dayIndex: widget.day.dayIndex,
+        exerciseId: exerciseId,
+        setsCompleted: 0,
+        completedAt: DateTime.now(),
+      ),
+    );
+    
+    return exerciseProgress.setsCompleted;
   }
 
   void _showInstructionsScreen() {

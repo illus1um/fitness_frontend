@@ -85,7 +85,7 @@ class SportsNutritionScreen extends StatelessWidget {
           "1 scoop (based on label) 20–30 minutes before exercise. Start with a half dose to assess tolerance.\n\n"
           "Who should avoid it:\n"
           "Those with heart conditions, high blood pressure, or caffeine sensitivity.\n\n"
-          "ℹAdditional facts:\n"
+          "Additional facts:\n"
           "Avoid taking late in the evening to prevent sleep issues. Stay hydrated and avoid stacking with other stimulants."
     },
     {
