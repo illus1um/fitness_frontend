@@ -110,16 +110,38 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
         automaticallyImplyLeading: false,
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(Icons.analytics, color: goldColor),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => AIAnalyticsScreen(),
-                )
-              );
-            },
-            tooltip: 'AI Analytics',
+          Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                  icon: Icon(Icons.analytics, color: goldColor, size: 22),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AIAnalyticsScreen(),
+                      )
+                    );
+                  },
+                  tooltip: 'AI Analytics',
+                ),
+                Transform.translate(
+                  offset: Offset(0, 0),
+                  child: Text(
+                    'Analytics',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: goldColor,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
         backgroundColor: isDarkMode ? Color(0xFF23242B) : Colors.white,

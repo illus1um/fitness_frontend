@@ -6,10 +6,8 @@ import '../models/exercise_info.dart';
 import '../services/exercise_file_service.dart';
 import 'equipment_utils.dart';
 
-/// Утилита для автоматической коррекции метаданных упражнений
-/// Запускается один раз для исправления JSON файла
+
 class ExerciseDataFixer {
-  /// Запускает процесс исправления данных в JSON файле
   static Future<bool> fixExerciseData() async {
     try {
       // Загружаем упражнения через сервис
@@ -17,12 +15,10 @@ class ExerciseDataFixer {
       
       print('Загружено ${exercises.length} упражнений для коррекции');
       
-      // Исправляем данные
       int fixedLocationCount = 0;
       int fixedExperienceCount = 0;
       
       final correctedExercises = exercises.map((ex) {
-        // Копируем оригинальные данные
         final Map<String, dynamic> fixedData = ex.toJson();
         
         // 1. Исправляем locations: если упражнение требует оборудования из зала,
