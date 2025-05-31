@@ -1,33 +1,72 @@
 import 'package:flutter/material.dart';
-import 'routes.dart';
-import 'screens/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
-  runApp(MyApp());
+import 'routes.dart';
+import 'splash_screen.dart';
+import 'screens/else/settings.dart';
+import 'theme/app_themes.dart';
+import 'utils/notification_setup.dart';
+
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+
+  // Инициализация часовых поясов
+  tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Asia/Almaty'));
+
+  // Инициализация уведомлений
+  await NotificationSetup.initialize();
+
+  // Загрузка сохраненных настроек темы
+  final prefs = await SharedPreferences.getInstance();
+  final savedTheme = prefs.getString('theme') ?? 'Light';
+  
+  runApp(MyApp(initialTheme: savedTheme));
 }
 
-class MyApp extends StatelessWidget {
+/// Основной класс приложения
+class MyApp extends StatefulWidget {
+  final String initialTheme;
+  const MyApp({Key? key, required this.initialTheme}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late ThemeMode _themeMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeMode = AppThemes.stringToThemeMode(widget.initialTheme);
+  }
+
+  void _updateTheme(ThemeMode mode) async {
+    setState(() => _themeMode = mode);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme', AppThemes.themeModeToString(mode));
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Fitness App',
-      theme: ThemeData(primarySwatch: Colors.brown,
-      scaffoldBackgroundColor: const Color.fromARGB(255, 249, 249, 249),
-      fontFamily: 'Poppins', // Устанавливаем Poppins для всего приложения
-          textTheme: TextTheme(
-            bodyLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.black),
-            bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Colors.black),
-            titleLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-          progressIndicatorTheme: ProgressIndicatorThemeData(
-          color: Color.fromARGB(255, 199, 169, 127), // ✅ Глобальный цвет загрузки
-        )
-        ),
-        initialRoute: "/login",
-        routes: appRoutes,
-      // home: HomeScreen(),
+      debugShowCheckedModeBanner: false,
+      theme: AppThemes.light,
+      darkTheme: AppThemes.dark,
+      themeMode: _themeMode,
+      routes: {
+        ...appRoutes,
+        '/settings': (_) => SettingsScreen(onThemeChanged: _updateTheme),
+      },
+      home: SplashScreen(),
     );
   }
 }
-  
+

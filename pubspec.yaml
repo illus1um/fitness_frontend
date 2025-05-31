@@ -11,6 +11,21 @@ dependencies:
   http: ^0.13.4
   rename: ^3.0.2
   shared_preferences: ^2.0.6
+  cached_network_image: ^3.3.1
+  flutter_cache_manager: ^3.3.1
+  flutter_picker_plus: ^1.0.6
+  flutter_local_notifications: ^15.0.0
+  permission_handler: ^12.0.0+1
+  percent_indicator: ^4.2.5
+  table_calendar: ^3.2.0
+  intl: ^0.20.2
+  wave: ^0.2.2
+  flutter_dotenv: ^5.1.0
+  image_picker: ^1.1.2
+  http_parser: ^4.0.2
+  image: ^4.1.7
+  path_provider: ^2.1.2
+
 
 dev_dependencies:
   flutter_test:
@@ -18,15 +33,16 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.6
 
+
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/supplements/
     - assets/exercises.json
-    - assets/gifs/
     - assets/muscle_groups/
-    - assets/workout_exercise.json
-    - assets/ideal.json
+    - assets/workout_exercises_full.json
+    - .env
   fonts:
     - family: Poppins
       fonts:
@@ -40,11 +56,14 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/icons/strenvy_icon.png"
+  adaptive_icon_foreground: assets/icons/strenvy_icon.png
+  adaptive_icon_background: "#000000"
+
 
 flutter_native_splash:
-  color: "#000000" # Чёрный фон
-  image: assets/icons/splash_logo.png # Лого персонажа (чуть выше центра)
-  branding: assets/icons/splash_text.png # Слоган "Enviable Strength" внизу (если нужен)
-  branding_mode: bottom # Разместить слоган снизу
+  color: "#000000"
+  image: assets/icons/splash_logo.png
+  branding: assets/icons/splash_text.png
+  branding_mode: bottom 
   android: true
   ios: true
