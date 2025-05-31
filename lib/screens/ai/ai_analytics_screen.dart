@@ -430,7 +430,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
             SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _isLoading ? null : _generateAnalysis,
-              icon: Icon(Icons.analytics),
               label: Text('Analyze'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: goldColor,

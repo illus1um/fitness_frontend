@@ -8,24 +8,19 @@ import 'package:http/http.dart' as http;
 
 /// Сервис для управления GIF файлами, которые хранятся на сервере
 class GifService {
-  // Делаем переменную изменяемой
   static String apiBasePath = '/static/assets/gifs'; // Путь на сервере, где хранятся GIF
   
   /// Получает URL для GIF-файла по его имени
   static String getGifUrl(String gifName) {
-    // Обрабатываем различные типы файлов: gif и png
-    // Если имя уже содержит полный URL, просто вернем его
     if (gifName.startsWith('http')) {
       return gifName;
     }
     
-    // В противном случае формируем URL из базового URL API и имени файла
     return '${ApiService.baseUrl}$apiBasePath/$gifName';
   }
   
   /// Получает альтернативные пути к гифкам на сервере
   static List<String> getAlternativeGifUrls(String gifName) {
-    // Если имя уже содержит полный URL, просто вернем его
     if (gifName.startsWith('http')) {
       return [gifName];
     }
