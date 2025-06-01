@@ -11,7 +11,8 @@ import 'package:http/http.dart' show MediaType;
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ApiService {
-  static const String baseUrl = "https://fitnessbackend-production-6598.up.railway.app"; // Backend server
+  static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
+// https://fitnessbackend-production-6598.up.railway.app
 
   static Future<bool> login(String username, String password) async {
     try {
@@ -770,6 +771,65 @@ class ApiService {
       return false;
     } catch (e) {
       print("Error deleting avatar: $e");
+      return false;
+    }
+  }
+
+  /// Отправляет код верификации на email при регистрации
+  static Future<void> sendEmailVerificationCode(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-email/send'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'email': email}),
+      );
+
+      if (response.statusCode != 200) {
+        print("Error sending verification code. Status: ${response.statusCode}, Body: ${response.body}");
+        if (response.statusCode == 429) {
+          throw Exception('Too many attempts. Please wait before trying again.');
+        } else if (response.statusCode == 400) {
+          final errorData = json.decode(response.body);
+          throw Exception(errorData['detail'] ?? 'Invalid request');
+        } else {
+          throw Exception('Server error: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      print("Error in sendEmailVerificationCode: $e");
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to send verification code: $e');
+    }
+  }
+
+  /// Проверяет код верификации email при регистрации
+  static Future<bool> verifyEmailCode(String email, String code) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-email/verify'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({'email': email, 'code': code}),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Error verifying code. Status: ${response.statusCode}, Body: ${response.body}");
+        if (response.statusCode == 429) {
+          throw Exception('Too many attempts. Please wait before trying again.');
+        } else if (response.statusCode == 400) {
+          final errorData = json.decode(response.body);
+          throw Exception(errorData['detail'] ?? 'Invalid verification code');
+        }
+        return false;
+      }
+    } catch (e) {
+      print("Error in verifyEmailCode: $e");
+      if (e is Exception) {
+        rethrow;
+      }
       return false;
     }
   }
