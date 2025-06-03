@@ -13,6 +13,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 class ApiService {
   static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
 // https://fitnessbackend-production-6598.up.railway.app
+// http://127.0.0.1:8000
 
   static Future<bool> login(String username, String password) async {
     try {

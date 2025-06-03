@@ -15,6 +15,7 @@ class DrinkingScreen extends StatefulWidget {
 
   @override
   _DrinkingScreenState createState() => _DrinkingScreenState();
+  
 }
 
 class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProviderStateMixin {
@@ -81,11 +82,20 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
       final dailyIntake = await ApiService.getDailyWaterIntake(today);
       
       if (dailyIntake != null) {
+        // Sort records by timestamp to ensure correct order
+        final sortedRecords = List<WaterIntakeRecord>.from(dailyIntake.records)
+          ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        
         setState(() {
           _today = today;
           currentWaterIntake = dailyIntake.totalAmount;
           actualWaterIntake = dailyIntake.totalAmount;
-          _intakeHistory = dailyIntake.records;
+          _intakeHistory = sortedRecords;
+          
+          // Only reset undo history if it's a different day
+          if (_today != today) {
+            _undoHistory = [];
+          }
           
           // Check if target has been reached
           _targetReachedAndCongratulated = currentWaterIntake >= calculatedWaterTarget;
@@ -96,7 +106,10 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
           currentWaterIntake = 0.0;
           actualWaterIntake = 0.0;
           _intakeHistory = [];
-          _undoHistory = [];
+          // Only reset undo history if it's a different day
+          if (_today != today) {
+            _undoHistory = [];
+          }
           _targetReachedAndCongratulated = false;
         });
       }
@@ -211,60 +224,75 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     // Don't allow undo if target has been reached and congratulated
     if (_targetReachedAndCongratulated) return;
     
-    if (_intakeHistory.isEmpty) return;
+    // Don't allow undo if current intake is 0 or history is empty
+    if (_intakeHistory.isEmpty || currentWaterIntake <= 0) return;
     
-    // Get the last record
-    WaterIntakeRecord lastRecord = _intakeHistory.last;
-    double lastAmount = lastRecord.amount;
-    
-    // Update actual intake
-    double newActualIntake = max(0, actualWaterIntake - lastAmount);
-    // Calculate new displayed intake (capped at target)
-    double newDisplayedIntake = min(newActualIntake, dailyWaterTarget);
-    
-    // First update locally for immediate UI feedback
-    setState(() {
-      _intakeHistory.removeLast();
-      _undoHistory.add(lastRecord);
-      actualWaterIntake = newActualIntake;
-      currentWaterIntake = newDisplayedIntake;
-    });
-    
-    // Animate to new value
-    double startValue = _progressController.value;
-    double endValue = newDisplayedIntake / dailyWaterTarget;
-    
-    _progressController.value = startValue;
-    _progressController.animateTo(endValue);
-    
-    // If the record has an ID (saved to server), delete it
-    if (lastRecord.id != null) {
-      bool success = await ApiService.deleteWaterRecord(lastRecord.id!);
-      if (!success) {
-        // If server update fails, show error and revert local changes
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to undo. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        
-        // Revert local changes
-        setState(() {
-          _undoHistory.removeLast();
-          _intakeHistory.add(lastRecord);
-          actualWaterIntake = actualWaterIntake + lastAmount;
-          currentWaterIntake = min(actualWaterIntake, dailyWaterTarget);
-        });
-        
-        // Also revert animation
-        _progressController.animateTo(currentWaterIntake / dailyWaterTarget);
-        return;
+    try {
+      // Get the last record (most recent by timestamp)
+      WaterIntakeRecord lastRecord = _intakeHistory.last;
+      double lastAmount = lastRecord.amount;
+      
+      // Update actual intake
+      double newActualIntake = max(0, actualWaterIntake - lastAmount);
+      // Calculate new displayed intake (capped at target)
+      double newDisplayedIntake = min(newActualIntake, dailyWaterTarget);
+      
+      // Don't proceed if we would go below 0
+      if (newActualIntake < 0) return;
+      
+      // First update locally for immediate UI feedback
+      setState(() {
+        _intakeHistory.removeLast();
+        _undoHistory.add(lastRecord);
+        actualWaterIntake = newActualIntake;
+        currentWaterIntake = newDisplayedIntake;
+      });
+      
+      // Animate to new value
+      double startValue = _progressController.value;
+      double endValue = newDisplayedIntake / dailyWaterTarget;
+      
+      _progressController.value = startValue;
+      _progressController.animateTo(endValue);
+      
+      // If the record has an ID (saved to server), delete it
+      if (lastRecord.id != null) {
+        bool success = await ApiService.deleteWaterRecord(lastRecord.id!);
+        if (!success) {
+          // If server update fails, show error and revert local changes
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to undo. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          
+          // Revert local changes
+          setState(() {
+            _undoHistory.removeLast();
+            _intakeHistory.add(lastRecord);
+            actualWaterIntake = actualWaterIntake + lastAmount;
+            currentWaterIntake = min(actualWaterIntake, dailyWaterTarget);
+          });
+          
+          // Also revert animation
+          _progressController.animateTo(currentWaterIntake / dailyWaterTarget);
+          return;
+        }
       }
+      
+      // Update the daily total on the server
+      await ApiService.addWaterIntake(newDisplayedIntake);
+    } catch (e) {
+      print('Error in _undoLastIntake: $e'); // Add debug logging
+      // Handle any errors that might occur during the undo process
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred while undoing. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-    
-    // Update the daily total on the server
-    await ApiService.addWaterIntake(newDisplayedIntake);
   }
 
   Future<void> _redoLastIntake() async {
@@ -1268,8 +1296,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   Widget _buildBottomBarButton(IconData icon, String label, Function onTap, bool enabled, Color color) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
-    // Disable undo button if target has been reached and congratulated
-    if (label == "Undo" && _targetReachedAndCongratulated) {
+    // Disable undo button if target has been reached and congratulated or if current intake is 0
+    if (label == "Undo" && (_targetReachedAndCongratulated || currentWaterIntake <= 0)) {
       enabled = false;
     }
     
@@ -1277,17 +1305,17 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
       onTap: enabled ? () => onTap() : null,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8), // Further reduced padding
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(
           color: enabled 
             ? (isDarkMode ? Colors.grey[800] : color.withOpacity(0.1))
-            : Colors.transparent,
+            : (isDarkMode ? Colors.grey[900] : Colors.grey[200]),
           borderRadius: BorderRadius.circular(12),
           border: enabled 
-            ? Border.all(color: color, width: 1.0) // Reduced border width
+            ? Border.all(color: color, width: 1.0)
             : Border.all(color: Colors.transparent),
         ),
-        child: Row(  // Changed from Column to Row layout
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
@@ -1295,7 +1323,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
               color: enabled 
                 ? color 
                 : (isDarkMode ? Colors.grey[700] : Colors.grey[400]),
-              size: 22, // Further reduced icon size
+              size: 22,
             ),
             SizedBox(width: 8),
             Text(
