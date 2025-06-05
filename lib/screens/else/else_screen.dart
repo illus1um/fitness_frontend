@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 import 'package:fitness_app/screens/reglog/login_screen.dart';
@@ -27,14 +25,13 @@ class _ElseScreenState extends State<ElseScreen> {
 
   void _loadUserData() async {
     setState(() {
-      userData = null; // Обнуляем перед загрузкой для принудительного обновления UI
+      userData = null; 
     });
     
     var data = await ApiService.getUserProfile();
     if (data != null) {
       print("ElseScreen: loaded user data with avatar_url: ${data['avatar_url']}");
       
-      // Для очистки кэша изображений при необходимости
       if (data['avatar_url'] != null && data['avatar_url'].toString().isNotEmpty) {
         final fullUrl = ApiService.fixAvatarUrl(data['avatar_url']);
         if (fullUrl.isNotEmpty) {
@@ -106,7 +103,6 @@ class _ElseScreenState extends State<ElseScreen> {
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
                       children: [
-                        // Profile header with improved avatar
                         Container(
                           padding: EdgeInsets.all(20),
                           decoration: BoxDecoration(
@@ -124,7 +120,6 @@ class _ElseScreenState extends State<ElseScreen> {
                           ),
                           child: Column(
                             children: [
-                              // Avatar with gradient border
                               Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
@@ -142,7 +137,7 @@ class _ElseScreenState extends State<ElseScreen> {
                                   ],
                                 ),
                                 child: Padding(
-                                  padding: EdgeInsets.all(3), // Border thickness
+                                  padding: EdgeInsets.all(3), 
                                   child: CircleAvatar(
                                     radius: 50,
                                     backgroundColor: isDarkMode ? Color(0xFF2A2A2A) : Colors.grey[200],
@@ -194,7 +189,6 @@ class _ElseScreenState extends State<ElseScreen> {
                         ),
                         SizedBox(height: 24),
 
-                        /// General settings card
                         _buildCard(
                           title: "General",
                           icon: Icons.settings,
@@ -209,7 +203,6 @@ class _ElseScreenState extends State<ElseScreen> {
                                   context,
                                   MaterialPageRoute(builder: (context) => MyProfileGoalScreen()),
                                 );
-                                // Reload user data when returning from MyProfileGoalScreen
                                 _loadUserData();
                               },
                               isDarkMode: isDarkMode,
@@ -235,7 +228,6 @@ class _ElseScreenState extends State<ElseScreen> {
                         ),
                         SizedBox(height: 20),
 
-                        /// Account card
                         _buildCard(
                           title: "Account",
                           icon: Icons.account_circle_rounded,
@@ -276,7 +268,6 @@ class _ElseScreenState extends State<ElseScreen> {
     );
   }
 
-  /// Redesigned card with title icon
   Widget _buildCard({
     required String title, 
     required List<Widget> children,
@@ -336,7 +327,6 @@ class _ElseScreenState extends State<ElseScreen> {
     );
   }
 
-  /// Improved list tile with theming
   Widget _buildListTile(
     IconData icon,
     String title,

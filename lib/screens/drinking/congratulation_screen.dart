@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -39,7 +37,7 @@ class CongratulationScreen extends StatelessWidget {
     final backgroundColor = isDarkMode ? Color(0xFF121212) : Color(0xFFF8FAFF);
     final cardColor = isDarkMode ? Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final accentColor = Color(0xFFC7A97F); // Gold accent
+    final accentColor = Color(0xFFC7A97F); 
     
     return Scaffold(
       backgroundColor: backgroundColor,

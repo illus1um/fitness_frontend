@@ -9,7 +9,6 @@ class WaterIntakeRecord {
     this.id
   });
   
-  // Add toJson and fromJson methods for serialization
   Map<String, dynamic> toJson() => {
     'amount': amount,
     'timestamp': timestamp.toIso8601String(),

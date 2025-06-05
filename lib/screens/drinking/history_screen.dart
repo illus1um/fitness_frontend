@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitness_app/services/api_service.dart';
@@ -20,7 +18,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   static const double _litersToFlOz = 33.814;
   bool _isLoading = true;
   
-  // Золотой акцентный цвет, соответствующий теме приложения
   final Color goldAccent = Color(0xFFC7A97F);
 
   @override
@@ -60,7 +57,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
     } catch (e) {
       print('Error loading water history: $e');
-      // Show error to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to load water history. Please try again.'),
@@ -94,26 +90,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (intake >= dailyWaterTarget) {
       return goldAccent;
     } else if (intake >= dailyWaterTarget * 0.8) {
-      return Color(0xFF7FB77E); // Зеленый
+      return Color(0xFF7FB77E); 
     } else if (intake >= dailyWaterTarget * 0.5) {
-      return Color(0xFFFFB26B); // Оранжевый
+      return Color(0xFFFFB26B); 
     } else {
-      return Color(0xFFFF7B7B); // Красный
+      return Color(0xFFFF7B7B); 
     }
   }
   
-  // Форматирование даты для более читаемого вывода
   String _formatDate(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
       return DateFormat.yMMMd().format(date);
     } catch (_) {
-      // Если формат даты не распознан, возвращаем исходную строку
       return dateStr;
     }
   }
   
-  // Рассчитываем статистику
   Map<String, dynamic> _calculateStats() {
     if (history.isEmpty) {
       return {
@@ -134,21 +127,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (value >= dailyWaterTarget) goalReached++;
     }
     
-    // Вычисляем текущую серию дней с достигнутой целью
     int streak = 0;
     final sortedDates = history.keys.toList()..sort((a, b) => b.compareTo(a));
     
-    // Проверяем сегодняшний день
     if (sortedDates.isNotEmpty) {
       DateTime currentDate = DateTime.now();
       String formattedToday = DateFormat('yyyy-MM-dd').format(currentDate);
       
-      // Если сегодня в истории и цель достигнута
       if (sortedDates.contains(formattedToday) && 
           history[formattedToday]! >= dailyWaterTarget) {
         streak = 1;
         
-        // Проверяем предыдущие дни
         currentDate = currentDate.subtract(Duration(days: 1));
         while (true) {
           String dateStr = DateFormat('yyyy-MM-dd').format(currentDate);
@@ -178,10 +167,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final cardColor = isDarkMode ? Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     
-    // Получаем статистику
     final stats = _calculateStats();
     
-    // Сортируем даты в порядке убывания (сначала новые)
     final sortedDates = history.keys.toList()..sort((a, b) => b.compareTo(a));
     
     final weekDays = _getLastSevenDays();
@@ -529,7 +516,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final dateStr = DateFormat('yyyy-MM-dd').format(date);
       final weekdayStr = DateFormat('E').format(date).substring(0, 1);
       
-      // Находим запись для этого дня или ставим 0
       final intake = history.containsKey(dateStr) ? history[dateStr]! : 0.0;
       final progress = intake / dailyWaterTarget;
       
@@ -584,7 +570,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: weekData.map((day) {
-                    // Цвет полосы графика зависит от прогресса
                     final Color barColor = day['progress'] >= 1.0
                         ? goldAccent
                         : day['progress'] >= 0.8
@@ -597,7 +582,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                         ? Colors.grey[800]!
                                         : Colors.grey[200]!;
                     
-                    // Максимальная высота полосы - 120, минимальная - 5 (если intake > 0)
                     final num barHeight = day['intake'] > 0 
                         ? 5 + (day['progress'] * 115).clamp(0.0, 115.0)
                         : 0;

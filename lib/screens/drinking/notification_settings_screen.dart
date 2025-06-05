@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +23,6 @@ class _NotificationSettingsScreenState
   int intervalHours = 2;
   int intervalMinutes = 0;
 
-  // Gold accent color used throughout the app
   final Color goldAccent = Color(0xFFC7A97F);
 
   @override
@@ -162,22 +159,22 @@ class _NotificationSettingsScreenState
             dayPeriodBorderSide: BorderSide(color: goldAccent, width: 2),
             dayPeriodColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return goldAccent; // Выбранный период будет золотым
+                return goldAccent; 
               }
               return Colors.transparent;
             }),
             dayPeriodTextColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return Colors.white; // Текст на выбранном периоде будет белым
+                return Colors.white;
               }
-              return goldAccent; // Невыбранный период будет золотым текстом
+              return goldAccent; 
             }),
             dayPeriodTextStyle: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
             dialHandColor: goldAccent,
-            dialTextColor: Colors.black87, // Всегда черные цифры на циферблате, так как фон белый
+            dialTextColor: Colors.black87, 
             dialTextStyle: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -185,15 +182,15 @@ class _NotificationSettingsScreenState
             ),
             hourMinuteColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return goldAccent; // Выбранное поле будет золотым
+                return goldAccent; 
               }
               return isDarkMode ? Colors.grey[800]! : Colors.grey[200]!;
             }),
             hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return Colors.white; // Текст на выбранном поле будет белым
+                return Colors.white; 
               }
-              return isDarkMode ? Colors.white : Colors.black87; // Цвет зависит от темы
+              return isDarkMode ? Colors.white : Colors.black87;
             }),
             hourMinuteTextStyle: TextStyle(
               fontSize: 50,
@@ -245,22 +242,22 @@ class _NotificationSettingsScreenState
             dayPeriodBorderSide: BorderSide(color: goldAccent, width: 2),
             dayPeriodColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return goldAccent; // Выбранный период будет золотым
+                return goldAccent; 
               }
               return Colors.transparent;
             }),
             dayPeriodTextColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return Colors.white; // Текст на выбранном периоде будет белым
+                return Colors.white; 
               }
-              return goldAccent; // Невыбранный период будет золотым текстом
+              return goldAccent; 
             }),
             dayPeriodTextStyle: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
             dialHandColor: goldAccent,
-            dialTextColor: Colors.black87, // Всегда черные цифры на циферблате, так как фон белый
+            dialTextColor: Colors.black87,
             dialTextStyle: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -268,15 +265,15 @@ class _NotificationSettingsScreenState
             ),
             hourMinuteColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return goldAccent; // Выбранное поле будет золотым
+                return goldAccent; 
               }
               return isDarkMode ? Colors.grey[800]! : Colors.grey[200]!;
             }),
             hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
               if (states.contains(MaterialState.selected)) {
-                return Colors.white; // Текст на выбранном поле будет белым
+                return Colors.white; 
               }
-              return isDarkMode ? Colors.white : Colors.black87; // Цвет зависит от темы
+              return isDarkMode ? Colors.white : Colors.black87;
             }),
             hourMinuteTextStyle: TextStyle(
               fontSize: 50,
@@ -321,7 +318,6 @@ class _NotificationSettingsScreenState
     final cardBgColor = isDarkMode ? Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    // Текущий выбранный интервал в минутах
     int _currentMinutes = intervalHours * 60 + intervalMinutes;
 
     showModalBottomSheet(
@@ -331,7 +327,6 @@ class _NotificationSettingsScreenState
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            // Список предустановленных интервалов в минутах
             final List<int> presetIntervals = [30, 60, 90, 120, 150, 180, 240];
             
             return Container(
@@ -342,7 +337,6 @@ class _NotificationSettingsScreenState
               ),
               child: Column(
                 children: [
-                  // Заголовок
                   Container(
                     padding: EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
@@ -367,7 +361,6 @@ class _NotificationSettingsScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Визуальный слайдер интервала
                           Text(
                             "Interval duration:",
                             style: TextStyle(
@@ -378,7 +371,6 @@ class _NotificationSettingsScreenState
                           ),
                           SizedBox(height: 16),
                           
-                          // Текущее значение с большим отображением
                           Container(
                             margin: EdgeInsets.only(bottom: 30),
                             padding: EdgeInsets.all(20),
@@ -430,13 +422,12 @@ class _NotificationSettingsScreenState
                             ),
                           ),
                           
-                          // Простой слайдер
                           Column(
                             children: [
                               Slider(
                                 min: 15,
                                 max: 240,
-                                divisions: 15, // 15 минутные интервалы
+                                divisions: 15,
                                 value: _currentMinutes.toDouble(),
                                 activeColor: goldAccent,
                                 inactiveColor: goldAccent.withOpacity(0.2),
@@ -446,7 +437,6 @@ class _NotificationSettingsScreenState
                                   });
                                 },
                               ),
-                              // Метки интервалов под слайдером
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: Row(
@@ -488,7 +478,6 @@ class _NotificationSettingsScreenState
                           
                           SizedBox(height: 40),
                           
-                          // Секция быстрого выбора
                           Text(
                             "Quick select:",
                             style: TextStyle(
@@ -499,7 +488,6 @@ class _NotificationSettingsScreenState
                           ),
                           SizedBox(height: 16),
                           
-                          // Бейджи быстрого выбора
                           Wrap(
                             spacing: 10,
                             runSpacing: 10,
@@ -564,7 +552,6 @@ class _NotificationSettingsScreenState
                     ),
                   ),
                   
-                  // Кнопки действий
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     decoration: BoxDecoration(
@@ -592,7 +579,6 @@ class _NotificationSettingsScreenState
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            // Устанавливаем новый интервал
               setState(() {
                               intervalHours = _currentMinutes ~/ 60;
                               intervalMinutes = _currentMinutes % 60;
@@ -628,7 +614,6 @@ class _NotificationSettingsScreenState
     );
   }
   
-  // Форматирование отображения интервала
   String _formatIntervalDisplay(int minutes) {
     if (minutes < 60) {
       return "$minutes min";
@@ -665,7 +650,6 @@ class _NotificationSettingsScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-                // Header with illustration
                 Center(
                   child: Column(
                     children: [
@@ -706,7 +690,6 @@ class _NotificationSettingsScreenState
                 ),
                 SizedBox(height: 30),
                 
-                // Enable/Disable Switch
                 Card(
                   elevation: 3,
                   shadowColor: isDarkMode 
@@ -767,7 +750,6 @@ class _NotificationSettingsScreenState
                 ),
                 SizedBox(height: 20),
                 
-                // Settings Section
             AbsorbPointer(
               absorbing: !notificationsEnabled,
                   child: AnimatedOpacity(

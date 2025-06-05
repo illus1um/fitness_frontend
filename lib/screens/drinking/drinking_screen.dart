@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use, unused_field, unused_local_variable
-
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,9 +17,8 @@ class DrinkingScreen extends StatefulWidget {
 }
 
 class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProviderStateMixin {
-  double dailyWaterTarget = 2.0; // in liters
-  double currentWaterIntake = 0.0; // in liters
-  // Track the actual water intake (uncapped) for proper undo/redo
+  double dailyWaterTarget = 2.0; 
+  double currentWaterIntake = 0.0; 
   double actualWaterIntake = 0.0; 
   List<WaterIntakeRecord> _intakeHistory = [];
   List<WaterIntakeRecord> _undoHistory = [];
@@ -31,14 +28,13 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   bool _isLoading = true;
   String _today = DateTime.now().toIso8601String().substring(0, 10);
   
-  // Colors
-  final Color primaryColor = Color(0xFF4A6FE7); // Original blue primary
-  final Color primaryLightColor = Color(0xFF6B8FF8); // Original light blue
-  final Color secondaryColor = Color(0xFF2CC2EA); // Original cyan secondary
-  final Color goldAccent = Color(0xFFC7A97F); // Gold accent from original design
-  final Color accentColor = Color(0xFFFF6B6B); // Red accent for important actions
+
+  final Color primaryColor = Color(0xFF4A6FE7); 
+  final Color primaryLightColor = Color(0xFF6B8FF8); 
+  final Color secondaryColor = Color(0xFF2CC2EA); 
+  final Color goldAccent = Color(0xFFC7A97F); 
+  final Color accentColor = Color(0xFFFF6B6B); 
   
-  // Animation controllers
   late AnimationController _progressController;
   bool _isAdding = false;
   
@@ -67,7 +63,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final profile = await ApiService.getUserProfile();
 
-    // Load unit
     _waterUnit = prefs.getString('water_unit') ?? 'L';
 
     if (profile != null) {
@@ -77,12 +72,10 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
 
       double calculatedWaterTarget = _calculateDailyWaterTarget(weight, age, isMale);
       
-      // Get today's water intake from the server
       final today = DateTime.now().toIso8601String().substring(0, 10);
       final dailyIntake = await ApiService.getDailyWaterIntake(today);
       
       if (dailyIntake != null) {
-        // Sort records by timestamp to ensure correct order
         final sortedRecords = List<WaterIntakeRecord>.from(dailyIntake.records)
           ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
         
@@ -92,12 +85,10 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
           actualWaterIntake = dailyIntake.totalAmount;
           _intakeHistory = sortedRecords;
           
-          // Only reset undo history if it's a different day
           if (_today != today) {
             _undoHistory = [];
           }
           
-          // Check if target has been reached
           _targetReachedAndCongratulated = currentWaterIntake >= calculatedWaterTarget;
         });
       } else {
@@ -106,7 +97,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
           currentWaterIntake = 0.0;
           actualWaterIntake = 0.0;
           _intakeHistory = [];
-          // Only reset undo history if it's a different day
           if (_today != today) {
             _undoHistory = [];
           }
@@ -119,7 +109,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
         _isLoading = false;
       });
       
-      // Initialize progress animation
       _progressController.value = currentWaterIntake / dailyWaterTarget;
     } else {
       setState(() {
@@ -138,24 +127,19 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   Future<void> _updateWaterIntake(double amountLiters, {bool isRedo = false}) async {
     if (amountLiters <= 0) return;
     
-    // Don't add more water if target is already reached
     if (currentWaterIntake >= dailyWaterTarget) return;
     
-    // Calculate actual intake (uncapped) and displayed intake (capped at target)
     double newActualIntake = actualWaterIntake + amountLiters;
     double newDisplayedIntake = min(newActualIntake, dailyWaterTarget);
     
-    // Create new record with the requested amount (for accurate undo/redo)
     WaterIntakeRecord newRecord = WaterIntakeRecord(
       amount: amountLiters, 
       timestamp: DateTime.now()
     );
     
-    // First update locally for immediate UI feedback
     setState(() {
       _isAdding = true;
       _intakeHistory.add(newRecord);
-      // Only clear undo history for new additions, not for redos
       if (!isRedo) {
         _undoHistory.clear();
       }
@@ -163,7 +147,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
       currentWaterIntake = newDisplayedIntake;
     });
     
-    // Animate to new value
     double startValue = _progressController.value;
     double endValue = newDisplayedIntake / dailyWaterTarget;
     
@@ -177,7 +160,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     // Save to server
     bool success = await ApiService.addWaterIntake(newDisplayedIntake, records: [newRecord]);
     if (!success) {
-      // If server update fails, show error and revert local changes
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update water intake. Please try again.'),
@@ -185,26 +167,21 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
         ),
       );
       
-      // Revert local changes if server update fails
       setState(() {
         _intakeHistory.removeLast();
         actualWaterIntake = actualWaterIntake - amountLiters;
         currentWaterIntake = min(actualWaterIntake, dailyWaterTarget);
       });
       
-      // Also revert animation
       _progressController.animateTo(currentWaterIntake / dailyWaterTarget);
       return;
     }
     
-    // Check if target is reached for the first time and show congratulation screen
     if (newDisplayedIntake >= dailyWaterTarget && !_targetReachedAndCongratulated && !isRedo) {
-      // Update state to disable undo
       setState(() {
         _targetReachedAndCongratulated = true;
       });
       
-      // Show congratulation screen with a small delay to allow animation to finish
       Future.delayed(Duration(milliseconds: 500), () {
         Navigator.push(
           context,
@@ -221,26 +198,19 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   }
 
   Future<void> _undoLastIntake() async {
-    // Don't allow undo if target has been reached and congratulated
     if (_targetReachedAndCongratulated) return;
     
-    // Don't allow undo if current intake is 0 or history is empty
     if (_intakeHistory.isEmpty || currentWaterIntake <= 0) return;
     
     try {
-      // Get the last record (most recent by timestamp)
       WaterIntakeRecord lastRecord = _intakeHistory.last;
       double lastAmount = lastRecord.amount;
       
-      // Update actual intake
       double newActualIntake = max(0, actualWaterIntake - lastAmount);
-      // Calculate new displayed intake (capped at target)
       double newDisplayedIntake = min(newActualIntake, dailyWaterTarget);
       
-      // Don't proceed if we would go below 0
       if (newActualIntake < 0) return;
       
-      // First update locally for immediate UI feedback
       setState(() {
         _intakeHistory.removeLast();
         _undoHistory.add(lastRecord);
@@ -248,18 +218,15 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
         currentWaterIntake = newDisplayedIntake;
       });
       
-      // Animate to new value
       double startValue = _progressController.value;
       double endValue = newDisplayedIntake / dailyWaterTarget;
       
       _progressController.value = startValue;
       _progressController.animateTo(endValue);
       
-      // If the record has an ID (saved to server), delete it
       if (lastRecord.id != null) {
         bool success = await ApiService.deleteWaterRecord(lastRecord.id!);
         if (!success) {
-          // If server update fails, show error and revert local changes
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to undo. Please try again.'),
@@ -267,7 +234,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
             ),
           );
           
-          // Revert local changes
           setState(() {
             _undoHistory.removeLast();
             _intakeHistory.add(lastRecord);
@@ -275,17 +241,14 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
             currentWaterIntake = min(actualWaterIntake, dailyWaterTarget);
           });
           
-          // Also revert animation
           _progressController.animateTo(currentWaterIntake / dailyWaterTarget);
           return;
         }
       }
       
-      // Update the daily total on the server
       await ApiService.addWaterIntake(newDisplayedIntake);
     } catch (e) {
       print('Error in _undoLastIntake: $e'); // Add debug logging
-      // Handle any errors that might occur during the undo process
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('An error occurred while undoing. Please try again.'),
@@ -298,10 +261,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   Future<void> _redoLastIntake() async {
     if (_undoHistory.isEmpty) return;
     
-    // Get the record without removing it yet
     WaterIntakeRecord recordToRedo = _undoHistory.last;
     
-    // Only remove from undo history if the add will be successful
     if (currentWaterIntake < dailyWaterTarget) {
       _undoHistory.removeLast();
       await _updateWaterIntake(recordToRedo.amount, isRedo: true);
@@ -315,14 +276,12 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   String get _unitLabel => _waterUnit;
 
   void _showAmountSelectionSheet() {
-    // Don't show the sheet if target is already reached
     if (currentWaterIntake >= dailyWaterTarget) return;
     
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDarkMode ? Color(0xFF1A1A1A) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     
-    // Initialize with a state variable that can be referenced in callbacks
     double _selectedAmount = _waterUnit == 'L' ? 0.10 : 3.0;
     
     showModalBottomSheet(
@@ -343,7 +302,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
               ),
               child: Column(
                 children: [
-                  // Handle bar
                   Container(
                     margin: EdgeInsets.only(top: 12),
                     width: 40,
@@ -354,7 +312,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                     ),
                   ),
                   
-                  // Make the content scrollable to avoid overflow
                   Expanded(
                     child: SingleChildScrollView(
                       physics: BouncingScrollPhysics(),
@@ -381,7 +338,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             
                             SizedBox(height: 40),
                             
-                            // Amount display with animation
                             Container(
                               width: 160,
                               height: 160,
@@ -416,7 +372,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             
                             SizedBox(height: 30),
                             
-                            // Custom amount slider
                             Text(
                               "Custom Amount",
                               style: TextStyle(
@@ -439,9 +394,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                 value: _selectedAmount,
                                 min: _waterUnit == 'L' ? 0.1 : 3.0,
                                 max: _waterUnit == 'L' ? 2.0 : 64.0,
-                                divisions: _waterUnit == 'L' ? 19 : 61, // 19 divisions for 0.1 increments from 0.1 to 2.0
+                                divisions: _waterUnit == 'L' ? 19 : 61, 
                                 onChanged: (value) {
-                                  // Round to nearest 0.1
                                   double roundedValue = (_waterUnit == 'L') 
                                       ? (value * 10).round() / 10 
                                       : double.parse(value.toStringAsFixed(1));
@@ -455,7 +409,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             
                             SizedBox(height: 40),
                             
-                            // Add button using gold accent
                             SizedBox(
                               width: double.infinity,
                               height: 56,
@@ -485,7 +438,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                               ),
                             ),
                             
-                            // Add extra padding at the bottom to ensure everything is visible
                             SizedBox(height: 30),
                           ],
                         ),
@@ -541,7 +493,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                 MaterialPageRoute(
                   builder: (context) => HistoryScreen(username: widget.username),
                 ),
-              ).then((_) => _loadUserData()); // Reload data when returning from history
+              ).then((_) => _loadUserData()); 
             },
           ),
           IconButton(
@@ -587,7 +539,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Today's summary and status card
                       Container(
                         width: double.infinity,
                         padding: EdgeInsets.all(20),
@@ -644,7 +595,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                     ),
                                   ],
                                 ),
-                                // Completely redesigned percentage indicator
                                 Container(
                                   width: 80,
                                   height: 80,
@@ -672,7 +622,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                   child: Stack(
                                     alignment: Alignment.center,
                                     children: [
-                                      // Modern circular progress
                                       SizedBox(
                                         width: 68,
                                         height: 68,
@@ -693,7 +642,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                         ),
                                       ),
                                       
-                                      // Percentage text with modern styling - properly centered
                                       Container(
                                         padding: EdgeInsets.all(4),
                                         width: 50,
@@ -722,7 +670,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             
                             SizedBox(height: 24),
                             
-                            // Water visualization - matching the screenshot
                             Container(
                               height: 160,
                               decoration: BoxDecoration(
@@ -752,8 +699,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                                 begin: Alignment.topCenter,
                                                 end: Alignment.bottomCenter,
                                                 colors: [
-                                                  Color(0xFF39C2EA), // Slightly adjusted secondary
-                                                  Color(0xFF4D77E8), // Matching indicator
+                                                  Color(0xFF39C2EA),
+                                                  Color(0xFF4D77E8), 
                                                 ],
                                               ),
                                             ),
@@ -769,7 +716,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                     },
                                   ),
                                   
-                                  // Goal achieved indicator
                                   if (_targetReachedAndCongratulated || progress >= 1.0)
                                     Positioned(
                                       top: 0,
@@ -810,7 +756,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             
                             SizedBox(height: 24),
                             
-                            // Quick actions
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -845,7 +790,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             
                             SizedBox(height: 20),
                             
-                            // Add Water button below the quick action buttons - full width matching the 3 buttons above
                             SizedBox(
                               width: double.infinity,
                               height: 50,
@@ -874,7 +818,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                       
                       SizedBox(height: 24),
                       
-                      // Health insights card
                       Container(
                         width: double.infinity,
                         padding: EdgeInsets.all(20),
@@ -897,7 +840,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Health title with icon
                                 Flexible(
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -922,9 +864,8 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                   ),
                                 ),
                                 
-                                SizedBox(width: 4), // Small gap
+                                SizedBox(width: 4), 
                                 
-                                // Achievement indicator - adapt to available space
                                 if (_targetReachedAndCongratulated || progress >= 1.0)
                                   Flexible(
                                     child: Container(
@@ -961,7 +902,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                             ),
                             SizedBox(height: 16),
                             
-                            // Benefits of water
                             ...List.generate(3, (index) {
                               List<String> benefits = [
                                 "Proper hydration improves energy levels and brain function",
@@ -1013,7 +953,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                       
                       SizedBox(height: 24),
                       
-                      // Recent activity - Simplified and improved
                       if (_intakeHistory.isNotEmpty)
                         Container(
                           width: double.infinity,
@@ -1066,22 +1005,18 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                               
                               SizedBox(height: 16),
                               
-                              // Показываем все интейки за день с точным временем
                               Container(
-                                height: min(240, _intakeHistory.length * 70.0), // Cap height
+                                height: min(240, _intakeHistory.length * 70.0), 
                                 child: ListView.builder(
                                   physics: BouncingScrollPhysics(),
                                   itemCount: _intakeHistory.length,
-                                  reverse: true, // Newest first
+                                  reverse: true, 
                                   itemBuilder: (context, index) {
-                                    // Get record in reverse order (newest first)
                                     WaterIntakeRecord record = _intakeHistory[_intakeHistory.length - 1 - index];
                                     String displayAmount = _convertToDisplay(record.amount).toStringAsFixed(1);
                                 
-                                    // Format time as hour:minute AM/PM
                                     String formattedTime = _formatTime(record.timestamp);
                                     
-                                    // Determine icon based on time of day
                                     IconData timeIcon;
                                     Color timeColor;
                                     
@@ -1110,7 +1045,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                         ),
                                         child: Row(
                                           children: [
-                                            // Time icon
                                             Container(
                                               width: 42,
                                               height: 42,
@@ -1126,7 +1060,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                             ),
                                             SizedBox(width: 14),
                                             
-                                            // Time and amount info
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1151,7 +1084,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
                                               ),
                                             ),
                                             
-                                            // Water drop indicator showing relative amount
                                             Container(
                                               width: 42,
                                               height: 42,
@@ -1202,7 +1134,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
       decoration: BoxDecoration(
         color: isDarkMode ? Color(0xFF252A36).withOpacity(0.5) : color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        // Add a semi-transparent overlay when target is reached
         gradient: isTargetReached ? LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -1257,7 +1188,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     final backgroundColor = isDarkMode ? Color(0xFF1A1A1A) : Colors.white;
     
     return SizedBox(
-      height: 60, // Further reduced height
+      height: 60, 
       child: Container(
         decoration: BoxDecoration(
           color: backgroundColor,
@@ -1277,7 +1208,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
               "Undo",
               _undoLastIntake,
               _intakeHistory.isNotEmpty,
-              goldAccent,  // Using gold accent
+              goldAccent,  
             ),
             SizedBox(width: 20), 
             _buildBottomBarButton(
@@ -1285,7 +1216,7 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
               "Redo",
               _redoLastIntake,
               _undoHistory.isNotEmpty,
-              goldAccent,  // Using gold accent
+              goldAccent,  
             ),
           ],
         ),
@@ -1296,7 +1227,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   Widget _buildBottomBarButton(IconData icon, String label, Function onTap, bool enabled, Color color) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
-    // Disable undo button if target has been reached and congratulated or if current intake is 0
     if (label == "Undo" && (_targetReachedAndCongratulated || currentWaterIntake <= 0)) {
       enabled = false;
     }
@@ -1342,7 +1272,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
     );
   }
 
-  // Функция для форматирования времени
   String _formatTime(DateTime time) {
     int hours = time.hour;
     int minutes = time.minute;
@@ -1354,7 +1283,6 @@ class _DrinkingScreenState extends State<DrinkingScreen> with SingleTickerProvid
   }
 }
 
-// Custom wave painter to add wave effect to the water
 class WavePainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -1372,18 +1300,14 @@ class WavePainter extends CustomPainter {
     final height = size.height;
     
     final path = Path();
-    // Start at the top left instead of bottom
     path.moveTo(0, 0);
     
-    // Draw waves at the top of the water
     for (int i = 0; i < width; i++) {
       final angle = (animationValue * 2 * pi) + (i / width * 4 * pi);
-      // Waves at the top (0 + wave height)
-      final y = sin(angle) * 3; // Reduced amplitude for subtler effect
+      final y = sin(angle) * 3; 
       path.lineTo(i.toDouble(), y);
     }
     
-    // Complete the path by going around the bottom of the container
     path.lineTo(width, 0);
     path.lineTo(width, height);
     path.lineTo(0, height);
@@ -1396,7 +1320,6 @@ class WavePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// Custom circular progress painter with rounded caps and smooth edges
 class CircularProgressPainter extends CustomPainter {
   final double progress;
   final Color progressColor;
@@ -1415,7 +1338,6 @@ class CircularProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
     
-    // Draw background circle
     final backgroundPaint = Paint()
       ..color = backgroundColor
       ..style = PaintingStyle.stroke
@@ -1424,7 +1346,6 @@ class CircularProgressPainter extends CustomPainter {
     
     canvas.drawCircle(center, radius, backgroundPaint);
     
-    // Draw progress arc
     final progressPaint = Paint()
       ..color = progressColor
       ..style = PaintingStyle.stroke
@@ -1435,7 +1356,7 @@ class CircularProgressPainter extends CustomPainter {
     
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      -pi / 2, // Start from top
+      -pi / 2, 
       sweepAngle,
       false,
       progressPaint,

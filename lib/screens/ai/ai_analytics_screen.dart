@@ -27,7 +27,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     _loadSavedAnalytics();
   }
 
-  // Загрузка сохраненного анализа из SharedPreferences
   Future<void> _loadSavedAnalytics() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -44,7 +43,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     }
   }
 
-  // Получение данных пользователя для анализа
   Future<bool> _gatherUserData() async {
     setState(() {
       _userData = {};
@@ -54,10 +52,9 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
       final prefs = await SharedPreferences.getInstance();
       bool hasData = false;
       
-      // Инициализируем сервис с данными об упражнениях
       await ExerciseDataService.initialize();
       
-      // 1. Получаем профиль пользователя
+      // Получаем профиль пользователя
       final apiUserProfile = await ApiService.getUserProfile();
       if (apiUserProfile != null) {
         _userData['profile'] = apiUserProfile;
@@ -72,11 +69,10 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
         }
       }
       
-      // 2. Получаем историю тренировок
+      // Получаем историю тренировок
       try {
         final progressEntries = await ApiService.getProgress();
         if (progressEntries.isNotEmpty) {
-          // Преобразуем записи, добавляя полную информацию об упражнениях
           final enrichedWorkouts = progressEntries.map((entry) {
             final exerciseData = ExerciseDataService.getExerciseById(entry.exerciseId);
             return {
@@ -96,7 +92,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
           await prefs.setString('workout_history', jsonEncode(_userData['workouts']));
           hasData = true;
         } else {
-          // Пробуем использовать сохраненную историю
           final savedWorkouts = prefs.getString('workout_history');
           if (savedWorkouts != null) {
             _userData['workouts'] = jsonDecode(savedWorkouts);
@@ -105,7 +100,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
         }
       } catch (e) {
         print('Error fetching workout history: $e');
-        // Пробуем использовать сохраненную историю
         final savedWorkouts = prefs.getString('workout_history');
         if (savedWorkouts != null) {
           _userData['workouts'] = jsonDecode(savedWorkouts);
@@ -113,7 +107,7 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
         }
       }
       
-      // 3. Получаем данные о потреблении воды
+      //  Получаем данные о потреблении воды
       try {
         final waterDataList = [];
         final now = DateTime.now();
@@ -140,7 +134,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
           await prefs.setString('water_tracking', jsonEncode(waterDataList));
           hasData = true;
         } else {
-          // Пробуем использовать сохраненные данные о воде
           final savedWater = prefs.getString('water_tracking');
           if (savedWater != null) {
             _userData['water'] = jsonDecode(savedWater);
@@ -149,7 +142,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
         }
       } catch (e) {
         print('Error fetching water data: $e');
-        // Пробуем использовать сохраненные данные о воде
         final savedWater = prefs.getString('water_tracking');
         if (savedWater != null) {
           _userData['water'] = jsonDecode(savedWater);
@@ -192,14 +184,12 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     return prompt;
   }
 
-  // Генерация анализа
   Future<void> _generateAnalysis() async {
     setState(() {
       _isLoading = true;
     });
     
     try {
-      // 1. Сначала собираем данные
       final hasData = await _gatherUserData();
       
       if (!hasData) {
@@ -217,23 +207,19 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
         return;
       }
       
-      // 2. Создаем запрос и получаем ответ от AI
       final prompt = _createAnalyticsPrompt();
       final analysis = await _aiService.getResponse(prompt);
       
-      // 3. Сохраняем результат
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(analyticsKey, analysis);
       await prefs.setString(lastAnalysisDateKey, DateTime.now().toIso8601String());
       
-      // 4. Обновляем UI
       setState(() {
         _analysisResult = analysis;
         _hasAnalysis = true;
         _isLoading = false;
       });
       
-      // 5. Уведомляем пользователя
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Analysis created successfully'),
@@ -257,31 +243,26 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     }
   }
 
-  // Форматирование текста от AI
   String _formatAnalysis(String analysis) {
-    // Удаляем маркеры форматирования
     analysis = analysis.replaceAll('**', '');
     analysis = analysis.replaceAll('*', '');
     analysis = analysis.replaceAll('__', '');
     
-    // Преобразуем заголовки в формат ЗАГОЛОВОК: для лучшего разделения
     final sectionTitles = ['PROGRESS ASSESSMENT', 'WORKOUT ANALYSIS', 'HYDRATION STATUS', 
                           'PERSONALIZED RECOMMENDATIONS', 'WEEKLY GOALS'];
     
     for (final title in sectionTitles) {
-      // Преобразуем разные форматы заголовков в стандартный
       final patterns = [
-        RegExp(r'\d+\.\s*' + title + r'\s*:'), // 1. TITLE:
-        RegExp(title + r'\s*:'), // TITLE:
-        RegExp(r'"' + title + r'"' + r'\s*:'), // "TITLE":
-        RegExp(title + r'\s*-'), // TITLE -
+        RegExp(r'\d+\.\s*' + title + r'\s*:'), 
+        RegExp(title + r'\s*:'), 
+        RegExp(r'"' + title + r'"' + r'\s*:'), 
+        RegExp(title + r'\s*-'), 
       ];
       
       for (final pattern in patterns) {
         analysis = analysis.replaceAll(pattern, '\n\n$title:');
       }
       
-      // Если заголовка нет, но есть нумерованный пункт, предполагаем что это секция
       if (!analysis.contains('$title:')) {
         final numberPattern = RegExp(r'(\d+)\.\s*(.*?)\s*:');
         final matches = numberPattern.allMatches(analysis);
@@ -295,13 +276,11 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
       }
     }
     
-    // Убираем лишние пробелы
     analysis = analysis.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     
     return analysis;
   }
 
-  // Получение времени последнего обновления
   Future<String> _getLastUpdatedTime() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -312,7 +291,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
         return DateFormat('MM/dd/yyyy at HH:mm').format(lastDate);
       }
     } catch (e) {
-      // Игнорируем ошибки
     }
     
     return "just now";
@@ -340,7 +318,7 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
         iconTheme: IconThemeData(color: isDarkMode ? Colors.white : Colors.black),
         foregroundColor: isDarkMode ? Colors.white : Colors.black87,
         actions: [
-          if (_hasAnalysis) // Показываем кнопку обновления, только если есть анализ
+          if (_hasAnalysis) 
             IconButton(
               icon: Icon(Icons.refresh, color: goldColor),
               onPressed: _isLoading ? null : _generateAnalysis,
@@ -385,7 +363,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     );
   }
 
-  // Вид для первого входа (без анализа)
   Widget _buildFirstTimeView(bool isDarkMode) {
     return Center(
       child: Padding(
@@ -446,7 +423,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     );
   }
 
-  // Заголовок для блока с аналитикой
   Widget _buildAnalyticsHeader(bool isDarkMode) {
     return Card(
       elevation: 3,
@@ -510,9 +486,8 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     );
   }
 
-  // Содержимое аналитики
+
   Widget _buildAnalyticsContent(bool isDarkMode) {
-    // Форматируем текст анализа для улучшения отображения
     final formattedAnalysis = _formatAnalysis(_analysisResult);
     
     if (formattedAnalysis.isEmpty) {
@@ -533,17 +508,14 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
       );
     }
     
-    // Ищем секции с помощью регулярных выражений
     final RegExp sectionRegex = RegExp(r'([A-Z\s]+):\s*(.*?)(?=\n\n[A-Z\s]+:|$)', dotAll: true);
     final matches = sectionRegex.allMatches(formattedAnalysis);
     
     final List<Widget> sections = [];
     
     if (matches.isEmpty) {
-      // Если секции не найдены, отображаем весь текст как одну секцию
       sections.add(_buildAnalysisSection('AI Analysis', formattedAnalysis, isDarkMode));
     } else {
-      // Создаем секции из найденных совпадений
       for (var match in matches) {
         if (match.groupCount >= 2) {
           final title = match.group(1)?.trim() ?? 'Section';
@@ -561,7 +533,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     );
   }
 
-  // Секция для отдельного блока аналитики
   Widget _buildAnalysisSection(String title, String content, bool isDarkMode) {
     return Card(
       elevation: 2,
@@ -619,7 +590,6 @@ class _AIAnalyticsScreenState extends State<AIAnalyticsScreen> {
     );
   }
 
-  // Получение иконки для секции по заголовку
   IconData _getSectionIcon(String title) {
     final lowercaseTitle = title.toLowerCase();
     

@@ -33,7 +33,6 @@ class ExerciseInfo {
     required this.restSec,
   });
 
-  /// Создаёт объект из JSON-карты
   factory ExerciseInfo.fromJson(Map<String, dynamic> j) => ExerciseInfo(
         id: j['id'] as String,
         name: j['name'] as String,
@@ -72,11 +71,9 @@ class ExerciseInfo {
         'restSec': restSec,
   };
 
-  /// Чтение из prefs
   factory ExerciseInfo.fromStorage(Map<String, dynamic> j) =>
       ExerciseInfo.fromJson(j);
 
-  /// Получает путь к гифке для загрузки с сервера
   String get assetGifPath {
 
     final fileName = gifUrl.split('/').last;
@@ -85,16 +82,14 @@ class ExerciseInfo {
     return 'gifs/$nameWithExt';
   }
 
-  /// Получает имя файла гифки для загрузки через GifService
   String get gifFileName {
     final fileName = gifUrl.split('/').last;
     return fileName.toLowerCase().endsWith('.gif') ? fileName : '$fileName.gif';
   }
 
-  /// Получает путь для превью (обычно статичная картинка)
   String get assetPreviewPath {
     final fileName = gifUrl.split('/').last;
-    // убираем возможный .gif
+
     final base = fileName.toLowerCase().endsWith('.gif')
       ? fileName.substring(0, fileName.length - 4)
       : fileName;
