@@ -11,7 +11,7 @@ import 'package:http/http.dart' show MediaType;
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ApiService {
-  static const String baseUrl = "https://fitnessbackend-production-6598.up.railway.app"; // Backend server
+  static const String baseUrl = "http://127.0.0.1:8000"; // Backend server
 // https://fitnessbackend-production-6598.up.railway.app
 // http://127.0.0.1:8000
 
