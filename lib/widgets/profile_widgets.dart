@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import '../utils/theme_constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -146,13 +144,11 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
-    // Преобразуем относительный путь в полный URL
     String? fullImageUrl;
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       fullImageUrl = ApiService.fixAvatarUrl(imageUrl);
     }
     
-    // Добавляем уникальный параметр к URL, чтобы избежать кеширования
     String? cacheBreakingUrl;
     if (fullImageUrl != null && fullImageUrl.isNotEmpty) {
       final timestamp = DateTime.now().millisecondsSinceEpoch;

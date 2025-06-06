@@ -15,21 +15,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
 
-  // Инициализация часовых поясов
   tz.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Asia/Almaty'));
 
-  // Инициализация уведомлений
   await NotificationSetup.initialize();
 
-  // Загрузка сохраненных настроек темы
   final prefs = await SharedPreferences.getInstance();
   final savedTheme = prefs.getString('theme') ?? 'Light';
   
   runApp(MyApp(initialTheme: savedTheme));
 }
 
-/// Основной класс приложения
 class MyApp extends StatefulWidget {
   final String initialTheme;
   const MyApp({Key? key, required this.initialTheme}) : super(key: key);

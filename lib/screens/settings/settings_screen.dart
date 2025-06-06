@@ -91,7 +91,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: '1.0.0',
                 icon: Icons.info_outline,
                 onTap: () {
-                  // Показать информацию о версии
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Fitness App v1.0.0'),
@@ -200,7 +199,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         height: 40,
         decoration: BoxDecoration(
           color: isDarkMode 
-              ? Color(0xFF3A3225) // Darker gold for dark mode
+              ? Color(0xFF3A3225) 
               : goldColor.withOpacity(0.15),
           borderRadius: BorderRadius.circular(8),
         ),

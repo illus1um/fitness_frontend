@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -75,7 +73,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
     
-    // Очистка предыдущих данных для сброса кеша
     if (userData != null && userData!["avatar_url"] != null) {
       await CachedNetworkImage.evictFromCache(userData!["avatar_url"]);
     }
@@ -103,7 +100,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
 
     bool success = await ApiService.updateUserProfile({field: newValue});
     if (success) {
-      // If training-related settings change, clear the plan cache
       if (field == 'training_program' ||
           field == 'training_location' ||
           field == 'training_experience') {
@@ -167,7 +163,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     );
   }
 
-  // Unit-conversion helpers
   double get _displayWeight {
     if (userData == null) return 0;
     final kg = (userData!['weight'] ?? 0.0) as double;
@@ -533,14 +528,12 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     ).join(' ');
   }
 
-  // Метод для выбора и загрузки аватара из галереи
   Future<void> _pickAvatar() async {
     final ImagePicker picker = ImagePicker();
     final bool hasAvatar = userData != null && 
                           userData!["avatar_url"] != null && 
                           userData!["avatar_url"].toString().isNotEmpty;
     
-    // Показываем модальное окно выбора источника изображения
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -555,7 +548,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Container(
                 width: 40,
                 height: 4,
@@ -574,7 +566,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
               
               const SizedBox(height: 20),
               
-              // Выбор из галереи
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(10),
@@ -597,7 +588,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
                 },
               ),
               
-              // Камера
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(10),
@@ -621,7 +611,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
                 },
               ),
 
-              // Добавляем разделитель и опцию удаления только если есть аватар
               if (hasAvatar) ...[
                 ListTile(
                   leading: Container(
@@ -651,7 +640,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     );
   }
 
-  // Метод для подтверждения удаления аватара
   void _confirmDeleteAvatar() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
@@ -697,7 +685,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     );
   }
 
-  // Метод для удаления аватара
   Future<void> _deleteAvatar() async {
     setState(() => _isLoading = true);
     
@@ -705,7 +692,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
       final success = await ApiService.deleteAvatar();
       
       if (success) {
-        // Обновляем данные пользователя после удаления
         await _loadUserData();
         _showSuccessSnackbar('Profile picture successfully deleted');
       } else {
@@ -719,20 +705,16 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     }
   }
 
-  // Метод для корректировки ориентации изображения
   Future<File?> _fixImageOrientation(File imageFile) async {
     try {
-      // Читаем изображение
       final bytes = await imageFile.readAsBytes();
       final image = img.decodeImage(bytes);
       
       if (image == null) return null;
 
-      // Максимальные размеры для аватара
       const maxWidth = 500;
       const maxHeight = 500;
 
-      // Изменяем размер изображения, если оно больше максимального
       var resizedImage = image;
       if (image.width > maxWidth || image.height > maxHeight) {
         resizedImage = img.copyResize(
@@ -743,13 +725,11 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         );
       }
 
-      // Получаем временную директорию для сохранения обработанного изображения
       final tempDir = await getTemporaryDirectory();
       final tempPath = tempDir.path;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final targetPath = '$tempPath/fixed_image_$timestamp.jpg';
 
-      // Сохраняем изображение в JPEG формате с оптимизированным качеством
       final fixedImage = File(targetPath);
       await fixedImage.writeAsBytes(
         img.encodeJpg(resizedImage, quality: 85),
@@ -762,12 +742,10 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
     }
   }
 
-  // Метод для загрузки аватара на сервер
   Future<void> _uploadAvatar(File imageFile) async {
     setState(() => _isLoading = true);
     
     try {
-      // Check if file has valid extension
       final String fileName = imageFile.path.toLowerCase();
       if (!fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && 
           !fileName.endsWith('.png') && !fileName.endsWith('.webp')) {
@@ -776,7 +754,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         return;
       }
 
-      // Показываем индикатор обработки
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -799,10 +776,8 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         },
       );
 
-      // Исправляем ориентацию изображения перед загрузкой
       final File? fixedImage = await _fixImageOrientation(imageFile);
       
-      // Закрываем диалог обработки
       if (context.mounted) {
         Navigator.pop(context);
       }
@@ -813,10 +788,8 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         return;
       }
       
-      // Загрузка изображения
       final success = await ApiService.uploadAvatar(fixedImage);
       
-      // Удаляем временный файл
       try {
         await fixedImage.delete();
       } catch (e) {
@@ -824,7 +797,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
       }
       
       if (success) {
-        // Если загрузка успешна, обновляем данные пользователя
         await _loadUserData();
         _showSuccessSnackbar('Avatar successfully updated');
       } else {
@@ -832,7 +804,6 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      // Закрываем диалог обработки в случае ошибки
       if (context.mounted) {
         Navigator.pop(context);
       }
@@ -1053,16 +1024,16 @@ class _MyProfileGoalScreenState extends State<MyProfileGoalScreen> with SingleTi
   Widget _buildDeleteAccountButton() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final softRedColor = isDarkMode 
-        ? Color(0xFFAA5555) // Более мягкий красный для темной темы
-        : Color(0xFFDD7777); // Более мягкий красный для светлой темы
+        ? Color(0xFFAA5555) 
+        : Color(0xFFDD7777); 
     
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: Card(
         elevation: 0,
         color: isDarkMode 
-            ? Color(0xFF352525) // Очень темный мягкий красный для фона в темной теме
-            : Color(0xFFF8E8E8), // Очень светлый мягкий красный для фона в светлой теме
+            ? Color(0xFF352525) 
+            : Color(0xFFF8E8E8), 
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ThemeConstants.cardBorderRadius),
           side: BorderSide(

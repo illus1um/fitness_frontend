@@ -72,7 +72,6 @@ class AIService {
     }
   }
 
-  // Method to get exercise advice
   Future<String> getExerciseAdvice(String exerciseName) async {
     return getResponse(
       'Give a short tip for the proper execution of the exercise "$exerciseName". '
@@ -80,7 +79,6 @@ class AIService {
     );
   }
 
-  // Method to get water intake advice
   Future<String> getWaterAdvice(double currentIntake, double goal) async {
     return getResponse(
       'My current water intake is: $currentIntake ml. '

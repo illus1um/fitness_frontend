@@ -82,7 +82,6 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
   }
 
   String _formatText(String text) {
-    // Simple formatting processing, remove asterisks
     text = text.replaceAll('**', '');
     text = text.replaceAll('*', '');
     text = text.replaceAll('__', '');
@@ -342,11 +341,9 @@ class ChatMessage extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final goldColor = Color.fromARGB(255, 199, 169, 127);
     
-    // Цвета для пользовательских сообщений
     final userBgColor = goldColor;
     final userTextColor = Colors.white;
     
-    // Цвета для сообщений ассистента
     final assistantBgColor = isDarkMode ? Color(0xFF23242B) : Colors.white;
     final assistantTextColor = isDarkMode ? Colors.white : Colors.black87;
     final timeColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];

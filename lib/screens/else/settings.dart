@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/notification_service.dart';
@@ -20,7 +18,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   String _selectedWaterUnit = 'L';
   bool _workoutNotificationsEnabled = true;
   
-  // Константы для цветов
   final Color goldAccent = Color(0xFFC7A97F);
   
   late AnimationController _animationController;
@@ -57,7 +54,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, value);
     
-    // Небольшая анимация при обновлении настроек
     _animationController.forward().then((_) {
       _animationController.reverse();
     });
@@ -78,7 +74,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               : ThemeMode.light;
       widget.onThemeChanged(mode);
       
-      // Показать уведомление о смене темы
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -130,7 +125,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         ),
         child: Column(
           children: [
-            // Полоска для перетаскивания
             Container(
               margin: EdgeInsets.only(top: 12),
               width: 40,
@@ -275,7 +269,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Иконка в цветном круге
                 Container(
                   padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
@@ -292,7 +285,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 ),
                 SizedBox(width: 16),
                 
-                // Заголовок и описание
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +314,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   ),
                 ),
                 
-                // Текущее значение и стрелка
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -464,7 +455,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   value: _selectedLanguage,
                   description: 'Localization is coming soon',
                   onTap: () {
-                    // Показываем уведомление вместо открытия модального окна
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Row(
@@ -488,7 +478,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   isDisabled: true,
                 ),
                 
-                // Добавляем новую секцию уведомлений
                 _buildSectionHeader('Notifications', Icons.notifications_outlined, isDarkMode: isDarkMode),
                 _buildNotificationToggle(
                   icon: Icons.fitness_center,
@@ -499,7 +488,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   isDarkMode: isDarkMode,
                 ),
                 
-                // Настройки единиц измерения
                 _buildSectionHeader('Units', Icons.straighten_outlined, isDarkMode: isDarkMode),
                 _buildSettingTile(
                   icon: Icons.fitness_center,
@@ -553,7 +541,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   isDarkMode: isDarkMode,
                 ),
                 
-                // Информация о приложении (опционально)
+                // Информация о приложении
                 _buildSectionHeader('About', Icons.info_outline, isDarkMode: isDarkMode),
                 _buildSettingTile(
                   icon: Icons.info,
@@ -561,7 +549,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   value: '1.0.0',
                   description: 'Current installed version',
                   onTap: () {
-                    // Здесь можно добавить показ информации о приложении
+                    // Здесь можем добавить показ информации о приложении
                   },
                   isDarkMode: isDarkMode,
                 ),
@@ -575,7 +563,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
   }
   
-  // Добавляем метод для построения переключателя уведомлений
   Widget _buildNotificationToggle({
     required IconData icon,
     required String title,
@@ -606,7 +593,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // Иконка в цветном круге
             Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -621,7 +607,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             ),
             SizedBox(width: 16),
             
-            // Заголовок и описание
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,7 +633,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               ),
             ),
             
-            // Переключатель
             Switch(
               value: value,
               onChanged: onChanged,
@@ -673,7 +657,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     });
     
     if (value) {
-      // Показать уведомление о включении
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -691,10 +674,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         ),
       );
     } else {
-      // Отменяем все уведомления о тренировках
       await NotificationService.cancelAllWorkoutNotifications();
       
-      // Показать уведомление о выключении
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(

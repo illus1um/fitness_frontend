@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:fitness_app/services/api_service.dart';
 
@@ -22,13 +20,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   
-  // Правила пароля
   bool _hasMinLength = false;
   bool _hasUppercase = false;
   bool _hasDigit = false;
   bool _hasSpecialChar = false;
   
-  // Сила пароля от 0 до 100
   double _passwordStrength = 0;
 
   @override
@@ -46,7 +42,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     super.dispose();
   }
 
-  // Проверяет силу пароля и обновляет индикаторы в реальном времени
   void _checkPasswordStrength() {
     final password = _newPasswordController.text;
     
@@ -56,7 +51,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       _hasDigit = RegExp(r'\d').hasMatch(password);
       _hasSpecialChar = RegExp(r'[_!@#\$%^&*(),.?":{}|<>]').hasMatch(password);
       
-      // Вычисляем силу пароля
       int strength = 0;
       if (_hasMinLength) strength += 25;
       if (_hasUppercase) strength += 25;
@@ -172,7 +166,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  // Вводная информация
                   Container(
                     margin: EdgeInsets.only(bottom: 24),
                     padding: EdgeInsets.all(16),
@@ -205,7 +198,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                   ),
                   
-                  // Форма в карточке
                   Container(
                     padding: EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -253,7 +245,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             isDarkMode: isDarkMode,
                           ),
                           
-                          // Индикатор силы пароля
                           if (_newPasswordController.text.isNotEmpty)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +284,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 ),
                                 SizedBox(height: 12),
                                 
-                                // Требования к паролю
                                 Container(
                                   padding: EdgeInsets.all(12),
                                   decoration: BoxDecoration(

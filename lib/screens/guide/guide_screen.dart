@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'exercises/exercises_screen.dart';
 import 'nutrition/sports_nutrition_screen.dart';
@@ -149,7 +147,6 @@ class GuideScreen extends StatelessWidget {
                       ),
                     ),
                     
-                    // Gradient overlay for better text visibility
                     Container(
                       height: 180,
                       decoration: BoxDecoration(
@@ -165,7 +162,6 @@ class GuideScreen extends StatelessWidget {
                       ),
                     ),
                     
-                    // Title text with strong shadow
                     Positioned(
                       bottom: 16,
                       left: 16,
@@ -193,7 +189,6 @@ class GuideScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    // Icon with gold circle background
                     Container(
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -209,7 +204,6 @@ class GuideScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 16),
-                    // Subtitle
                     Expanded(
                       child: Text(
                         subtitle,
@@ -219,7 +213,6 @@ class GuideScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Arrow indicator
                     Container(
                       width: 36,
                       height: 36,

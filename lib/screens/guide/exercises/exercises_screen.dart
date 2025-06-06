@@ -106,7 +106,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                               crossAxisAlignment:
                                   CrossAxisAlignment.stretch,
                               children: [
-                                // Image
                                 Expanded(
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.vertical(
@@ -124,7 +123,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                                     ),
                                   ),
                                 ),
-                                // Label
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(

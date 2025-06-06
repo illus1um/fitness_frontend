@@ -13,10 +13,8 @@ class NotificationService {
   static const String _channelName = 'Workout Reminders';
   static const String _channelDescription = 'Notifications for workout days';
   
-  // Ключ для сохранения ID запланированных уведомлений
   static const String _scheduledNotificationsKey = 'scheduled_workout_notifications';
 
-  // Инициализация сервиса уведомлений
   static Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -29,7 +27,6 @@ class NotificationService {
       initializationSettings,
     );
     
-    // Создаем канал для Android
     final AndroidNotificationChannel channel = AndroidNotificationChannel(
       _channelId,
       _channelName,
@@ -42,13 +39,10 @@ class NotificationService {
         ?.createNotificationChannel(channel);
   }
   
-  // Отмена всех запланированных уведомлений
   static Future<void> cancelAllWorkoutNotifications() async {
-    // Получаем сохраненные ID
     final prefs = await SharedPreferences.getInstance();
     final scheduledIds = prefs.getStringList(_scheduledNotificationsKey) ?? [];
     
-    // Отменяем каждое уведомление
     for (final idStr in scheduledIds) {
       final id = int.tryParse(idStr);
       if (id != null) {
@@ -56,53 +50,41 @@ class NotificationService {
       }
     }
     
-    // Очищаем список ID
     await prefs.setStringList(_scheduledNotificationsKey, []);
   }
   
-  // Планирование уведомлений для тренировочных дней
   static Future<void> scheduleWorkoutNotifications(List<DateTime> workoutDays, List<DayInfo> plan) async {
-    // Сначала отменяем существующие уведомления
     await cancelAllWorkoutNotifications();
     
-    // Текущая дата (без времени)
     final now = _stripTime(DateTime.now());
     
-    // Список сохраняемых ID уведомлений
     final List<String> scheduledIds = [];
     
-    // Добавляем уведомления для каждого будущего дня тренировки
     for (int i = 0; i < workoutDays.length; i++) {
       final workoutDay = workoutDays[i];
       
-      // Пропускаем прошедшие дни
       if (workoutDay.isBefore(now)) {
         continue;
       }
       
-      // Находим информацию о дне тренировки
       DayInfo? dayInfo;
       if (i < plan.length) {
         dayInfo = plan[i];
       }
       
-      // Создаем уникальный ID для уведомления
       final notificationId = _generateNotificationId();
       
-      // Сохраняем ID
       scheduledIds.add(notificationId.toString());
       
-      // Создаем время уведомления (8:00 утра в день тренировки)
       final scheduledDate = tz.TZDateTime(
         tz.local,
         workoutDay.year,
         workoutDay.month,
         workoutDay.day,
-        8,  // 8 часов утра
-        0,  // 0 минут
+        8,  
+        0, 
       );
       
-      // Создаем содержимое уведомления
       String title = 'Workout Day!';
       String body = 'Today is your workout day.';
       
@@ -110,7 +92,6 @@ class NotificationService {
         body = 'Today\'s workout: ${dayInfo.part}';
       }
       
-      // Планируем уведомление
       await _scheduleNotification(
         id: notificationId,
         title: title,
@@ -119,12 +100,10 @@ class NotificationService {
       );
     }
     
-    // Сохраняем список ID запланированных уведомлений
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_scheduledNotificationsKey, scheduledIds);
   }
   
-  // Метод для генерации уникального ID уведомления
   static int _generateNotificationId() {
     return Random().nextInt(1000000);
   }
@@ -157,7 +136,6 @@ class NotificationService {
     );
   }
   
-  // Удаляет время из даты
   static DateTime _stripTime(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }

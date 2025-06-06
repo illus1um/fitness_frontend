@@ -225,7 +225,6 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
       _progress = 0.1;
     });
     
-    // Simulate progress
     for (double i = 0.2; i <= 0.8; i += 0.1) {
       await Future.delayed(Duration(milliseconds: 300));
       if (!mounted) return;
@@ -235,7 +234,6 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
       });
     }
     
-    // Start fixing
     final result = await ExerciseDataFixer.fixExerciseData();
     
     if (!mounted) return;
@@ -249,7 +247,6 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
           : 'Error fixing data';
     });
     
-    // Small delay for animation
     await Future.delayed(Duration(seconds: 1));
     
     if (!mounted) return;
@@ -266,7 +263,6 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
       _progress = 0.3;
     });
     
-    // Simulate progress
     await Future.delayed(Duration(milliseconds: 500));
     
     if (!mounted) return;
@@ -274,18 +270,14 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
       _progress = 0.6;
     });
     
-    // Apply fixes
     final result = await ExerciseDataFixer.applyFixedData();
     
     if (result) {
-      // After successful application of fixes, clear workout plan cache,
-      // so that new data is used when next plan is created
+
       await PlanCache.clearPlan();
       
-      // Clear cache on server as well
       await ApiService.clearPlan();
       
-      // Reset flag that user doesn't have a generated plan
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_generated_plan', false);
     }
@@ -301,7 +293,6 @@ class _ExerciseDataFixScreenState extends State<ExerciseDataFixScreen> {
           : 'Error applying fixes';
     });
     
-    // Small delay for animation
     await Future.delayed(Duration(seconds: 1));
     
     if (!mounted) return;

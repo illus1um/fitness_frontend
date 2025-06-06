@@ -46,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => HomeScreen()),
       );
     } else {
-      // создаём пустой RegistrationData для передачи
       RegistrationData regData = RegistrationData(
         username: usernameController.text,
         password: passwordController.text,
@@ -106,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 _buildToggleButtons(context, true),
                 SizedBox(height: 40),
 
-                /// Обёртка для полей и кнопки логина
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
