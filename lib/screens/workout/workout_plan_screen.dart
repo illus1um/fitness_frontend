@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../models/day_info.dart';
@@ -24,7 +22,6 @@ class WorkoutPlanScreen extends StatefulWidget {
 }
 
 class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
-  // все записи прогресса
   List<ProgressEntry> _allProgress = [];
   bool _loading = true;
 
@@ -46,12 +43,10 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
   bool _isDayCompleted(DayInfo day) {
     if (day.exercises.isEmpty) return false;
     
-    // фильтруем прогресс по дню
     final dayProg = _allProgress
         .where((e) => e.dayIndex == day.dayIndex)
         .toList();
     
-    // считаем, сколько упражнений полностью завершено
     final completedExercises = day.exercises.where((ex) {
       final entry = dayProg.firstWhere(
         (p) => p.exerciseId == ex.id,
@@ -65,20 +60,16 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
       return entry.setsCompleted >= ex.sets;
     }).length;
     
-    // Возвращаем true если все упражнения выполнены
     return completedExercises == day.exercises.length;
   }
   
-  // Расчет прогресса выполнения дня (от 0.0 до 1.0)
   double _calculateDayProgress(DayInfo day) {
     if (day.exercises.isEmpty) return 0.0;
     
-    // фильтруем прогресс по дню
     final dayProg = _allProgress
         .where((e) => e.dayIndex == day.dayIndex)
         .toList();
     
-    // считаем, сколько упражнений полностью завершено
     final completedExercises = day.exercises.where((ex) {
       final entry = dayProg.firstWhere(
         (p) => p.exerciseId == ex.id,
@@ -96,18 +87,14 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     return total > 0 ? (completedExercises / total).clamp(0.0, 1.0) : 0.0;
   }
   
-  // Проверяет, доступен ли день
   bool _isDayAvailable(int dayIndex) {
-    if (widget.availableDays == null) return true; // Если не задан список доступных дней, считаем все доступными
+    if (widget.availableDays == null) return true; 
     return widget.availableDays!.contains(dayIndex);
   }
   
-  // Обработчик завершения дня тренировки
   Future<void> _onDayComplete() async {
-    // Обновляем прогресс
     await _loadProgress();
     
-    // Вызываем коллбэк, если он задан
     if (widget.onWorkoutComplete != null) {
       await widget.onWorkoutComplete!();
     }
@@ -198,11 +185,9 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                     padding: EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        // Progress circle
                         _buildProgressCircle(percent, isCompleted, isAvailable, goldColor, isDarkMode),
                         SizedBox(width: 20),
                         
-                        // Workout info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,7 +208,6 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
                           ),
                         ),
                         
-                        // Icon
                         _buildTrailingIcon(isCompleted, isAvailable, goldColor, isDarkMode),
                       ],
                     ),
@@ -243,7 +227,6 @@ class _WorkoutPlanScreenState extends State<WorkoutPlanScreen> {
     Color goldColor, 
     bool isDarkMode
   ) {
-    // Fix for the 100% display issue - make sure percent is exactly 1.0 if completed
     if (isCompleted) percent = 1.0;
     
     return CircularPercentIndicator(

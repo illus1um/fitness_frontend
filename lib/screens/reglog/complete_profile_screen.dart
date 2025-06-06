@@ -29,13 +29,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     widget.registrationData.height = selectedHeight;
     widget.registrationData.age = selectedAge;
 
-    // Ensure any existing workout plan is cleared for new users
     try {
-      // Set flag to indicate user has NOT generated a workout plan yet
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_generated_plan', false);
       
-      // Clear any existing plans from server and cache
       await ApiService.clearProgress();
       await ApiService.clearPlan();
       await PlanCache.clearPlan();

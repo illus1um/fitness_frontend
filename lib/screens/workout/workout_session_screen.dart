@@ -1,7 +1,3 @@
-// lib/screens/workout/workout_session_screen.dart
-
-// ignore_for_file: deprecated_member_use
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -40,7 +36,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   Timer? timer;
   int secondsLeft = 0;
   late PageController _pageController;
-  // Key for CircularPercentIndicator to preserve animation state
   final GlobalKey<State<StatefulWidget>> _progressCircleKey = GlobalKey();
   final GlobalKey<State<StatefulWidget>> _setsCircleKey = GlobalKey();
 
@@ -56,7 +51,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     final ex = widget.day.exercises[exIndex];
     final progress = await ApiService.getDayProgress(widget.day.dayIndex);
     
-    // Находим текущий прогресс для упражнения
     final exProgress = progress.firstWhere(
       (p) => p.exerciseId == ex.id,
       orElse: () => ProgressEntry(
@@ -67,7 +61,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       ),
     );
     
-    // Устанавливаем текущий подход
     setState(() {
       currentSet = exProgress.setsCompleted;
     });
@@ -194,7 +187,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         isResting = false;
       });
       
-      // Анимированный переход к следующему упражнению
       _pageController.animateToPage(
         exIndex,
         duration: const Duration(milliseconds: 300),
@@ -214,7 +206,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         exIndex--;
       });
       
-      // Анимированный переход к предыдущему упражнению
       _pageController.animateToPage(
         exIndex,
         duration: const Duration(milliseconds: 300),
@@ -237,7 +228,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       })
     );
     
-    // Дата завершения
     final completionDate = DateTime.now();
     
     // Переходим на экран итогов
@@ -249,12 +239,10 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           completedExercises: completedWorkout,
           completionDate: completionDate,
           onFinish: () async {
-            // Вызываем коллбэк завершения
             if (widget.onComplete != null) {
               await widget.onComplete!();
             }
             
-            // Закрываем все экраны и возвращаемся на главную страницу
             Navigator.of(context).popUntil((route) => route.isFirst);
           },
         ),
@@ -262,17 +250,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     );
   }
   
-  // Получаем прогресс по конкретному упражнению
   Future<int> _getExerciseProgress(String exerciseId) async {
-    // Получаем прогресс для текущего дня
     final progress = await ApiService.getDayProgress(widget.day.dayIndex);
     
-    // Если это текущее упражнение, возвращаем текущий прогресс
     if (widget.day.exercises[exIndex].id == exerciseId) {
       return currentSet;
     }
     
-    // Ищем прогресс для данного упражнения
     final exerciseProgress = progress.firstWhere(
       (p) => p.exerciseId == exerciseId,
       orElse: () => ProgressEntry(
@@ -357,8 +341,8 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context); // Закрываем диалог
-                      Navigator.pop(context); // Возвращаемся на экран дня
+                      Navigator.pop(context); 
+                      Navigator.pop(context); 
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: goldColor,
@@ -425,7 +409,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 return SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Exercise image and info button with improved styling
                       Container(
                         height: 280,
                         margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -445,7 +428,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                         ),
                         child: Stack(
                           children: [
-                            // Image
                             ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
@@ -466,7 +448,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                               ),
                             ),
                             
-                            // Info button
                             Positioned(
                               top: 16,
                               right: 16,
@@ -500,7 +481,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                         ),
                       ),
                       
-                      // Exercise details with improved styling
                       Container(
                         margin: EdgeInsets.symmetric(horizontal: 16),
                         padding: EdgeInsets.all(20),
@@ -521,7 +501,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Exercise name
                             Center(
                               child: Text(
                                 _capitalize(currentEx.name),
@@ -535,7 +514,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                             ),
                             SizedBox(height: 20),
                             
-                            // Target muscle
                             _buildDetailRow(
                               context,
                               Icons.fitness_center,
@@ -546,7 +524,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                             ),
                             SizedBox(height: 12),
                             
-                            // Equipment
                             _buildDetailRow(
                               context,
                               Icons.sports_gymnastics,
@@ -567,7 +544,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             ),
           ),
           
-          // Enhanced progress indicators
           Container(
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             decoration: BoxDecoration(
@@ -587,11 +563,9 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
             ),
             child: Column(
               children: [
-                // Progress indicators
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // Timer indicator
                     _buildProgressCircle(
                       key: _progressCircleKey,
                       pct: timerPercent,
@@ -600,7 +574,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                       color: isResting ? Colors.blue.shade400 : goldColor,
                       isDarkMode: isDarkMode,
                     ),
-                    // reps block
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 8),
                       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -625,7 +598,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                         ],
                       ),
                     ),
-                    // Sets indicator 
                     _buildProgressCircle(
                       key: _setsCircleKey,
                       pct: _pct(currentSet, ex.sets),
@@ -639,7 +611,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 
                 SizedBox(height: 24),
                 
-                // Control buttons
                 Row(
                   children: [
                     if (exIndex > 0)
@@ -674,7 +645,6 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 
                 SizedBox(height: 16),
                 
-                // Main action button
                 _buildMainActionButton(
                   isResting: isResting,
                   currentSet: currentSet,
@@ -961,7 +931,6 @@ class ExerciseInstructionsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image container with improved styling
             Container(
               height: 320,
               width: double.infinity,
@@ -996,7 +965,6 @@ class ExerciseInstructionsScreen extends StatelessWidget {
               ),
             ),
 
-            // Exercise information with improved styling
             Container(
               width: double.infinity,
               margin: EdgeInsets.only(bottom: 24),
@@ -1052,7 +1020,7 @@ class ExerciseInstructionsScreen extends StatelessWidget {
               ),
             ),
 
-            // Instructions section with improved styling
+            // Instructions section
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(20),

@@ -25,11 +25,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final RegExp usernameRegExp = RegExp(r'^[a-zA-Z0-9_.-]+$');
   
-  // Добавляем Future для хранения результатов валидации
   Future<String?>? _usernameValidation;
   Future<String?>? _emailValidation;
 
-  /// Базовая валидация username
   String? _validateUsernameSync(String? value) {
     if (value == null || value.isEmpty) {
       return "Username is required";
@@ -41,7 +39,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  /// Полная валидация username с проверкой на сервере
   Future<String?> _validateUsername(String? value) async {
     final syncError = _validateUsernameSync(value);
     if (syncError != null) return syncError;
@@ -52,13 +49,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return "This username is already taken";
       }
     } catch (_) {
-      // Если произошла ошибка при проверке, пропускаем эту валидацию
     }
     
     return null;
   }
 
-  /// Базовая валидация email
   String? _validateEmailSync(String? value) {
     if (value == null || value.isEmpty) {
       return "Email is required";
@@ -68,7 +63,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  /// Полная валидация email с проверкой на сервере
   Future<String?> _validateEmail(String? value) async {
     final syncError = _validateEmailSync(value);
     if (syncError != null) return syncError;
@@ -79,7 +73,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return "This email is already registered";
       }
     } catch (_) {
-      // Если произошла ошибка при проверке, пропускаем эту валидацию
     }
 
     return null;
@@ -368,7 +361,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
 
-        // Confirm Password field
         Padding(
           padding: const EdgeInsets.only(bottom: 15.0),
           child: TextFormField(
@@ -510,7 +502,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  /// Валидация пароля
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return "Password is required";
@@ -536,7 +527,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  /// Валидация имени и фамилии
   String? _validateName(String? value) {
     if (value == null || value.isEmpty) {
       return "This field is required";
@@ -561,7 +551,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           setState(() => isLoading = true);
 
           try {
-            // Проверяем асинхронную валидацию
             final usernameError = await _validateUsername(usernameController.text);
             if (usernameError != null) {
               setState(() {
@@ -589,7 +578,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               gender: gender,
             );
 
-            // Переходим на экран верификации email вместо CompleteProfileScreen
             Navigator.push(
               context,
               MaterialPageRoute(

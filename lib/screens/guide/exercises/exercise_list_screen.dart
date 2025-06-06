@@ -68,7 +68,6 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
       ),
       body: Column(
         children: [
-          // Search field
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),

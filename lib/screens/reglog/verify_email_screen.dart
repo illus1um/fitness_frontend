@@ -20,7 +20,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    // Отправляем код верификации при открытии экрана
     _sendVerificationCode();
   }
 

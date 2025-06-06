@@ -10,7 +10,6 @@ import 'equipment_utils.dart';
 class ExerciseDataFixer {
   static Future<bool> fixExerciseData() async {
     try {
-      // Загружаем упражнения через сервис
       final exercises = await ExerciseFileService.loadExercises();
       
       print('Загружено ${exercises.length} упражнений для коррекции');
@@ -39,12 +38,10 @@ class ExerciseDataFixer {
         
         // 3. Исправляем уровень опыта для сложных упражнений
         if (_isAdvancedExercise(ex) && ex.experienceLevels.contains('Beginner')) {
-          // Удаляем 'Beginner' и 'No experience' из списка
           final updatedLevels = ex.experienceLevels
               .where((level) => level != 'Beginner' && level != 'No experience')
               .toList();
           
-          // Если список пуст, добавляем 'Experienced' и 'Pro'
           if (updatedLevels.isEmpty) {
             updatedLevels.addAll(['Experienced', 'Pro']);
           }
@@ -56,7 +53,6 @@ class ExerciseDataFixer {
         // 4. Исправляем базовые упражнения для новичков
         if (_isBasicExercise(ex) && !ex.experienceLevels.contains('Beginner')) {
           final updatedLevels = [...ex.experienceLevels, 'Beginner'];
-          // Для самых базовых можно добавить и 'No experience'
           if (_isVeryBasicExercise(ex) && !updatedLevels.contains('No experience')) {
             updatedLevels.add('No experience');
           }
@@ -71,7 +67,6 @@ class ExerciseDataFixer {
       print('Исправлено $fixedLocationCount упражнений с неверной локацией');
       print('Исправлено $fixedExperienceCount упражнений с неверным уровнем опыта');
       
-      // Сохраняем исправленные данные в temporaryDirectory
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/fixed_exercises.json');
       await file.writeAsString(json.encode(correctedExercises));
@@ -84,7 +79,6 @@ class ExerciseDataFixer {
     }
   }
   
-  /// Устанавливает исправленный JSON в качестве основного
   static Future<bool> applyFixedData() async {
     try {
       final tempDir = await getTemporaryDirectory();
@@ -97,7 +91,6 @@ class ExerciseDataFixer {
       
       final fixedJson = await fixedFile.readAsString();
       
-      // Заменяем файл через сервис
       final result = await ExerciseFileService.replaceExerciseFile(fixedJson);
       
       print('Исправленные данные применены: $result');
@@ -108,22 +101,18 @@ class ExerciseDataFixer {
     }
   }
   
-  /// Определяет, является ли упражнение сложным (не для новичков)
   static bool _isAdvancedExercise(ExerciseInfo ex) {
-    // Список ключевых слов, указывающих на сложные упражнения
     final advancedKeywords = [
       'planche', 'muscle up', 'handstand', 'lever', 
       'one arm', 'one-arm', 'pistol', 'ring', 'clean and jerk',
       'snatch', 'overhead', 'advanced', 'complex', 'dragon'
     ];
     
-    // Проверяем название упражнения на ключевые слова
     final nameLower = ex.name.toLowerCase();
     if (advancedKeywords.any((word) => nameLower.contains(word))) {
       return true;
     }
     
-    // Сложные типы оборудования
     if (ex.equipment.toLowerCase().contains('olympic')) {
       return true;
     }
@@ -131,21 +120,17 @@ class ExerciseDataFixer {
     return false;
   }
   
-  /// Определяет, является ли упражнение базовым (подходит для новичков)
   static bool _isBasicExercise(ExerciseInfo ex) {
-    // Список ключевых слов для базовых упражнений
     final basicKeywords = [
       'basic', 'simple', 'beginner', 'assisted', 'modified',
       'knee push', 'wall', 'supported', 'machine', 'guide'
     ];
     
-    // Проверяем название
     final nameLower = ex.name.toLowerCase();
     if (basicKeywords.any((word) => nameLower.contains(word))) {
       return true;
     }
     
-    // Базовые группы упражнений
     if (ex.bodyPart.toLowerCase() == 'cardio') {
       return true;
     }

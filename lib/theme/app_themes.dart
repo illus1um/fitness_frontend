@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Класс для работы с темами приложения
 class AppThemes {
   
-  /// Основной золотой цвет приложения
   static const Color goldAccent = Color(0xFFC7A97F);
   
-  /// Тёмный вариант золотого цвета для тёмной темы
   static const Color darkGoldAccent = Color(0xFFB2996E);
   
-  /// Светлая тема
   static ThemeData get light => ThemeData(
     brightness: Brightness.light,
     primaryColor: const Color.fromARGB(255, 255, 255, 255),
@@ -41,7 +37,6 @@ class AppThemes {
         const ProgressIndicatorThemeData(color: goldAccent),
   );
 
-  /// Тёмная тема
   static ThemeData get dark => ThemeData(
     brightness: Brightness.dark,
     primaryColor: const Color.fromARGB(255, 12, 12, 12),
@@ -71,7 +66,6 @@ class AppThemes {
         const ProgressIndicatorThemeData(color: darkGoldAccent),
   );
   
-  /// Конвертирует строковое представление темы в ThemeMode
   static ThemeMode stringToThemeMode(String s) {
     switch (s) {
       case 'Dark':
@@ -84,7 +78,6 @@ class AppThemes {
     }
   }
 
-  /// Конвертирует ThemeMode в строковое представление
   static String themeModeToString(ThemeMode m) {
     switch (m) {
       case ThemeMode.dark:

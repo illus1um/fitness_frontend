@@ -1,7 +1,3 @@
-// lib/screens/workout/workout_day_screen.dart
-
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import '../../models/day_info.dart';
 import '../../models/progress_entry.dart';
@@ -27,7 +23,6 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   Map<String, int> _completedSets = {};
   bool _loading = true;
 
-  // Функция для капитализации первой буквы текста
   String _capitalize(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
@@ -38,7 +33,6 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     super.initState();
     _loadDayProgress();
     
-    // Предзагружаем превью для более быстрой загрузки
     if (widget.day.exercises.isNotEmpty) {
       GifService.preloadExercisePreviews(widget.day.exercises);
     }
@@ -52,7 +46,6 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     });
   }
   
-  // Проверяем, завершен ли день полностью
   bool _isDayCompleted() {
     if (widget.day.exercises.isEmpty) return false;
     
@@ -62,12 +55,9 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     });
   }
   
-  // Обработчик завершения тренировки
   Future<void> _onSessionComplete() async {
-    // Обновляем прогресс текущего дня
     await _loadDayProgress();
     
-    // Если день полностью завершен, вызываем коллбэк
     if (_isDayCompleted() && widget.onComplete != null) {
       await widget.onComplete!();
     }
@@ -155,7 +145,6 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
             padding: EdgeInsets.all(16),
             child: Row(
               children: [
-                // Exercise image with rounded corners
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Container(

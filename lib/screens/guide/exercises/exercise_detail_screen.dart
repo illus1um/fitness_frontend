@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import '../../../services/gif_service.dart';
 
@@ -39,7 +37,6 @@ class ExerciseDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image container with improved styling
             Container(
               height: 320,
               width: double.infinity,
@@ -117,7 +114,6 @@ class ExerciseDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Exercise name
                   Text(
                     _capitalize(exercise["name"] ?? "Unknown Exercise"),
                     style: TextStyle(
@@ -176,7 +172,6 @@ class ExerciseDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Section header with icon
                   Row(
                     children: [
                       Container(
@@ -218,7 +213,6 @@ class ExerciseDetailScreen extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Step number in gold circle
                               Container(
                                 width: 32,
                                 height: 32,
@@ -239,7 +233,6 @@ class ExerciseDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 16),
 
-                              // Instruction text with theme-aware styling
                               Expanded(
                                 child: Text(
                                   instructions[index],
@@ -256,7 +249,6 @@ class ExerciseDetailScreen extends StatelessWidget {
                       },
                     )
                   else
-                    // Styled placeholder for missing instructions
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -284,7 +276,6 @@ class ExerciseDetailScreen extends StatelessWidget {
               ),
             ),
             
-            // Добавляем дополнительную информацию, если она есть
             if (exercise["bodyPart"] != null || exercise["secondaryMuscles"] != null)
               const SizedBox(height: 24),
               
@@ -309,7 +300,6 @@ class ExerciseDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Section header
                     Row(
                       children: [
                         Container(
@@ -339,7 +329,6 @@ class ExerciseDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Body part
                     if (exercise["bodyPart"] != null) 
                       _buildInfoRow(
                         context,
@@ -353,7 +342,6 @@ class ExerciseDetailScreen extends StatelessWidget {
                     if (exercise["bodyPart"] != null && exercise["secondaryMuscles"] != null) 
                       const SizedBox(height: 12),
                     
-                    // Secondary muscles
                     if (exercise["secondaryMuscles"] != null)
                       _buildInfoRow(
                         context,

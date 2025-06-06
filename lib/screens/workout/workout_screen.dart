@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -637,7 +635,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final goldColor = Color(0xFFC7A97F);
     
-    // Определяем интервал между тренировками на основе размера плана
     final int daysBetweenWorkouts = _plan!.length <= 15 ? 2 : 1;
     
     final DateTime firstDay = _startDate!;
@@ -676,7 +673,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         leftChevronIcon: Container(
           decoration: BoxDecoration(
             color: isDarkMode
-                ? Color(0xFF3A3225) // Darker gold for dark mode
+                ? Color(0xFF3A3225) 
                 : goldColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
@@ -686,7 +683,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         rightChevronIcon: Container(
           decoration: BoxDecoration(
             color: isDarkMode
-                ? Color(0xFF3A3225) // Darker gold for dark mode
+                ? Color(0xFF3A3225) 
                 : goldColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
@@ -696,8 +693,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         headerPadding: const EdgeInsets.symmetric(vertical: 10),
         headerMargin: const EdgeInsets.only(bottom: 6),
       ),
-      rowHeight: rowHeight, // Dynamic row height
-      daysOfWeekHeight: 30, // Reduced further
+      rowHeight: rowHeight, 
+      daysOfWeekHeight: 30, 
       calendarStyle: CalendarStyle(
         defaultTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
           fontSize: 16,
@@ -752,7 +749,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           shape: BoxShape.circle,
         ),
         outsideDaysVisible: false,
-        cellMargin: EdgeInsets.all(4), // Slightly reduced margin
+        cellMargin: EdgeInsets.all(4),
         cellPadding: EdgeInsets.zero,
       ),
       eventLoader: (day) {
@@ -770,9 +767,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         markerBuilder: (context, day, events) {
           if (events.isNotEmpty) {
             return Positioned(
-              bottom: 3, // Slightly reduced spacing
+              bottom: 3,
               child: Container(
-                width: 6, // Slightly smaller marker
+                width: 6,
                 height: 6,
                 decoration: BoxDecoration(
                   color: goldColor,
@@ -797,7 +794,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           final simpleDay = DateTime(day.year, day.month, day.day);
           if (_startDate == null) return null;
           
-          // Проверяем, находится ли день в списке тренировочных дней
           final isWorkoutDay = _workoutDays.any((workoutDate) =>
             workoutDate.year == simpleDay.year && 
             workoutDate.month == simpleDay.month && 
@@ -806,17 +802,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           
           if (!isWorkoutDay) return null;
           
-          // Вычисляем разницу в днях между днём календаря и начальной датой
           final diff = simpleDay.difference(
             DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
           ).inDays;
           
-          // Находим индекс тренировочного дня (учитывая, что тренировки каждые 2 дня)
           final dayNumber = diff ~/ 2;
-          // В плане индексы начинаются с 1
           final dayIndex = dayNumber + 1;
           
-          // Проверяем, доступен ли день
           final enabled = _isDayOpen(dayIndex);
           
           return Tooltip(
@@ -900,23 +892,17 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           DateTime(_startDate!.year, _startDate!.month, _startDate!.day),
         ).inDays;
         
-        // Определяем интервал между тренировками
         int daysBetweenWorkouts = _plan!.length <= 15 ? 2 : 1;
         
-        // Не тренировочный день если имеет отрицательную разницу или не соответствует интервалу
         if (diff < 0 || (daysBetweenWorkouts == 2 && diff % 2 != 0)) {
           return;
         }
         
-        // Вычисляем номер тренировочного дня (0-based)
         final dayNumber = daysBetweenWorkouts == 2 ? diff ~/ 2 : diff;
         
-        // Индекс дня в плане (1-based, так как dayIndex в плане начинается с 1)
         final targetDayIndex = dayNumber + 1;
         
-        // Проверяем, есть ли день с таким индексом в плане
         if (dayNumber < _plan!.length && _isDayOpen(targetDayIndex)) {
-          // Находим конкретный день для открытия
           final dayToOpen = _plan!.firstWhere((d) => d.dayIndex == targetDayIndex, 
             orElse: () => DayInfo(dayIndex: -1, part: '', exercises: []));
             
@@ -1030,7 +1016,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             height: 44,
             decoration: BoxDecoration(
               color: isDarkMode 
-                  ? Color(0xFF3A3225)  // Darker gold for dark mode
+                  ? Color(0xFF3A3225) 
                   : goldColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1076,21 +1062,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     );
   }
 
-  // Helper to check if user has generated a plan
   Future<bool> _checkUserHasGeneratedPlan() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('has_generated_plan') ?? false;
   }
 
-  // Метод для фонового обновления данных без индикатора загрузки
   Future<void> _refreshDataInBackground() async {
-    // Загружаем данные пользователя в фоне
     await _loadUserData();
     
-    // Проверяем наличие плана на сервере
     final serverPlan = await ApiService.getPlan();
     
-    // Если план существует на сервере, устанавливаем флаг и загружаем данные
     if (serverPlan != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_generated_plan', true);
@@ -1103,7 +1084,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       return;
     }
     
-    // Проверим наличие плана в кэше
     final cachedPlan = await PlanCache.loadPlan();
     final startDate = await PlanCache.loadStartDate();
     
@@ -1119,7 +1099,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       return;
     }
     
-    // Если плана нет ни на сервере, ни в кэше, проверим только статус флага
     final prefs = await SharedPreferences.getInstance();
     final hasGenerated = prefs.getBool('has_generated_plan') ?? false;
     
@@ -1128,7 +1107,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       if (mounted) setState(() {});
     }
     
-    // Если план был сгенерирован согласно флагу, но не загружен, загрузим его
     if (hasGenerated && (_plan == null || _startDate == null)) {
       await _loadCachedPlan();
       if (mounted) setState(() {});

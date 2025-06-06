@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 
 class SportsNutritionScreen extends StatelessWidget {
@@ -137,7 +135,6 @@ class SportsNutritionScreen extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final goldColor = Color(0xFFC7A97F);
     
-    // Define the title style without bold
     final titleStyle = TextStyle(
       fontSize: 20,
       color: isDarkMode ? Colors.white : Colors.black87,
@@ -213,7 +210,7 @@ class SportsNutritionScreen extends StatelessWidget {
                         Expanded(
                           child: Text(
                             supplement['title']!,
-                            style: titleStyle, // Non-bold title style
+                            style: titleStyle, 
                           ),
                         ),
                         Container(
@@ -254,11 +251,9 @@ class SupplementDetailScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     
-    // Define colors based on theme
     final accentColor = isDarkMode ? const Color(0xFFB2996E) : const Color(0xFFC7A97F);
     final bodyTextColor = isDarkMode ? Colors.grey[300] : Colors.grey[800];
     
-    // Parse the details into sections
     final sections = details.split('\n\n');
     final result = <Widget>[];
     
@@ -268,7 +263,6 @@ class SupplementDetailScreen extends StatelessWidget {
         final heading = parts[0].trim();
         final content = parts[1].trim();
         
-        // Add the section heading
         result.add(
           Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -293,7 +287,6 @@ class SupplementDetailScreen extends StatelessWidget {
           ),
         );
         
-        // Add the section content
         result.add(
           Padding(
             padding: const EdgeInsets.only(left: 32, bottom: 16),
@@ -308,7 +301,6 @@ class SupplementDetailScreen extends StatelessWidget {
           ),
         );
         
-        // Add a divider except after the last section
         if (section != sections.last) {
           result.add(
             Divider(
@@ -367,7 +359,6 @@ class SupplementDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image with enhanced styling
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -392,7 +383,6 @@ class SupplementDetailScreen extends StatelessWidget {
             ),
             ),
             
-            // Title with accent underline
             Container(
               margin: const EdgeInsets.only(top: 24, bottom: 16),
               padding: const EdgeInsets.only(bottom: 8),
@@ -414,7 +404,6 @@ class SupplementDetailScreen extends StatelessWidget {
               ),
             ),
             
-            // Content sections
             ..._buildFormattedSections(context, supplement['details']!),
             
             const SizedBox(height: 24),

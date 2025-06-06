@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/day_info.dart';
@@ -27,7 +25,6 @@ class WorkoutSummaryScreen extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final goldColor = const Color(0xFFC7A97F);
     
-    // Подсчитываем общую статистику
     int totalSets = 0;
     int totalCompleted = 0;
     
@@ -38,17 +35,15 @@ class WorkoutSummaryScreen extends StatelessWidget {
       totalCompleted += completed;
     }
     
-    // Вычисляем процент выполнения
     final completionRate = totalSets > 0 ? totalCompleted / totalSets : 0.0;
     
-    // Форматируем дату
     final dateFormatter = DateFormat('EEEE, MMMM d, yyyy • h:mm a');
     final formattedDate = dateFormatter.format(completionDate);
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('Workout Summary'),
-        automaticallyImplyLeading: false, // Отключаем кнопку назад
+        automaticallyImplyLeading: false,
         centerTitle: true,
         elevation: 0,
         backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
@@ -62,11 +57,9 @@ class WorkoutSummaryScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Заголовок с поздравлением и красивым бейджем
                   Center(
                     child: Column(
                       children: [
-                        // Trophy badge with animated shimmer
                         Container(
                           width: 100,
                           height: 100,
@@ -97,7 +90,6 @@ class WorkoutSummaryScreen extends StatelessWidget {
                         
                         const SizedBox(height: 24),
                         
-                        // Congratulation text with beautiful styling
                         Text(
                           'Great Job!',
                           style: theme.textTheme.headlineMedium?.copyWith(
@@ -108,7 +100,6 @@ class WorkoutSummaryScreen extends StatelessWidget {
                         
                         const SizedBox(height: 12),
                         
-                        // Day completion info
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
@@ -126,7 +117,6 @@ class WorkoutSummaryScreen extends StatelessWidget {
                         
                         const SizedBox(height: 8),
                         
-                        // Date
                         Text(
                           formattedDate,
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -139,7 +129,6 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   
                   const SizedBox(height: 32),
                   
-                  // Overall progress circle with percentage
                   Center(
                     child: CircularPercentIndicator(
                       radius: 80,
@@ -175,7 +164,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   
                   const SizedBox(height: 32),
                   
-                  // Общая статистика в красивых карточках
+                  // Общая статистика
                   Container(
                     decoration: BoxDecoration(
                       color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
@@ -255,7 +244,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                   
                   const SizedBox(height: 16),
                   
-                  // Список упражнений с улучшенным дизайном
+                  // Список упражнений
                   ...completedExercises.map((ex) {
                     final exercise = ex['exercise'] as ExerciseInfo;
                     final completed = ex['sets_completed'] as int;
@@ -282,7 +271,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Изображение упражнения в контейнере с тенью
+                            // Изображение упражнения
                             Container(
                               width: 60,
                               height: 60,
@@ -374,7 +363,6 @@ class WorkoutSummaryScreen extends StatelessWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  // Progress bar
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
@@ -437,7 +425,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
             ),
           ),
           
-          // Кнопка "Готово" с градиентом
+          // Кнопка "Готово"
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -478,11 +466,8 @@ class WorkoutSummaryScreen extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(28),
                   onTap: () {
-                    // Вызываем коллбэк для завершения тренировки
                     onFinish();
-                    
-                    // Дополнительно убеждаемся, что вернулись на главный экран
-                    // даже если коллбэк onFinish не содержит правильной логики навигации
+                  
                     Future.delayed(const Duration(milliseconds: 100), () {
                       if (Navigator.canPop(context)) {
                         Navigator.of(context).popUntil((route) => route.isFirst);

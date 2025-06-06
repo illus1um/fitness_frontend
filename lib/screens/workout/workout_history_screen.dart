@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/progress_entry.dart';
@@ -25,9 +23,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
   }
   
   Future<void> _initializeData() async {
-    // Инициализируем сервис с данными об упражнениях
     await ExerciseDataService.initialize();
-    // Загружаем историю
     _loadHistory();
   }
   
@@ -35,25 +31,19 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Получаем полную историю прогресса
       final progressEntries = await ApiService.getProgress();
       
-      // Группируем записи по дате и дню тренировки
       final Map<String, Map<int, List<ProgressEntry>>> groupedByDateAndDay = {};
       
       for (final entry in progressEntries) {
-        // Форматируем дату для группировки по дням
         final dateStr = DateFormat('yyyy-MM-dd').format(entry.completedAt);
         
-        // Создаем вложенные карты при необходимости
         groupedByDateAndDay.putIfAbsent(dateStr, () => {});
         groupedByDateAndDay[dateStr]!.putIfAbsent(entry.dayIndex, () => []);
         
-        // Добавляем запись в соответствующую группу
         groupedByDateAndDay[dateStr]![entry.dayIndex]!.add(entry);
       }
       
-      // Преобразуем в формат для отображения в UI
       final List<Map<String, dynamic>> result = [];
       
       groupedByDateAndDay.forEach((dateStr, dayEntries) {
@@ -68,7 +58,6 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
         });
       });
       
-      // Сортируем по дате (сначала новые)
       result.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
       
       setState(() {
@@ -170,7 +159,6 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
           ),
           const SizedBox(height: 40),
           
-          // Добавляем кнопку для начала тренировки
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 40),
             height: 56,
@@ -198,7 +186,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(28),
                 onTap: () {
-                  Navigator.of(context).pop(); // Возвращаемся на предыдущий экран
+                  Navigator.of(context).pop();
                 },
                 child: const Center(
                   child: Text(
@@ -227,11 +215,9 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
     final totalSets = history['total_sets'] as int;
     final entries = history['entries'] as List<ProgressEntry>;
     
-    // Форматируем дату более компактно
     final dateFormatter = DateFormat('EEE, MMM d');
     final formattedDate = dateFormatter.format(date);
     
-    // Определяем, сколько дней прошло с тренировки
     final daysAgo = DateTime.now().difference(date).inDays;
     String timeAgoText;
     if (daysAgo == 0) {
@@ -374,7 +360,6 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
             ),
           ),
           children: [
-            // Контейнер со скроллом для содержимого
             SingleChildScrollView(
               physics: ClampingScrollPhysics(),
               child: Container(

@@ -1,5 +1,3 @@
-// lib/services/plan_cache.dart
-
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/day_info.dart';
@@ -13,7 +11,6 @@ class PlanCache {
 
   static Future<void> savePlan(List<DayInfo> plan) async {
     final prefs = await SharedPreferences.getInstance();
-    // 1. сохраняем сам план
     await prefs.setString(_planKey, json.encode(plan.map((d) => d.toJson()).toList()));
   }
 
@@ -66,7 +63,6 @@ class PlanCache {
           .toList();
     } catch (e) {
       print('Error loading progress: $e');
-      // В случае ошибки очищаем кэшированный прогресс и возвращаем пустой список
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_progressKey);
       return [];

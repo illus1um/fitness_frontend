@@ -70,12 +70,10 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
-        // Проверяем, содержит ли ответ относительный URL аватара
         if (data.containsKey('avatar_url') && data['avatar_url'] != null) {
           final rawUrl = data['avatar_url'].toString();
           print("Raw avatar_url from server: $rawUrl");
           
-          // Преобразуем относительный путь в полный URL
           data['avatar_url'] = fixAvatarUrl(rawUrl);
           print("Fixed avatar_url: ${data['avatar_url']}");
         }
@@ -406,7 +404,6 @@ class ApiService {
     return resp.statusCode == 200;
   }
 
-    /// Проверка доступности username
   static Future<bool> isUsernameAvailable(String username) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/auth/check-username?username=$username'));
@@ -417,7 +414,6 @@ class ApiService {
     }
   }
 
-  /// Проверка доступности email
   static Future<bool> isEmailAvailable(String email) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/auth/check-email?email=$email'));
@@ -639,7 +635,6 @@ class ApiService {
       String? token = await AuthService.getAccessToken();
       if (token == null) return false;
       
-      // Check if file is a valid image format
       final String fileName = imageFile.path.toLowerCase();
       bool isValidFormat = false;
       String mimeType = '';
@@ -660,16 +655,13 @@ class ApiService {
         return false;
       }
       
-      // Создаем multipart request
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/users/upload-avatar'),
       );
       
-      // Добавляем заголовок авторизации
       request.headers['Authorization'] = 'Bearer $token';
       
-      // Добавляем файл в запрос с явным указанием MIME типа
       final fileField = await http.MultipartFile.fromPath(
         'avatar',
         imageFile.path,
@@ -677,32 +669,26 @@ class ApiService {
       );
       request.files.add(fileField);
       
-      // Printing request details for debugging
       print("Uploading file: ${imageFile.path}");
       print("File size: ${await imageFile.length()} bytes");
       print("File MIME type: $mimeType");
       print("Endpoint: ${request.url}");
       
-      // Отправляем запрос
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       
-      // Print response body for debugging
       print("Response body: ${response.body}");
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Если сервер вернул URL аватара, обновляем локальный кеш
         try {
           final responseData = json.decode(response.body);
           if (responseData.containsKey('avatar_url')) {
             final avatarPath = responseData['avatar_url'] as String;
             print("Received new avatar path: $avatarPath");
             
-            // Преобразуем относительный путь в полный URL
             final avatarUrl = fixAvatarUrl(avatarPath);
             print("Fixed avatar URL: $avatarUrl");
             
-            // Очистка кеша для этого URL если он уже существует
             await CachedNetworkImage.evictFromCache(avatarUrl);
           }
         } catch (e) {
@@ -719,7 +705,6 @@ class ApiService {
     }
   }
   
-  // Получение URL аватара из данных пользователя
   static Future<String?> getAvatarUrl() async {
     Map<String, dynamic>? userData = await getUserProfile();
     if (userData?['avatar_url'] == null || userData!['avatar_url'].toString().isEmpty) {
@@ -727,14 +712,12 @@ class ApiService {
     }
     
     String avatarPath = userData['avatar_url'];
-    // Проверяем, является ли путь относительным и добавляем базовый URL
     if (avatarPath.startsWith('/')) {
       return '$baseUrl$avatarPath';
     }
     return avatarPath;
   }
   
-  // Вспомогательный метод для преобразования относительных путей в полные URL
   static String fixAvatarUrl(String? avatarPath) {
     if (avatarPath == null || avatarPath.isEmpty) {
       return '';
@@ -762,7 +745,6 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        // Clear the avatar cache if it exists
         final currentAvatarUrl = await getAvatarUrl();
         if (currentAvatarUrl != null) {
           await CachedNetworkImage.evictFromCache(currentAvatarUrl);

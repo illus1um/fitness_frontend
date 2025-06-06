@@ -14,7 +14,6 @@ class DataProvider {
       String target = exercise["target"] ?? "Unknown";
       String equipment = (exercise["equipment"] ?? "Bodyweight").toLowerCase().replaceAll(" ", "");
       
-      // Вместо пути к гифке в ассетах будем хранить только имя файла
       String gifFileName = exercise["gifUrl"].split('/').last;
       if (!gifFileName.toLowerCase().endsWith('.gif')) {
         gifFileName = "$gifFileName.gif";
@@ -32,7 +31,7 @@ class DataProvider {
         "name": name,
         "target": target,
         "equipment": equipment,
-        "gifFileName": gifFileName, // Используем имя файла вместо пути
+        "gifFileName": gifFileName,
         "instructions": instructions,
       });
     }
