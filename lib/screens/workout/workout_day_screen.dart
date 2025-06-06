@@ -3,6 +3,7 @@ import '../../models/day_info.dart';
 import '../../models/progress_entry.dart';
 import '../../services/api_service.dart';
 import '../../services/gif_service.dart';
+import '../../services/weight_recommendation_service.dart';
 import 'workout_session_screen.dart';
 
 class WorkoutDayScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class WorkoutDayScreen extends StatefulWidget {
 class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   Map<String, int> _completedSets = {};
   bool _loading = true;
+  Map<String, dynamic>? _userData;
 
   String _capitalize(String text) {
     if (text.isEmpty) return text;
@@ -31,16 +33,19 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDayProgress();
+    _loadData();
     
     if (widget.day.exercises.isNotEmpty) {
       GifService.preloadExercisePreviews(widget.day.exercises);
     }
   }
 
-  Future<void> _loadDayProgress() async {
+  Future<void> _loadData() async {
+    final userData = await ApiService.getUserProfile();
     final list = await ApiService.getDayProgress(widget.day.dayIndex);
+    
     setState(() {
+      _userData = userData;
       _completedSets = { for (var e in list) e.exerciseId: e.setsCompleted };
       _loading = false;
     });
@@ -56,7 +61,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
   }
   
   Future<void> _onSessionComplete() async {
-    await _loadDayProgress();
+    await _loadData();
     
     if (_isDayCompleted() && widget.onComplete != null) {
       await widget.onComplete!();
@@ -110,6 +115,21 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
     bool isDarkMode, 
     Color goldColor
   ) {
+    String? recommendedWeight;
+    if (_userData != null && WeightRecommendationService.needsWeightRecommendation(ex.equipment)) {
+      final weight = WeightRecommendationService.calculateRecommendedWeight(
+        exercise: ex,
+        userWeight: _userData!['weight'].toDouble(),
+        userHeight: _userData!['height'].toDouble(),
+        userAge: _userData!['age'],
+        experience: _userData!['training_experience'],
+        isMale: _userData!['gender'],
+      );
+      if (weight > 0) {
+        recommendedWeight = "${weight.toStringAsFixed(1)} kg";
+      }
+    }
+
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -140,7 +160,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                 onComplete: _onSessionComplete,
               ),
             ),
-          ).then((_) => _loadDayProgress()),
+          ).then((_) => _loadData()),
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Row(
@@ -179,6 +199,25 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                           color: isDarkMode ? Colors.white : Colors.black,
                         ),
                       ),
+                      SizedBox(height: 4),
+                      Text(
+                        '${ex.sets} sets • ${ex.reps} reps',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
+                      if (recommendedWeight != null) ...[
+                        SizedBox(height: 4),
+                        Text(
+                          'Recommended: $recommendedWeight',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: goldColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                       SizedBox(height: 8),
                       _buildProgressIndicator(done, ex.sets, isDone, isDarkMode, goldColor),
                     ],
@@ -337,7 +376,7 @@ class _WorkoutDayScreenState extends State<WorkoutDayScreen> {
                     onComplete: _onSessionComplete,
                   ),
                 ),
-              ).then((_) => _loadDayProgress()),
+              ).then((_) => _loadData()),
               child: Text(
                 'START WORKOUT',
                 style: TextStyle(
