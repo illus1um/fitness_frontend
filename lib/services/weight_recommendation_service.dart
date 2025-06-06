@@ -19,7 +19,7 @@ class WeightRecommendationService {
     
     double weightFactor = userWeight / 70.0;
     
-    double heightFactor = userHeight / 170.0;
+    double heightFactor = (userHeight / 170.0) * 0.5 + 0.5;
     
     double baseWeight = userWeight * baseMultiplier;
     
@@ -36,34 +36,34 @@ class WeightRecommendationService {
   static double _getBaseMultiplier(String equipment) {
     switch (equipment.toLowerCase()) {
       case 'barbell':
-        return 0.8; 
+        return 0.7;
       case 'dumbbell':
-        return 0.3; 
+        return 0.2;
       case 'kettlebell':
-        return 0.4;
+        return 0.3;
       case 'weighted':
-        return 0.5;
+        return 0.4;
       case 'cable':
-        return 0.4; 
+        return 0.25;
       case 'smith machine':
-        return 0.7; 
+        return 0.6;
       default:
-        return 0.0; 
+        return 0.0;
     }
   }
   
   static double _getExperienceMultiplier(String experience) {
     switch (experience.toLowerCase()) {
       case 'no experience':
-        return 0.5;
+        return 0.4;
       case 'beginner':
-        return 0.7;
+        return 0.6;
       case 'experienced':
-        return 0.9;
+        return 0.75;
       case 'pro':
-        return 1.0;
+        return 0.9;
       default:
-        return 0.7;
+        return 0.6;
     }
   }
   
