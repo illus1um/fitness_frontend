@@ -11,7 +11,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
-  String _selectedLanguage = 'English';
   String _selectedTheme = 'System';
   String _selectedWeightUnit = 'kg';
   String _selectedHeightUnit = 'cm';
@@ -41,7 +40,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _selectedLanguage = prefs.getString('language') ?? 'English';
       _selectedTheme = prefs.getString('theme') ?? 'Light';
       _selectedWeightUnit = prefs.getString('weight_unit') ?? 'kg';
       _selectedHeightUnit = prefs.getString('height_unit') ?? 'cm';
@@ -59,7 +57,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     });
     
     setState(() {
-      if (key == 'language') _selectedLanguage = value;
       if (key == 'theme') _selectedTheme = value;
       if (key == 'weight_unit') _selectedWeightUnit = value;
       if (key == 'height_unit') _selectedHeightUnit = value;
@@ -448,34 +445,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                     );
                   },
                   isDarkMode: isDarkMode,
-                ),
-                _buildSettingTile(
-                  icon: Icons.language,
-                  title: 'Language',
-                  value: _selectedLanguage,
-                  description: 'Localization is coming soon',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Icon(Icons.info_outline, color: Colors.white),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text('Localization is not implemented yet. Coming soon!'),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: isDarkMode ? Colors.blueGrey[700] : Colors.blueGrey,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        margin: EdgeInsets.all(10),
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  },
-                  isDarkMode: isDarkMode,
-                  isDisabled: true,
                 ),
                 
                 _buildSectionHeader('Notifications', Icons.notifications_outlined, isDarkMode: isDarkMode),
